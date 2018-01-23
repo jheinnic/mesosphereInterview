@@ -15,12 +15,12 @@ import info.jchein.mesosphere.elevator.domain.sdk.IElevatorCarDriver;
 import info.jchein.mesosphere.elevator.domain.sdk.IElevatorCarPort;
 import info.jchein.mesosphere.elevator.domain.sdk.IElevatorDriverFactory;
 import info.jchein.mesosphere.elevator.domain.sdk.IHallPanelPort;
+import info.jchein.mesosphere.elevator.emulator.ElevatorCarEmulator;
 import info.jchein.mesosphere.elevator.emulator.LandingControlEmulator;
 import info.jchein.mesosphere.elevator.domain.sdk.IHallPanelDriver;
 import info.jchein.mesosphere.elevator.simulator.ElevatorSimulation;
 import info.jchein.mesosphere.elevator.simulator.IElevatorSimulation;
 import info.jchein.mesosphere.elevator.simulator.FloorHallSimulation;
-import info.jchein.mesosphere.elevator.simulator.ElevatorCarEmulator;
 import rx.Scheduler.Worker;
 
 @Configuration
@@ -61,7 +61,7 @@ public class ElevatorSimulationConfiguration
 	@Scope(BeanDefinition.SCOPE_PROTOTYPE)
 	public IHallPanelDriver getFloorHallDriver(IHallPanelPort port)
 	{
-		return new FloorHallEmulator(port);
+		return new LandingControlEmulator(port);
 	}
 	
 	@Bean

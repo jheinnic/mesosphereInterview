@@ -20,12 +20,11 @@ class ElevatorCar implements IElevatorCar, IElevatorCarPort {
 
 	IElevatorCarDriver driver = null
 
-	new(@NotNull IClock systemClock, @NotNull EventBus eventBus, @Min(0) int carIndex) {
-		this(systemClock, eventBus, carIndex, null);
+	new(@Min(0) int carIndex, @NotNull IClock systemClock, @NotNull EventBus eventBus) {
+		this(carIndex, systemClock, eventBus, null);
 	}
 
-	new(@NotNull IClock systemClock, @NotNull EventBus eventBus, @Min(0) int carIndex,
-		ElevatorCarSnapshot initialState) {
+	new(@Min(0) int carIndex, @NotNull IClock systemClock, @NotNull EventBus eventBus, ElevatorCarSnapshot initialState) {
 		this.systemClock = systemClock;
 		this.eventBus = eventBus
 		this.carIndex = carIndex
@@ -92,7 +91,7 @@ class ElevatorCar implements IElevatorCar, IElevatorCarPort {
 		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	
-	override doorStatusUpdated(DoorState newStatus) {
+	override doorStateChanging(DoorState newStatus) {
 		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	

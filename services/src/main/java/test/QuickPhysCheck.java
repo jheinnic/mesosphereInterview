@@ -19,7 +19,7 @@ public class QuickPhysCheck {
 		});
 		ElevatorDoorProperties doorProps = ElevatorDoorProperties.build(bldr -> { });
 		BuildingProperties bldgProps = BuildingProperties.build(bldr -> {
-			bldr.numElevators(6).numFloors(12).metersPerFloor(1.5);
+			bldr.numElevators(6).numFloors(12).metersPerFloor(3.5);
 		});
 		
 		ElevatorPhysicsService physicsService = new ElevatorPhysicsService(

@@ -36,7 +36,7 @@ implements IHallPanelDriver, IEmulatedLandingButtonPanel
 		this.floorIndex = port.getFloorIndex();
 	}
 	
-	public int getFloorIndex() {
+	public int readFloorIndex() {
 		return this.floorIndex;
 	}
 	
@@ -45,9 +45,13 @@ implements IHallPanelDriver, IEmulatedLandingButtonPanel
 	}
 
 	@Override
-	public void parkArrivingCar(DirectionOfTravel direction, int carIndex) {
-		this.port.lightParkedSignal(carIndex, direction);
-		this.port.turnOffHallCall(direction);
+	public void invitePassengersToBoard(DirectionOfTravel direction, int carIndex) {
+		this.port.cancelPickupRequest(direction);
+	}
+
+	@Override
+	public void withdrawInvitationToBoard(DirectionOfTravel direction, int carIndex) {
+		this.port.cancelPickupRequest(direction);
 	}
 
 //	@Override
@@ -56,8 +60,7 @@ implements IHallPanelDriver, IEmulatedLandingButtonPanel
 //	}
 
 	@Override
-	public void launchDepartingCar(DirectionOfTravel direction, int carIndex) {
-		this.port.turnOffHallCall(direction);
-		this.port.dimParkedSignal(carIndex, direction);
+	public void pickupRequestCleared(DirectionOfTravel direction) {
+		this.port.cancelPickupRequest(direction);
 	}
 }

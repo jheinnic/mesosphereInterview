@@ -1,10 +1,11 @@
 package info.jchein.mesosphere.elevator.physics
 
-import javax.annotation.PostConstruct
-
 import com.google.common.base.Preconditions
-import static extension java.lang.String.format
 import org.eclipse.xtend.lib.annotations.ToString
+
+import static extension java.lang.Math.floor
+import static extension java.lang.Math.round
+import static extension java.lang.String.format
 
 @ToString
 class ElevatorPhysicsService implements IElevatorPhysicsService {
@@ -29,7 +30,7 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 	double tFromCnstVUp
 	double dMinForConstVUp
 	double tMinForConstVUp
-	
+
 	val int numFloors
 	val double metersPerFloor
 	val double maxJerk
@@ -69,7 +70,7 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		this.tMaxA = maxAccel / maxJerk;
 		this.vMaxA = maxJerk * tMaxA * tMaxA / 2.0;
 		this.dMaxA = vMaxA * tMaxA / 3.0;
-		
+
 		// Compute the deceleration required to stop from braking speed in the given stopping distance at constant
 		// deceleration.  Derive the time to complete a stop from the braking distance marker using that acceleration
 		// rate and confirm that it requires less than the maximum acceleration magnitude to stop from slow speed at the
@@ -78,23 +79,27 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		this.tStopBrk = speedBrk / this.accelBrake
 
 		Preconditions.checkArgument(
-			this.accelBrake < maxAccel, "It must be possible to brake from the stopping distance at constant rate of velocity change"
+			this.accelBrake < maxAccel,
+			"It must be possible to brake from the stopping distance at constant rate of velocity change"
 		);
 
 		this.travelUpByDistance = newDoubleArrayOfSize(this.numFloors - 1);
 		this.timeUpByDistance = newDoubleArrayOfSize(this.numFloors - 1);
 		this.travelDownByDistance = newDoubleArrayOfSize(this.numFloors - 1);
 		this.timeDownByDistance = newDoubleArrayOfSize(this.numFloors - 1);
-		
-		prefillSpaceAndTimeArrays(this.motorProps.maxRiseSpeed, this.travelUpByDistance, this.timeUpByDistance)
-		prefillSpaceAndTimeArrays(this.motorProps.maxDescentSpeed, this.travelDownByDistance, this.timeDownByDistance)
+
+		this.prefillSpaceAndTimeArrays(this.motorProps.maxRiseSpeed, this.travelUpByDistance, this.timeUpByDistance)
+		this.prefillSpaceAndTimeArrays(this.motorProps.maxDescentSpeed, this.travelDownByDistance,
+			this.timeDownByDistance)
+		this.prefillSpaceAndTimeArrays(this.motorProps.maxRiseSpeed, this.travelUpByDistance, this.timeUpByDistance)
+		this.prefillSpaceAndTimeArrays(this.motorProps.maxDescentSpeed, this.travelDownByDistance,
+			this.timeDownByDistance)
 	}
-	
-	def void prefillSpaceAndTimeArrays(double maxSpeed, double[] spaceArray, double[] timeArray)
-	{
-		var printUp = ""
-		var deltaUp = 0.0
-		var lastUp = 0.0
+
+	def void prefillSpaceAndTimeArrays(double maxSpeed, double[] spaceArray, double[] timeArray) {
+//		var printUp = ""
+//		var deltaUp = 0.0
+//		var lastUp = 0.0
 
 		val floorHeight = this.metersPerFloor
 		var ii = this.numFloors - 1;
@@ -102,33 +107,35 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		this.speedMax = maxSpeed
 		this.preComputeConstantRegions();
 
-		for( var nextHeight = (floorHeight * ii), ii = ii- 1; ii >= 0; ii--, nextHeight -= floorHeight ) {
+		for (var nextHeight = (floorHeight * ii), ii = ii - 1; ii >= 0; ii--, nextHeight -= floorHeight) {
 			var constVelocitySegmentLength = nextHeight - this.dMinForConstVUp
 			if (constVelocitySegmentLength < 0) {
-				printUp += "Discarding %d: (%f -> %f)\n".format(ii, constVelocitySegmentLength, (this.tMinForConstVUp + (constVelocitySegmentLength / this.speedMax)));
+//				printUp +=
+//					"Discarding %d: (%f -> %f)\n".format(ii, constVelocitySegmentLength,
+//						(this.tMinForConstVUp + (constVelocitySegmentLength / this.speedMax)));
 				this.speedMax = computeShortPathMaxSpeed(nextHeight);
-				printUp += "New speedMax = %f\n".format(this.speedMax);
+//				printUp += "New speedMax = %f\n".format(this.speedMax);
 				this.preComputeConstantRegions();
 				constVelocitySegmentLength = nextHeight - this.dMinForConstVUp
 			}
 			spaceArray.set(ii, constVelocitySegmentLength)
 			timeArray.set(ii, this.tMinForConstVUp + (constVelocitySegmentLength / this.speedMax))
-
-			deltaUp = this.timeUpByDistance.get(ii) - lastUp;
-			lastUp = this.timeUpByDistance.get(ii);
-
-			printUp += "%d: (%f -> %f) @ %f\n".format(ii, this.travelUpByDistance.get(ii), this.timeUpByDistance.get(ii), deltaUp)
 		}
 
-		println("XX: %f in %f\n".format(this.dMinForConstVUp, this.tMinForConstVUp));
-		println("\nData:")
-		println(printUp);
-		println("%f".format(this.timeUpByDistance.get(3) + this.timeUpByDistance.get(2) + this.timeUpByDistance.get(4)))
-		println("%f".format(this.timeUpByDistance.get(9)))
-		
-		println(this.toString())
+//		for (ii = 0; ii < this.numFloors - 1; ii++) {
+//			deltaUp = timeArray.get(ii) - lastUp;
+//			lastUp = timeArray.get(ii);
+//
+//			printUp += "%d: (%f -> %f) @ %f\n".format(ii, spaceArray.get(ii), timeArray.get(ii), deltaUp)
+//		}
+//		println("XX: %f in %f\n".format(this.dMinForConstVUp, this.tMinForConstVUp));
+//		println("\nData:")
+//		println(printUp);
+//		println("%f".format(timeArray.get(3) + timeArray.get(2) + timeArray.get(4)))
+//		println("%f".format(timeArray.get(9)))
+//		println(this.toString())
 	}
-	
+
 	/**
 	 * For paths that are sufficiently short, there is no span at constant velocity.  Between the starting point and the
 	 * half-way point there is one region of constant jerk with increasing acceleration, followed by a second span where
@@ -137,10 +144,10 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 	 * and recompute.
 	 */
 	private def double computeShortPathMaxSpeed(double maxDistance) {
-		val dMid = (maxDistance - this.distBrk) / 2
 		val d0 = this.dMaxA
+		val dMid = (maxDistance - d0) / 2; // - this.distBrk) / 2
 		val v0 = this.vMaxA
-		return Math.sqrt((v0 * v0) + (2 * this.maxAccel * (dMid - d0 - d0)));
+		return Math.sqrt((v0 * v0) + (2 * this.maxAccel * dMid));
 	}
 
 	/**
@@ -167,7 +174,7 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		// intervals from this block and the two that follow will be accounted for in constant velocity at maximum speed.
 		this.vToCnstVUp = this.speedMax - (this.tMaxA * this.maxAccel) + this.vMaxA
 		this.dToCnstVUp = (this.vToCnstVUp * this.tMaxA) + (this.tMaxA * this.tMaxA * this.maxAccel / 2.0) - this.dMaxA
-		
+
 		// Now that we know the velocity where constant acceleration begins tapering off, compute the time it takes to
 		// reach that speed at constant acceleration, and the distance traveled in that time.  This interval is computed
 		// after the transition from constant acceleration to constant velocity, but it occurs before that interval.  We
@@ -175,17 +182,19 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		// compute its duration in time and space.
 		this.tUpAtMaxA = (this.vToCnstVUp - this.vMaxA) / this.maxAccel
 		this.dUpAtMaxA = (this.vMaxA * this.tUpAtMaxA) + (this.tUpAtMaxA * this.tUpAtMaxA * this.maxAccel / 2.0)
-		
+
 		// The remaining interval accounts for a transition from constant maximum velocity to slow down to braking speed
 		// before we reach the final braking distance zone.  This computation also serves to inform the greatest floor 
 		// distance from which we can safely accept a destination change to an earlier floor along the same trajectory.
-		// 
+		//
 		// Scratch that.  Target breaking acceleration and velocity.  Compensate for any difference when calculating the
 		// straightforward constant velocity duration on each floor pair.
 		// this.tFromCnstVUp = (speedMax - this.speedBrk) / this.accelBrake
 		this.tFromCnstVUp = (this.maxAccel - this.accelBrake) / this.maxJerk
 		this.vFromCnstVUp = this.speedBrk
-		this.dFromCnstVUp = (this.speedMax * this.tFromCnstVUp) - (this.maxAccel * this.tFromCnstVUp * this.tFromCnstVUp / 2.0) + (this.maxJerk * this.tFromCnstVUp * this.tFromCnstVUp * this.tFromCnstVUp / 6.0)
+		this.dFromCnstVUp = (this.speedMax * this.tFromCnstVUp) -
+			(this.maxAccel * this.tFromCnstVUp * this.tFromCnstVUp / 2.0) +
+			(this.maxJerk * this.tFromCnstVUp * this.tFromCnstVUp * this.tFromCnstVUp / 6.0)
 
 		// Last step--sum up the distance and time costs for the regions calculated thus far.  For any traversal path 
 		// that has a region of time spent at constant velocity, the course of action is to deduct the distance sum from
@@ -195,83 +204,95 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		this.tMinForConstVUp = this.tMaxA + this.tMaxA + this.tUpAtMaxA + this.tFromCnstVUp + this.tStopBrk;
 		this.dMinForConstVUp = this.dMaxA + this.dToCnstVUp + this.dUpAtMaxA + this.dFromCnstVUp + this.distBrk
 
-	}	override expectedStopDuration(int boardingCount, int disembarkingCount) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+
+	override expectedStopDuration(int boardingCount, int disembarkingCount) {
+		return this.doorProps.doorOpenCloseSlideTime + Math.max(
+			this.doorProps.minDoorHoldTimePerOpen,
+			(this.doorProps.doorHoldTimePerPerson * (boardingCount + disembarkingCount)));
 	}
 
 	override idealPassengerCount() {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+		return (this.weightProps.idealWeightLoad / this.weightProps.passengerWeight).round as int
 	}
 
 	override maxTolerancePassengerCount() {
+		return ((
+			this.weightProps.maxWeightLoad * this.toleranceProps.getRefusePickupAfterWeightPct
+		) / this.weightProps.passengerWeight).floor as int
+	}
+
+	override floorDistance(int fromFloorIndex, int toFloorIndex) {
 		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 
-	override travelTime(int fromFloorIndex, int toFloodIndex) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	override travelTime(int fromFloorIndex, int toFloorIndex) {
+		if (fromFloorIndex > toFloorIndex) {
+			return this.travelDownByDistance.get(fromFloorIndex - toFloorIndex);
+		} else if (fromFloorIndex < toFloorIndex) {
+			return this.travelUpByDistance.get(toFloorIndex - fromFloorIndex);
+		} else {
+			throw new IllegalArgumentException(
+				"to and from floor indices cannot both be <%d> and <%d>".format(fromFloorIndex, toFloorIndex));
+		}
 	}
 }
-
-
-
-
-
 /*o		//
-		// We can reuse information from the reduction of acceleration from maximum to 0 as we now proceed from 0 to
-		// negative maximum while continuing to respect maximum jerk magnitude.  This will require the same amount of time,
-		// so we can reuse the time to max acceleration at maximal jerk for time again.  We would also reuse the previously
-		// computed transition velocity, but now it is the target velocity, not the origin, and so is not in the formula.
-		//
-		// The most significant difference is that the 'starting acceleration' term from the distance formula drops out
-		// here, because we are starting at 0 acceleration.  The sign of the jerk term remains negative.
-		this.vFromCnstVUp = this.vToCnstVUp
-		this.dFromCnstVUp = (speedUp * this.tMaxA) - this.dMaxA
-		this.vFromCnstVDown = this.vToCnstVDown
-		this.dFromCnstVDown = (speedDown * this.tMaxA) - this.dMaxA
-		
-		// An interesting result is that while dFromCnstVUp and dToConstVUp represent very different magnitudes of change
-		// from what their original velocity would yield in the same time, they yield the same absolute value for distance
-		// traveled.  This suggests a means to compute these intervals when the distance traveled is too short to reach
-		// maximum speed.
-		//
-		// The final interval will not reflect the same symmetry, as it targets braking speed, not initial velocity after
-		// ramping to maximum acceleration from rest.
-//		this.tUpAtMinA = (this.vFromCnstVUp - speedBrk) / this.accelBrake
-//		this.dUpAtMinA = (this.vFromCnstVUp * this.tUpAtMinA) + (this.tUpAtMinA * this.tUpAtMinA * maxAccel / 2.0)
-//		this.tDownAtMinA = (this.vFromCnstVDown - this.vMaxA) / maxAccel
-//		this.dDownAtMinA = (this.vMaxA * this.tDownAtMinA) + (this.tDownAtMinA * this.tDownAtMinA * maxAccel / 2.0)
+ * 		// We can reuse information from the reduction of acceleration from maximum to 0 as we now proceed from 0 to
+ * 		// negative maximum while continuing to respect maximum jerk magnitude.  This will require the same amount of time,
+ * 		// so we can reuse the time to max acceleration at maximal jerk for time again.  We would also reuse the previously
+ * 		// computed transition velocity, but now it is the target velocity, not the origin, and so is not in the formula.
+ * 		//
+ * 		// The most significant difference is that the 'starting acceleration' term from the distance formula drops out
+ * 		// here, because we are starting at 0 acceleration.  The sign of the jerk term remains negative.
+ * 		this.vFromCnstVUp = this.vToCnstVUp
+ * 		this.dFromCnstVUp = (speedUp * this.tMaxA) - this.dMaxA
+ * 		this.vFromCnstVDown = this.vToCnstVDown
+ * 		this.dFromCnstVDown = (speedDown * this.tMaxA) - this.dMaxA
+ * 		
+ * 		// An interesting result is that while dFromCnstVUp and dToConstVUp represent very different magnitudes of change
+ * 		// from what their original velocity would yield in the same time, they yield the same absolute value for distance
+ * 		// traveled.  This suggests a means to compute these intervals when the distance traveled is too short to reach
+ * 		// maximum speed.
+ * 		//
+ * 		// The final interval will not reflect the same symmetry, as it targets braking speed, not initial velocity after
+ * 		// ramping to maximum acceleration from rest.
+ * //		this.tUpAtMinA = (this.vFromCnstVUp - speedBrk) / this.accelBrake
+ * //		this.dUpAtMinA = (this.vFromCnstVUp * this.tUpAtMinA) + (this.tUpAtMinA * this.tUpAtMinA * maxAccel / 2.0)
+ * //		this.tDownAtMinA = (this.vFromCnstVDown - this.vMaxA) / maxAccel
+ * //		this.dDownAtMinA = (this.vMaxA * this.tDownAtMinA) + (this.tDownAtMinA * this.tDownAtMinA * maxAccel / 2.0)
 
-		var double tDeltaSlow
-		var double dDeltaSlow
-		if (speedBrk < vMaxA) { 
-			tMaxSlow = (2.0 * speedBrk / maxJerk).sqrt
-			dMaxSlow = speedBrk * tMaxSlow / 3.0
-		} else {
-			tDeltaSlow = ((speedBrk-vMaxA) / maxAccel)
-			dDeltaSlow = (vMaxA * tDeltaSlow) + (maxAccel * tDeltaSlow * tDeltaSlow / 2.0)
-			tMaxSlow = tMaxA + tDeltaSlow
-			dMaxSlow = dMaxA + dDeltaSlow
-		}
-		
-		Preconditions.checkArgument(
-			dMaxSlow < dBrk, "Braking distance must be at least as great as distance required to stop at slow speed"
-		);
+ * 		var double tDeltaSlow
+ * 		var double dDeltaSlow
+ * 		if (speedBrk < vMaxA) { 
+ * 			tMaxSlow = (2.0 * speedBrk / maxJerk).sqrt
+ * 			dMaxSlow = speedBrk * tMaxSlow / 3.0
+ * 		} else {
+ * 			tDeltaSlow = ((speedBrk-vMaxA) / maxAccel)
+ * 			dDeltaSlow = (vMaxA * tDeltaSlow) + (maxAccel * tDeltaSlow * tDeltaSlow / 2.0)
+ * 			tMaxSlow = tMaxA + tDeltaSlow
+ * 			dMaxSlow = dMaxA + dDeltaSlow
+ * 		}
+ * 		
+ * 		Preconditions.checkArgument(
+ * 			dMaxSlow < dBrk, "Braking distance must be at least as great as distance required to stop at slow speed"
+ * 		);
 
-		val tDeltaUp = (speedUp - vMaxA) / maxAccel
-		val tMaxUp = tMaxA + tDeltaUp
-		val dDeltaUp = (vMaxA * tDeltaUp) + (maxAccel * tDeltaUp * tDeltaUp / 2.0)
-		val dMaxUp = dMaxA + dDeltaUp
-	
-		val tDeltaDown = (speedDown - vMaxA) / maxAccel
-		val tMaxDown = tMaxA + tDeltaDown
-		val dDeltaDown = (vMaxA * tDeltaDown) + (maxAccel * tDeltaDown * tDeltaDown / 2.0)
-		val dMaxDown = dMaxA + dDeltaDown
+ * 		val tDeltaUp = (speedUp - vMaxA) / maxAccel
+ * 		val tMaxUp = tMaxA + tDeltaUp
+ * 		val dDeltaUp = (vMaxA * tDeltaUp) + (maxAccel * tDeltaUp * tDeltaUp / 2.0)
+ * 		val dMaxUp = dMaxA + dDeltaUp
+ * 	
+ * 		val tDeltaDown = (speedDown - vMaxA) / maxAccel
+ * 		val tMaxDown = tMaxA + tDeltaDown
+ * 		val dDeltaDown = (vMaxA * tDeltaDown) + (maxAccel * tDeltaDown * tDeltaDown / 2.0)
+ * 		val dMaxDown = dMaxA + dDeltaDown
 
-		Preconditions.checkArgument(
-			tMaxUp > 0 && tMaxDown > 0,
-			"Elevators that cannot achieve constant acceleration are unsupported"
-		);
-		var double accelerationAtMaxRise
-		var double accelerationAtMaxFall
-		var double accelerationAtBrakingSpeed
-*/
+ * 		Preconditions.checkArgument(
+ * 			tMaxUp > 0 && tMaxDown > 0,
+ * 			"Elevators that cannot achieve constant acceleration are unsupported"
+ * 		);
+ * 		var double accelerationAtMaxRise
+ * 		var double accelerationAtMaxFall
+ * 		var double accelerationAtBrakingSpeed
+ */

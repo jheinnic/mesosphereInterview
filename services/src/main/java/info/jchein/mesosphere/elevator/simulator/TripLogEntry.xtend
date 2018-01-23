@@ -1,4 +1,4 @@
-package info.jchein.mesosphere.elevator.scheduler.tracking
+package info.jchein.mesosphere.elevator.simulator
 
 import de.oehme.xtend.contrib.Buildable
 import org.eclipse.xtend.lib.annotations.Data

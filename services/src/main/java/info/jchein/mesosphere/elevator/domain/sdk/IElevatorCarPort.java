@@ -11,11 +11,11 @@ public interface IElevatorCarPort {
 
 	void destinationRejected(int rejectedFloorIndec, int retainedFloorIndex, DirectionOfTravel direction, String reason);
 
-	void doorStatusUpdated(DoorState newStatus);
+	void doorStateChanging(DoorState newStatus);
 
-	void parkedForBoarding(int floorIndex);
+	void parkedForBoarding(int floorIndex, double weightOnArrival);
 
-	void idleForDeparture(int floorIndex);
+	void idleForDeparture(int floorIndex, double weightOnDeparture);
 
 	void travelledThroughFloor(int floorIndex, DirectionOfTravel direction);
 

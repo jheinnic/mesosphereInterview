@@ -1,7 +1,16 @@
 package info.jchein.mesosphere.elevator.configuration;
 
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
+
+import info.jchein.mesosphere.elevator.physics.BuildingProperties;
+import info.jchein.mesosphere.elevator.physics.ElevatorDoorProperties;
+import info.jchein.mesosphere.elevator.physics.ElevatorMotorProperties;
+import info.jchein.mesosphere.elevator.physics.ElevatorWeightProperties;
+import info.jchein.mesosphere.elevator.physics.PassengerToleranceProperties;
 
 //@Component("ElevatorConfigurationProperties")
 @Configuration
@@ -9,11 +18,11 @@ import org.springframework.context.annotation.Configuration;
 public class ElevatorConfigurationProperties {
 
 	public int foo;
-	
-//	@Min(3)
+
+	// @Min(3)
 	public int numFloors;
 
-//	@Min(1)
+	// @Min(1)
 	public int numElevators;
 
 	public double metersPerFloor = 3.5;
@@ -25,36 +34,36 @@ public class ElevatorConfigurationProperties {
 	public double maxDescentSpeed = 3.2;
 
 	public double maxAcceleration = 1.5;
-	
+
 	public double maxJerk = 2.0;
 
-	public double maxHallCallWeightPct = 0.85;
-	
-	public int maxWeightAllowance = 1250;
-	
-	public int avgPassengerWeight = 75;
+	public int maxWeightLoad = 1250;
 
-	public int maxStopsForHallCall = 4;
+	public double idealWeightLoad = 600;
+
+	public int passengerWeight = 75;
+
+	public int minDoorHoldTimePerOpen = 3000;
+
+	public int doorHoldTimePerPerson = 250;
+
+	public int doorOpenCloseSlideTime = 2000;
+
+	public int simulationTickTime = 20;
+
+	public double brakingDistance = 300;
+
+	public int passengerStopTolerance = 4;
 
 	public int maxTravelTimeForHallCall = 18500;
 
-	public int minDoorHoldTimeOnOpen = 3000;
+	public double passengerPickupTimeTolerance = 30000;
 
-	public int perAccessDoorHoldTime = 250;
+	public double maxSpeedForStopAtFloor = 0.25;
 
-	public int doorSlideTime = 2000;
+	public double refusePickupAfterWeightPct = 0.85;
 
-//	public double maxSpeedForStopAtFloor = 0.25;
-
-	public int terminalFloorTime = 5040;
-
-	public int middleFloorTime = 4667;
-
-	public int singleFloorTime = 5420;
-	
-	public int simulationTickTime = 20;
-
-	public int slowBarrierForStop = 300;
+	public double passengerTravelTimeTolerance;
 
 	public int getNumFloors() {
 		return numFloors;
@@ -85,58 +94,104 @@ public class ElevatorConfigurationProperties {
 	}
 
 	public double getMaxHallCallWeightPct() {
-		return maxHallCallWeightPct;
+		return refusePickupAfterWeightPct;
 	}
 
 	public int getMaxWeightAllowance() {
-		return maxWeightAllowance;
+		return maxWeightLoad;
 	}
 
 	public int getAvgPassengerWeight() {
-		return avgPassengerWeight;
+		return passengerWeight;
 	}
 
 	public int getMaxStopsForHallCall() {
-		return maxStopsForHallCall;
+		return passengerStopTolerance;
 	}
 
 	public double getMaxTravelTimeForHallCall() {
 		return maxTravelTimeForHallCall;
 	}
 
-	public int getMinDoorHoldTimeOnOpen() {
-		return minDoorHoldTimeOnOpen;
+	public int getMinDoorHoldTimePerOpen() {
+		return minDoorHoldTimePerOpen;
 	}
 
-	public int getPerAccessDoorHoldTime() {
-		return perAccessDoorHoldTime;
+	public int getDoorHoldTimePerPerson() {
+		return doorHoldTimePerPerson;
 	}
 
-	public int getDoorSlideTime() {
-		return doorSlideTime;
+	public int getDoorOpenCloseSlideTime() {
+		return doorOpenCloseSlideTime;
 	}
 
-//	public double getMaxSpeedForStopAtFloor() {
-//		return maxSpeedForStopAtFloor;
-//	}
-
-	public double getTerminalFloorTime() {
-		return terminalFloorTime;
-	}
-
-	public double getMiddleFloorTime() {
-		return middleFloorTime;
-	}
-
-	public double getSingleFloorTime() {
-		return singleFloorTime;
-	}
-	
 	public double getSimulationTickTime() {
 		return simulationTickTime;
 	}
 
-	public int getSlowBarrierForStop() {
-		return slowBarrierForStop;
+	public double getBrakingDistance() {
+		return brakingDistance;
+	}
+
+	public double getPassengerPickupTimeTolerance() {
+		return passengerPickupTimeTolerance;
+	}
+
+	public double getPassengerTravelTimeTolerance() {
+		return passengerTravelTimeTolerance;
+	}
+
+	@Bean
+	@Scope(BeanDefinition.SCOPE_SINGLETON)
+	BuildingProperties getBuildingProperties() {
+		return BuildingProperties.build(builder -> {
+			builder.numFloors(this.numFloors)
+				.numElevators(this.numElevators)
+				.metersPerFloor(this.metersPerFloor);
+		});
+	}
+
+	@Bean
+	@Scope(BeanDefinition.SCOPE_SINGLETON)
+	ElevatorDoorProperties getDoorProperties() {
+		return ElevatorDoorProperties.build(builder -> {
+			builder.doorHoldTimePerPerson(this.doorHoldTimePerPerson)
+				.doorOpenCloseSlideTime(this.doorOpenCloseSlideTime)
+				.minDoorHoldTimePerOpen(this.minDoorHoldTimePerOpen);
+		});
+	}
+
+	@Bean
+	@Scope(BeanDefinition.SCOPE_SINGLETON)
+	ElevatorMotorProperties getMotorProperties() {
+		return ElevatorMotorProperties.build(builder -> {
+			builder.brakingDistance(this.brakingDistance)
+				.brakingSpeed(this.brakeSpeed)
+				.maxJerk(this.maxJerk)
+				.maxAcceleration(this.maxAcceleration)
+				.maxDescentSpeed(this.maxDescentSpeed)
+				.maxRiseSpeed(this.maxRiseSpeed);
+		});
+	}
+
+	@Bean
+	@Scope(BeanDefinition.SCOPE_SINGLETON)
+	ElevatorWeightProperties getWeightProperties() {
+		return ElevatorWeightProperties.build(builder -> {
+			builder.maxWeightLoad(this.maxWeightLoad)
+				.idealWeightLoad(this.idealWeightLoad)
+				.passengerWeight(this.passengerWeight);
+		});
+	}
+
+	@Bean
+	@Scope(BeanDefinition.SCOPE_SINGLETON)
+	PassengerToleranceProperties getPassengerTolerance() {
+		return PassengerToleranceProperties.build(builder -> {
+			builder.passengerPickupTimeTolerance(this.passengerPickupTimeTolerance)
+				.passengerTravelTimeTolerance(this.passengerTravelTimeTolerance)
+				.passengerStopTolerance(this.passengerStopTolerance)
+				.refusePickupAfterWeightPct(this.refusePickupAfterWeightPct);
+		});
 	}
 }

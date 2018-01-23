@@ -10,7 +10,7 @@ import javax.validation.constraints.Min
 @Buildable
 class PassengerToleranceProperties {
 	@Positive
-	val double avoidLandingCallAtWeightPercent
+	val double refusePickupAfterWeightPct
 
 	@Min(0)
 	val int passengerStopTolerance

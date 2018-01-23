@@ -13,6 +13,8 @@ import javax.validation.constraints.NotNull
 import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Component
 import info.jchein.mesosphere.elevator.domain.hall.event.PickupCallRemoved
+import info.jchein.mesosphere.elevator.physics.BuildingProperties
+import javax.validation.Valid
 
 @Component
 @Scope(scopeName="prototype")
@@ -24,11 +26,12 @@ class LandingControls implements ILandingControls, IHallPanelPort {
 	private IHallPanelDriver driver;
 	private ArrayList<IElevatorCarParkRelease> parkedKeys;
 
-	new(@NotNull EventBus eventBus, @NotNull IClock systemClock, @Min(0) int floorIndex, @Min(0) int floorCount) {
+	new(@Min(0) int floorIndex, @NotNull IClock systemClock, @NotNull EventBus eventBus, @Min(1) int elevatorCount
+	) {
 		super()
 		this.eventBus = eventBus
 		this.systemClock = systemClock;
-		this.parkedKeys = new ArrayList<IElevatorCarParkRelease>(floorCount);
+		this.parkedKeys = new ArrayList<IElevatorCarParkRelease>(elevatorCount);
 		this.floorIndex = floorIndex
 	}
 
