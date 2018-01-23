@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>1.5.9.RELEASE</version>
+	</parent>
+	<groupId>info.jchein.examples.mesosphere</groupId>
+	<artifactId>interview</artifactId>
+	<version>0.0.1</version>
+	<name>Mesosphere Interview Coding Challenge</name>
+	<description>Mesosphere Interview Coding Challenge</description>
+	<url>http://mesosphere.jchein.ngrok.io/coding/</url>
+	<packaging>pom</packaging>
+
+	<modules>
+		<module>parent</module>
+		<module>services</module>
+		<module>acceptance</module>
+	</modules>
+	
+	<scm>
+		<connection>git@bitbucket.org:jheinnic/mesosphereInterview.git</connection>
+		<developerConnection>git@bitbucket.org:jheinnic/mesosphereInterview.git</developerConnection>
+	</scm>
+
+	<properties>
+		<useReleaseProfile>false</useReleaseProfile>
+
+		<jgitflow.plugin-version>1.0-m5.1</jgitflow.plugin-version>
+		<maven-project-info.reports-plugin-version>2.8</maven-project-info.reports-plugin-version>
+		<maven-s3.wagon-version>1.2.1</maven-s3.wagon-version>
+		<maven-scm.plugin-version>1.9.4</maven-scm.plugin-version>
+		<maven-site.plugin-version>3.5.1</maven-site.plugin-version>
+	</properties>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-scm-plugin</artifactId>
+				<version>${maven-scm.plugin-version}</version>
+				<configuration>
+					<connectionType>developerConnection</connectionType>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>external.atlassian.jgitflow</groupId>
+				<artifactId>jgitflow-maven-plugin</artifactId>
+				<version>${jgitflow.plugin-version}</version>
+				<configuration>
+					<defaultOriginUrl>git@bitbucket.org:jheinnic/mesosphereInterview.git</defaultOriginUrl>
+
+					<allowSnapshots>true</allowSnapshots>
+					<allowUntracked>false</allowUntracked>
+					<alwaysUpdateOrigin>false</alwaysUpdateOrigin>
+
+					<!-- Enable this to push to origin using SSH keys -->
+					<enableSshAgent>true</enableSshAgent>
+
+					<enableFeatureVersions>true</enableFeatureVersions>
+
+					<!-- Keep your maven submodules at the same version as the parent POM -->
+					<autoVersionSubmodules>true</autoVersionSubmodules>
+
+					<!-- Pushing in-development features to origin allows all devs to see 
+						what each other are working on -->
+					<pushFeatures>true</pushFeatures>
+
+					<!-- This allows the CI server (e.g. Jenkins) to automatically push 
+						new releases to origin; you can then either manually deploy them or, if you 
+						are doing Continuous Deployments, auto-deploy them to prod -->
+					<pushReleases>true</pushReleases>
+
+					<!-- Hot Fixes should be pushed to origin as well so that any dev can 
+						pick them up -->
+					<pushHotfixes>true</pushHotfixes>
+
+					<pullDevelop>true</pullDevelop>
+					<pullMaster>true</pullMaster>
+
+					<squash>false</squash>
+					<scmCommentPrefix>[RELEASE] </scmCommentPrefix>
+
+					<!-- Prevents deployments from dev workstations so that they can be 
+						done by a CI server -->
+					<noDeploy>true</noDeploy>
+
+					<flowInitContext>
+						<masterBranchName>master</masterBranchName>
+						<developBranchName>develop</developBranchName>
+						<featureBranchPrefix>feature-</featureBranchPrefix>
+						<releaseBranchPrefix>release-</releaseBranchPrefix>
+						<hotfixBranchPrefix>hotfix-</hotfixBranchPrefix>
+						<versionTagPrefix>rev-</versionTagPrefix>
+					</flowInitContext>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-site-plugin</artifactId>
+				<version>${maven-site.plugin-version}</version>
+				<configuration>
+					<locales>en</locales>
+				</configuration>
+			</plugin>
+		</plugins>
+		
+		<extensions>
+			<extension>
+				<groupId>org.kuali.maven.wagons</groupId>
+				<artifactId>maven-s3-wagon</artifactId>
+				<version>${maven-s3.wagon-version}</version>
+			</extension>
+		</extensions>
+	</build>
+
+	<distributionManagement>
+		<repository>
+			<id>s3-release-repo</id>
+			<name>AWS Release Repository</name>
+			<url>s3://jchein-mesosphere/release</url>
+		</repository>
+
+		<snapshotRepository>
+			<id>s3-snapshot-repo</id>
+			<name>AWS Snapshot Repository</name>
+			<url>s3://jchein-mesosphere/snapshot</url>
+		</snapshotRepository>
+
+		<site>
+			<id>s3-site</id>
+			<url>s3://jchein-mesosphere/site</url>
+		</site>
+	</distributionManagement>
+
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-project-info-reports-plugin</artifactId>
+				<version>${maven-project-info.reports-plugin-version}</version>
+			</plugin>
+		</plugins>
+	</reporting>
+</project>
