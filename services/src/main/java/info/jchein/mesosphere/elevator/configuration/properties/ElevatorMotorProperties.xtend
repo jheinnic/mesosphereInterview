@@ -15,6 +15,9 @@ class ElevatorMotorProperties {
 	val double brakingDistance
 
 	@Positive
+	val double slowSpeed
+	
+	@Positive
 	val double maxRiseSpeed
 
 	@Positive

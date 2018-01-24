@@ -6,11 +6,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 
-import info.jchein.mesosphere.elevator.physics.BuildingProperties;
-import info.jchein.mesosphere.elevator.physics.ElevatorDoorProperties;
-import info.jchein.mesosphere.elevator.physics.ElevatorMotorProperties;
-import info.jchein.mesosphere.elevator.physics.ElevatorWeightProperties;
-import info.jchein.mesosphere.elevator.physics.PassengerToleranceProperties;
+import info.jchein.mesosphere.elevator.configuration.properties.BuildingProperties;
+import info.jchein.mesosphere.elevator.configuration.properties.ElevatorDoorProperties;
+import info.jchein.mesosphere.elevator.configuration.properties.ElevatorMotorProperties;
+import info.jchein.mesosphere.elevator.configuration.properties.ElevatorWeightProperties;
+import info.jchein.mesosphere.elevator.configuration.properties.PassengerToleranceProperties;
 
 //@Component("ElevatorConfigurationProperties")
 @Configuration
@@ -28,6 +28,8 @@ public class ElevatorConfigurationProperties {
 	public double metersPerFloor = 3.5;
 
 	public double brakeSpeed = 0.5;
+	
+	public double slowSpeed = 1.5;
 
 	public double maxRiseSpeed = 4.0;
 
@@ -79,6 +81,10 @@ public class ElevatorConfigurationProperties {
 
 	public double getBrakeSpeed() {
 		return brakeSpeed;
+	}
+
+	public double getSlowSpeed() {
+		return slowSpeed;
 	}
 
 	public double getMaxRiseSpeed() {
@@ -169,6 +175,7 @@ public class ElevatorConfigurationProperties {
 				.brakingSpeed(this.brakeSpeed)
 				.maxJerk(this.maxJerk)
 				.maxAcceleration(this.maxAcceleration)
+				.maxSlowSpeed(this.maxSlowSpeed)
 				.maxDescentSpeed(this.maxDescentSpeed)
 				.maxRiseSpeed(this.maxRiseSpeed);
 		});

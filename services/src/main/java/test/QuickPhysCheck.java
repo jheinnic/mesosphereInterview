@@ -18,7 +18,7 @@ public class QuickPhysCheck {
 		ElevatorWeightProperties weightProps = ElevatorWeightProperties.build(bldr -> {
 		});
 		ElevatorMotorProperties motorProps = ElevatorMotorProperties.build(bldr -> {
-			bldr.brakingDistance(0.3).brakingSpeed(0.5).maxAcceleration(1.5).maxJerk(2.0).maxDescentSpeed(3.2).maxRiseSpeed(4.0);
+			bldr.brakingDistance(0.3).brakingSpeed(0.5).maxAcceleration(1.5).maxJerk(2.0).slowSpeed(1.5).maxDescentSpeed(3.2).maxRiseSpeed(4.0);
 		});
 		ElevatorDoorProperties doorProps = ElevatorDoorProperties.build(bldr -> { });
 		BuildingProperties bldgProps = BuildingProperties.build(bldr -> {
@@ -37,7 +37,7 @@ public class QuickPhysCheck {
 			}
 		}
 
-		JourneyArc anArc = physicsService.getTraversalPath(0, 1);
+		JourneyArc anArc = physicsService.getTraversalPath(6, 1);
 		double lastDuration = anArc.duration();
 		for (int jj=2; jj<12; jj++) {
 			JourneyArc arc = physicsService.getTraversalPath(0, jj);

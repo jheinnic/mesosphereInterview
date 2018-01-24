@@ -123,7 +123,8 @@ class JourneyArc {
 	def ConstantAccelerationPathLeg withDeltaHeight(ConstantAccelerationPathLeg leg, double deltaHeight, double deltaTime) {
 		new ConstantAccelerationPathLeg(
 			leg.initialMoment.copy[
-				height(leg.initialHeight + deltaHeight) 
+				time(leg.initialTime + deltaTime)
+				.height(leg.initialHeight + deltaHeight) 
 			], leg.duration
 		)
 	}

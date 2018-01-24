@@ -71,6 +71,10 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		// deceleration.  Derive the time to complete a stop from the braking distance marker using that acceleration
 		// rate and confirm that it requires less than the maximum acceleration magnitude to stop from slow speed at the
 		// given distance.
+		//
+		// s = s0 + v0*t + (0.5)*a*t^2
+		// v = v0 + a*t
+		// v^2 = v0^2 + 2a(s - s0)
 		this.accelBrake = speedBrk * speedBrk / (2 * this.distBrk)
 		this.tStopBrk = speedBrk / this.accelBrake
 
@@ -85,33 +89,45 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		val floorHeight = this.metersPerFloor
 		var lastFloorPair = this.numFloors - 1;
 
-		val slowArc = this.computeUpwardArch(PathMoment.build [
+		val slowRise = this.computeUpwardArch(PathMoment.build [
 			it.time(0).height(0).velocity(0).acceleration(0).jerk(0)
-		], this.speedBrk)
-		val fastArc = this.computeUpwardArch(PathMoment.build [
+		], this.motorProps.slowSpeed)
+		val slowDescent = this.computeDownwardArch(PathMoment.build [
+			it.time(0).height(0).velocity(0).acceleration(0).jerk(0)
+		], -1 * this.motorProps.slowSpeed)
+		val fastRise = this.computeUpwardArch(PathMoment.build [
 			it.time(0).height(0).velocity(0).acceleration(0).jerk(0)
 		], this.motorProps.maxRiseSpeed)
+		val fastDescent = this.computeDownwardArch(PathMoment.build [
+			it.time(0).height(0).velocity(0).acceleration(0).jerk(0)
+		], this.motorProps.maxDescentSpeed)
 
-		fastArc.legIterator().forEach[ nextLeg | println(nextLeg.toString()); ]
+		fastRise.legIterator().forEach[ nextLeg | println(nextLeg.toString()); ]
 
-		Assert.isTrue(slowArc.shortestPossibleArc <= floorHeight,
+		Assert.isTrue(slowDescent.shortestPossibleArc <= floorHeight,
 			"Must be able to traverse one floor within slow speed arc's path")
 			
 		var ii = 0
 		var nextHeight = floorHeight
-		var fastArcDistance = fastArc.shortestPossibleArc
+		var fastArcDistance = fastRise.shortestPossibleArc
 
 		for (; ii < lastFloorPair && nextHeight < fastArcDistance; ii++) {
 			System.out.println(String.format("%d is slow", ii));
 			this.upwardArcs.set(
-				ii, slowArc.adjustConstantRegion(nextHeight)
+				ii, slowRise.adjustConstantRegion(nextHeight)
+			)	
+			this.downwardArcs.set(
+				ii, slowDescent.adjustConstantRegion(nextHeight)
 			)	
 			nextHeight += floorHeight
 		}
-		for (; ii<lastFloorPair; ii++) {
-			System.out.println(String.format("%d is fast", ii));
+		for (var jj=ii; jj<lastFloorPair; jj++) {
+			System.out.println(String.format("%d is fast", jj));
 			this.upwardArcs.set(
-				ii, fastArc.adjustConstantRegion(nextHeight)
+				jj, fastRise.adjustConstantRegion(nextHeight)
+			)	
+			this.downwardArcs.set(
+				jj, fastDescent.adjustConstantRegion(nextHeight)
 			)	
 			nextHeight += floorHeight
 		}
@@ -192,7 +208,7 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 	 * distance from which we can safely accept a destination change to an earlier floor along the same trajectory.
 	 */
 	private def JourneyArc computeUpwardArch(PathMoment moment, double _maxSpeed) {
-		val listBuilder = ImmutableList.<PathLeg>builder()
+ 		val listBuilder = ImmutableList.<PathLeg>builder()
 		val maxSpeed = if (_maxSpeed > 0) {
 				_maxSpeed
 			} else {
@@ -200,20 +216,23 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 			}
 
 		val tJerkUpOne = (this.maxAccel - moment.acceleration) / this.maxJerk;
-		val toMaxUpAcc = new ConstantJerkPathLeg(
-			moment.copy[jerk(this.maxJerk)],
-			tJerkUpOne
-		)
+		val toMaxUpAcc = new ConstantJerkPathLeg( moment.copy[jerk(this.maxJerk)], tJerkUpOne)
+		if (toMaxUpAcc.finalVelocity > maxSpeed) {
+			// 0 = (v0-v) + a0t + 0.5 * j*t^2 is technically a factor-able polynomial, but let's defer supporting this result and just insist that the motor must be able
+			// to reach maximum acceleration before maximum velocity or we won't support it.
+			throw new IllegalArgumentException("Motors must be able to reach maximum acceleration before maximum velocity to be supported here");
+		}
 		val atMaxUpAcc = toMaxUpAcc.nextMoment(listBuilder, 0);
-		Assert.isTrue(atMaxUpAcc.acceleration == this.maxAccel, "Acceleration must reach maximum");
+		Assert.isTrue(atMaxUpAcc.acceleration == this.maxAccel && atMaxUpAcc.velocity > 0, "Acceleration must reach maximum");
 
-		val vJerkDownOne = maxSpeed - (this.tMaxA * atMaxUpAcc.acceleration) + this.vMaxA
+        val tJerkDownOne = atMaxUpAcc.acceleration / this.maxJerk
+		val vJerkDownOne = maxSpeed - (tJerkDownOne * atMaxUpAcc.acceleration) + (this.maxJerk * tJerkDownOne * tJerkDownOne / 2.0)
 		val tMaxUpAcc = (vJerkDownOne - atMaxUpAcc.velocity) / atMaxUpAcc.acceleration
 
 		val toJerkDownOne = new ConstantAccelerationPathLeg(atMaxUpAcc, tMaxUpAcc)
 		val atJerkDownOne = toJerkDownOne.nextMoment(listBuilder, -1 * this.maxJerk)
 
-		val toConstV = new ConstantJerkPathLeg(atJerkDownOne, this.tMaxA)
+		val toConstV = new ConstantJerkPathLeg(atJerkDownOne, tJerkDownOne)
 		val atConstV = toConstV.nextMoment(listBuilder, 0)
 
 		val toJerkDownTwo = new ConstantVelocityPathLeg(atConstV, 0)
@@ -222,9 +241,11 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		val toMaxDownAcc = new ConstantJerkPathLeg(atJerkDownTwo, this.tMaxA)
 		val atMaxDownAcc = toMaxDownAcc.nextMoment(listBuilder, 0)
 
-		val tJerkUpTwo = ((-1 * this.accelBrake) - atMaxDownAcc.acceleration) / this.maxJerk
-		val vJerkUpTwo = this.speedBrk - (this.tMaxA * atMaxDownAcc.acceleration) - this.vMaxA
-		val tMaxDownAcc = (atMaxDownAcc.velocity - vJerkUpTwo) / atMaxDownAcc.acceleration
+		val tJerkUpTwo = (0 - this.accelBrake - atMaxDownAcc.acceleration) / this.maxJerk
+		val vJerkUpTwo = this.speedBrk - (tJerkUpTwo * atMaxDownAcc.acceleration) - (this.maxJerk * tJerkUpTwo * tJerkUpTwo / 2.0)
+		
+		// Unlike the global maxAccel value, which stores an unsigned magnitude, the value we get from a PathMoment is a signed quantity!
+		val tMaxDownAcc = -1 * (atMaxDownAcc.velocity - vJerkUpTwo) / atMaxDownAcc.acceleration
 
 		val toJerkUpTwo = new ConstantAccelerationPathLeg(atMaxDownAcc, tMaxDownAcc);
 		val atJerkUpTwo = toJerkUpTwo.nextMoment(listBuilder, this.maxJerk)
@@ -246,20 +267,23 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 			}
 
 		val tJerkDownOne = (this.maxAccel + moment.acceleration) / this.maxJerk;
-		val toMaxDownAcc = new ConstantJerkPathLeg(
-			moment.copy[jerk(-1 * this.maxJerk)],
-			tJerkDownOne
-		)
+		val toMaxDownAcc = new ConstantJerkPathLeg( moment.copy[jerk(-1 * this.maxJerk)], tJerkDownOne)
+		if (toMaxDownAcc.finalVelocity < maxSpeed) {
+			// 0 = (v0-v) + a0t + 0.5 * j*t^2 is technically a factor-able polynomial, but let's defer supporting this result and just insist that the motor must be able
+			// to reach maximum acceleration before maximum velocity or we won't support it.
+			throw new IllegalArgumentException("Motors must be able to reach maximum acceleration before maximum velocity to be supported here");
+		}
 		val atMaxDownAcc = toMaxDownAcc.nextMoment(listBuilder, 0);
-		Assert.isTrue(atMaxDownAcc.acceleration == (-1 * this.maxAccel), "Acceleration must reach maximum");
+		Assert.isTrue(atMaxDownAcc.acceleration == (-1 * this.maxAccel) && atMaxDownAcc.velocity < 0, "Acceleration must reach maximum");
 
-		val vJerkUpOne = maxSpeed - (this.tMaxA * atMaxDownAcc.acceleration) - this.vMaxA
+        val tJerkUpOne = -1 * atMaxDownAcc.acceleration / this.maxJerk
+		val vJerkUpOne = maxSpeed - (tJerkUpOne * atMaxDownAcc.acceleration) - (this.maxJerk * tJerkUpOne * tJerkUpOne / 2.0)
 		val tMaxDownAcc = (vJerkUpOne - atMaxDownAcc.velocity) / atMaxDownAcc.acceleration
 
 		val toJerkUpOne = new ConstantAccelerationPathLeg(atMaxDownAcc, tMaxDownAcc)
 		val atJerkUpOne = toJerkUpOne.nextMoment(listBuilder, this.maxJerk)
 
-		val toConstV = new ConstantJerkPathLeg(atJerkUpOne, this.tMaxA)
+		val toConstV = new ConstantJerkPathLeg(atJerkUpOne, tJerkUpOne)
 		val atConstV = toConstV.nextMoment(listBuilder, 0)
 
 		val toJerkUpTwo = new ConstantVelocityPathLeg(atConstV, 0)
@@ -269,12 +293,28 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		val atMaxUpAcc = toMaxUpAcc.nextMoment(listBuilder, 0)
 
 		// TODO: Proofcheck the signage here!
-		val tJerkDownTwo = (this.accelBrake - atMaxUpAcc.acceleration) / this.maxJerk
-		val vJerkDownTwo = (-1 * this.speedBrk) - (this.tMaxA * atMaxUpAcc.acceleration) + this.vMaxA
-		val tMaxUpAcc = (atMaxUpAcc.velocity - vJerkDownTwo) / atMaxUpAcc.acceleration
+		val tJerkDownTwo = (atMaxUpAcc.acceleration - this.accelBrake) / this.maxJerk
+		val vJerkDownTwo = (-1 * this.speedBrk) - (tJerkDownTwo * atMaxUpAcc.acceleration) + ((this.maxJerk * tJerkDownTwo * tJerkDownTwo) / 2.0)
+
+		// Unlike the global maxAccel value, which stores an unsigned magnitude, the value we get from a PathMoment is a signed quantity!
+		val tMaxUpAcc = (vJerkDownTwo - atMaxUpAcc.velocity) / atMaxUpAcc.acceleration
 
 		val toJerkDownTwo = new ConstantAccelerationPathLeg(atMaxUpAcc, tMaxUpAcc);
 		val atJerkDownTwo = toJerkDownTwo.nextMoment(listBuilder, -1 * this.maxJerk)
+		
+		
+//		val toMaxDownAcc = new ConstantJerkPathLeg(atJerkDownTwo, this.tMaxA)
+//		val atMaxDownAcc = toMaxDownAcc.nextMoment(listBuilder, 0)
+//
+//		val tJerkUpTwo = (0 - this.accelBrake - atMaxDownAcc.acceleration) / this.maxJerk
+//		val vJerkUpTwo = this.speedBrk - (tJerkUpTwo * atMaxDownAcc.acceleration) - (this.maxJerk * tJerkUpTwo * tJerkUpTwo / 2.0)
+//		
+//		// Unlike the global maxAccel value, which stores an unsigned magnitude, the value we get from a PathMoment is a signed quantity!
+//		val tMaxDownAcc = -1 * (atMaxDownAcc.velocity - vJerkUpTwo) / atMaxDownAcc.acceleration
+
+		
+		
+		
 
 		val toBrakes = new ConstantJerkPathLeg(atJerkDownTwo, tJerkDownTwo)
 		val atBrakes = toBrakes.nextMoment(listBuilder, 0)
