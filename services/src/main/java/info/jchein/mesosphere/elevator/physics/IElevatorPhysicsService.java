@@ -1,7 +1,7 @@
 package info.jchein.mesosphere.elevator.physics;
 
 public interface IElevatorPhysicsService {
-	int floorDistance( int fromFloorIndex, int toFloorIndex );
+	double floorDistance( int fromFloorIndex, int toFloorIndex );
 
 	double travelTime( int fromFloorIndex, int toFloodIndex );
 	
@@ -11,5 +11,5 @@ public interface IElevatorPhysicsService {
 	
 	int maxTolerancePassengerCount();
 	
-	
+	JourneyArc getTraversalPath( int fromFloorIndex, int toFloorIndex );
 }

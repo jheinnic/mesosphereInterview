@@ -1,11 +1,20 @@
 package info.jchein.mesosphere.elevator.physics
 
 import com.google.common.base.Preconditions
+import com.google.common.collect.ImmutableList
 import org.eclipse.xtend.lib.annotations.ToString
+import org.springframework.util.Assert
 
+import info.jchein.mesosphere.elevator.configuration.properties.BuildingProperties
+import info.jchein.mesosphere.elevator.configuration.properties.ElevatorMotorProperties
+import info.jchein.mesosphere.elevator.configuration.properties.ElevatorDoorProperties
+import info.jchein.mesosphere.elevator.configuration.properties.PassengerToleranceProperties
+import info.jchein.mesosphere.elevator.configuration.properties.ElevatorWeightProperties
+
+import static extension java.lang.String.format
 import static extension java.lang.Math.floor
 import static extension java.lang.Math.round
-import static extension java.lang.String.format
+//import static extension java.lang.Math.sqrt
 
 @ToString
 class ElevatorPhysicsService implements IElevatorPhysicsService {
@@ -20,30 +29,17 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 	final double dMaxA
 
 	double tStopBrk
-	double vToCnstVUp
-	double dToCnstVUp
-	double tUpAtMaxA
-	double dUpAtMaxA
-	double dFromCnstVUp
-	double vFromCnstVUp
 	double accelBrake
-	double tFromCnstVUp
-	double dMinForConstVUp
-	double tMinForConstVUp
 
 	val int numFloors
 	val double metersPerFloor
 	val double maxJerk
 	val double maxAccel
-	var double speedMax
 	val double speedBrk
 	val double distBrk
 
-	double[] travelUpByDistance
-	double[] timeUpByDistance
-
-	double[] travelDownByDistance
-	double[] timeDownByDistance
+	JourneyArc[] upwardArcs
+	JourneyArc[] downwardArcs
 
 	public new(
 		BuildingProperties bldgProps,
@@ -83,57 +79,42 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 			"It must be possible to brake from the stopping distance at constant rate of velocity change"
 		);
 
-		this.travelUpByDistance = newDoubleArrayOfSize(this.numFloors - 1);
-		this.timeUpByDistance = newDoubleArrayOfSize(this.numFloors - 1);
-		this.travelDownByDistance = newDoubleArrayOfSize(this.numFloors - 1);
-		this.timeDownByDistance = newDoubleArrayOfSize(this.numFloors - 1);
-
-		this.prefillSpaceAndTimeArrays(this.motorProps.maxRiseSpeed, this.travelUpByDistance, this.timeUpByDistance)
-		this.prefillSpaceAndTimeArrays(this.motorProps.maxDescentSpeed, this.travelDownByDistance,
-			this.timeDownByDistance)
-		this.prefillSpaceAndTimeArrays(this.motorProps.maxRiseSpeed, this.travelUpByDistance, this.timeUpByDistance)
-		this.prefillSpaceAndTimeArrays(this.motorProps.maxDescentSpeed, this.travelDownByDistance,
-			this.timeDownByDistance)
-	}
-
-	def void prefillSpaceAndTimeArrays(double maxSpeed, double[] spaceArray, double[] timeArray) {
-//		var printUp = ""
-//		var deltaUp = 0.0
-//		var lastUp = 0.0
+		this.upwardArcs = newArrayOfSize(this.numFloors - 1);
+		this.downwardArcs = newArrayOfSize(this.numFloors - 1);
 
 		val floorHeight = this.metersPerFloor
-		var ii = this.numFloors - 1;
+		var lastFloorPair = this.numFloors - 1;
 
-		this.speedMax = maxSpeed
-		this.preComputeConstantRegions();
+		val slowArc = this.computeUpwardArch(PathMoment.build [
+			it.time(0).height(0).velocity(0).acceleration(0).jerk(0)
+		], this.speedBrk)
+		val fastArc = this.computeUpwardArch(PathMoment.build [
+			it.time(0).height(0).velocity(0).acceleration(0).jerk(0)
+		], this.motorProps.maxRiseSpeed)
 
-		for (var nextHeight = (floorHeight * ii), ii = ii - 1; ii >= 0; ii--, nextHeight -= floorHeight) {
-			var constVelocitySegmentLength = nextHeight - this.dMinForConstVUp
-			if (constVelocitySegmentLength < 0) {
-//				printUp +=
-//					"Discarding %d: (%f -> %f)\n".format(ii, constVelocitySegmentLength,
-//						(this.tMinForConstVUp + (constVelocitySegmentLength / this.speedMax)));
-				this.speedMax = computeShortPathMaxSpeed(nextHeight);
-//				printUp += "New speedMax = %f\n".format(this.speedMax);
-				this.preComputeConstantRegions();
-				constVelocitySegmentLength = nextHeight - this.dMinForConstVUp
-			}
-			spaceArray.set(ii, constVelocitySegmentLength)
-			timeArray.set(ii, this.tMinForConstVUp + (constVelocitySegmentLength / this.speedMax))
+		fastArc.legIterator().forEach[ nextLeg | println(nextLeg.toString()); ]
+
+		Assert.isTrue(slowArc.shortestPossibleArc <= floorHeight,
+			"Must be able to traverse one floor within slow speed arc's path")
+			
+		var ii = 0
+		var nextHeight = floorHeight
+		var fastArcDistance = fastArc.shortestPossibleArc
+
+		for (; ii < lastFloorPair && nextHeight < fastArcDistance; ii++) {
+			System.out.println(String.format("%d is slow", ii));
+			this.upwardArcs.set(
+				ii, slowArc.adjustConstantRegion(nextHeight)
+			)	
+			nextHeight += floorHeight
 		}
-
-//		for (ii = 0; ii < this.numFloors - 1; ii++) {
-//			deltaUp = timeArray.get(ii) - lastUp;
-//			lastUp = timeArray.get(ii);
-//
-//			printUp += "%d: (%f -> %f) @ %f\n".format(ii, spaceArray.get(ii), timeArray.get(ii), deltaUp)
-//		}
-//		println("XX: %f in %f\n".format(this.dMinForConstVUp, this.tMinForConstVUp));
-//		println("\nData:")
-//		println(printUp);
-//		println("%f".format(timeArray.get(3) + timeArray.get(2) + timeArray.get(4)))
-//		println("%f".format(timeArray.get(9)))
-//		println(this.toString())
+		for (; ii<lastFloorPair; ii++) {
+			System.out.println(String.format("%d is fast", ii));
+			this.upwardArcs.set(
+				ii, fastArc.adjustConstantRegion(nextHeight)
+			)	
+			nextHeight += floorHeight
+		}
 	}
 
 	/**
@@ -150,6 +131,16 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		return Math.sqrt((v0 * v0) + (2 * this.maxAccel * dMid));
 	}
 
+	private def PathMoment nextMoment(PathLeg pathLeg, ImmutableList.Builder<PathLeg> listBuilder, double nextJerk) {
+		listBuilder.add(pathLeg);
+		return pathLeg.getFinalMoment(nextJerk)
+	}
+
+	private def ImmutableList<PathLeg> endPath(PathLeg finalLeg, ImmutableList.Builder<PathLeg> listBuilder) {
+		listBuilder.add(finalLeg)
+		return listBuilder.build();
+	}
+
 	/**
 	 * As long as the elevator reaches maximum velocity during a given journey, a calculation of its travel time will
 	 * be the sum of two segments.  The segment where its speed is ramping up and then slowing to a stop has constant
@@ -162,53 +153,139 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 	 * When the computed values fall into a range where the car no longer has any sustained travel time at its maximum
 	 * velocity, this function gets called again to recompute the acceleration/deceleration time spans a few additional
 	 * times for the unique travel distances that require distinctly unique values.
+	 * 
+	 * Compute the time required to reach maximum acceleration, given maximum jerk, the resulting velocity, and the
+	 * distance traveled in that time.
+	 * 
+	 * The time to reduce acceleration from max to 0 is the same as needed to increase it from 0 to max.  Account
+	 * for an interval required at negative constant jerk to switch from constant acceleration to constant and maximal
+	 * velocity.  
+	 * 
+	 * Compute the velocity when this reduction begins in order to achieve and sustain stated maximum speeds without
+	 * exceeding maximum jerk when we eventually have to reduce the acceleration towards 0.  For floors with enough
+	 * distance between them to support reaching maximum speed, the remaining distance following the pre-computed
+	 * intervals from this block and the two that follow will be accounted for in constant velocity at maximum speed.
+	 * 
+	 * vf = v0 + a0*t + jt^2/2 = v0 + (tMaxA * aMax) + (vMaxA)
+	 * 
+	 * Let vf be the known maximum speed, a0 be the known maximum acceleration, and j be negative maximmal jerk, because
+	 * we will be decelerating at this stage.  Note that we want to subtract negative jerk, so we can just add the
+	 * stored positive value equivalently.
+	 * 
+	 * v0 = vf - a0*t - jt^2/2 
+	 * 
+	 * Now that we know the velocity where constant acceleration begins tapering off, compute the time it takes to
+	 * reach that speed at constant acceleration, and the distance traveled in that time.  This interval is computed
+	 * after the transition from constant acceleration to constant velocity, but it occurs before that interval.  We
+	 * need to proceed this way because we need to know the velocity moment that ends the constant acceleration interval
+	 * before we can compute its duration in time and space.
+	 * 
+	 * Create a placeholder for the moment at constant velocity, then decelerate to maximum deceleration.
+	 * 
+	 * We travel at constant deceleration to the braking distance point, at which time we want to be traveling at
+	 * the braking velocity and constant deceleration.  This requires knowing the time required to reach the target
+	 * deceleration and working backwards from there to find the target velocity to jerk up from, so we can work
+	 * backwards a second time to find the time duration at constant deceleration required to get there.	
+	 * 
+	 * The remaining interval accounts for a transition from constant maximum velocity to slow down to braking speed
+	 * before we reach the final braking distance zone.  This computation also serves to inform the greatest floor 
+	 * distance from which we can safely accept a destination change to an earlier floor along the same trajectory.
 	 */
-	private def preComputeConstantRegions() {
-		// The time to reduce acceleration from max to 0 is the same as needed to increase it from 0 to max.  Account
-		// for an interval required at negative constant jerk to switch from constant acceleration to constant and maximal
-		// velocity.  
-		//
-		// Compute the velocity when this reduction begins in order to achieve and sustain stated maximum speeds without
-		// exceeding maximum jerk when we eventually have to reduce the acceleration towards 0.  For floors with enough
-		// distance between them to support reaching maximum speed, the remaining distance following the pre-computed
-		// intervals from this block and the two that follow will be accounted for in constant velocity at maximum speed.
-		this.vToCnstVUp = this.speedMax - (this.tMaxA * this.maxAccel) + this.vMaxA
-		this.dToCnstVUp = (this.vToCnstVUp * this.tMaxA) + (this.tMaxA * this.tMaxA * this.maxAccel / 2.0) - this.dMaxA
+	private def JourneyArc computeUpwardArch(PathMoment moment, double _maxSpeed) {
+		val listBuilder = ImmutableList.<PathLeg>builder()
+		val maxSpeed = if (_maxSpeed > 0) {
+				_maxSpeed
+			} else {
+				-1 * _maxSpeed
+			}
 
-		// Now that we know the velocity where constant acceleration begins tapering off, compute the time it takes to
-		// reach that speed at constant acceleration, and the distance traveled in that time.  This interval is computed
-		// after the transition from constant acceleration to constant velocity, but it occurs before that interval.  We
-		// need to proceed this way because we need to know the velocity moment that ends this interval before we can
-		// compute its duration in time and space.
-		this.tUpAtMaxA = (this.vToCnstVUp - this.vMaxA) / this.maxAccel
-		this.dUpAtMaxA = (this.vMaxA * this.tUpAtMaxA) + (this.tUpAtMaxA * this.tUpAtMaxA * this.maxAccel / 2.0)
+		val tJerkUpOne = (this.maxAccel - moment.acceleration) / this.maxJerk;
+		val toMaxUpAcc = new ConstantJerkPathLeg(
+			moment.copy[jerk(this.maxJerk)],
+			tJerkUpOne
+		)
+		val atMaxUpAcc = toMaxUpAcc.nextMoment(listBuilder, 0);
+		Assert.isTrue(atMaxUpAcc.acceleration == this.maxAccel, "Acceleration must reach maximum");
 
-		// The remaining interval accounts for a transition from constant maximum velocity to slow down to braking speed
-		// before we reach the final braking distance zone.  This computation also serves to inform the greatest floor 
-		// distance from which we can safely accept a destination change to an earlier floor along the same trajectory.
-		//
-		// Scratch that.  Target breaking acceleration and velocity.  Compensate for any difference when calculating the
-		// straightforward constant velocity duration on each floor pair.
-		// this.tFromCnstVUp = (speedMax - this.speedBrk) / this.accelBrake
-		this.tFromCnstVUp = (this.maxAccel - this.accelBrake) / this.maxJerk
-		this.vFromCnstVUp = this.speedBrk
-		this.dFromCnstVUp = (this.speedMax * this.tFromCnstVUp) -
-			(this.maxAccel * this.tFromCnstVUp * this.tFromCnstVUp / 2.0) +
-			(this.maxJerk * this.tFromCnstVUp * this.tFromCnstVUp * this.tFromCnstVUp / 6.0)
+		val vJerkDownOne = maxSpeed - (this.tMaxA * atMaxUpAcc.acceleration) + this.vMaxA
+		val tMaxUpAcc = (vJerkDownOne - atMaxUpAcc.velocity) / atMaxUpAcc.acceleration
 
-		// Last step--sum up the distance and time costs for the regions calculated thus far.  For any traversal path 
-		// that has a region of time spent at constant velocity, the course of action is to deduct the distance sum from
-		// the total distance, then divide the difference by maximum speed to compute the constant velocity region's time
-		// cost.  Add that to the time measurement for the variable regions that are the same for all paths that reach
-		// maximum velocity.
-		this.tMinForConstVUp = this.tMaxA + this.tMaxA + this.tUpAtMaxA + this.tFromCnstVUp + this.tStopBrk;
-		this.dMinForConstVUp = this.dMaxA + this.dToCnstVUp + this.dUpAtMaxA + this.dFromCnstVUp + this.distBrk
+		val toJerkDownOne = new ConstantAccelerationPathLeg(atMaxUpAcc, tMaxUpAcc)
+		val atJerkDownOne = toJerkDownOne.nextMoment(listBuilder, -1 * this.maxJerk)
 
+		val toConstV = new ConstantJerkPathLeg(atJerkDownOne, this.tMaxA)
+		val atConstV = toConstV.nextMoment(listBuilder, 0)
+
+		val toJerkDownTwo = new ConstantVelocityPathLeg(atConstV, 0)
+		val atJerkDownTwo = toJerkDownTwo.nextMoment(listBuilder, -1 * this.maxJerk)
+
+		val toMaxDownAcc = new ConstantJerkPathLeg(atJerkDownTwo, this.tMaxA)
+		val atMaxDownAcc = toMaxDownAcc.nextMoment(listBuilder, 0)
+
+		val tJerkUpTwo = ((-1 * this.accelBrake) - atMaxDownAcc.acceleration) / this.maxJerk
+		val vJerkUpTwo = this.speedBrk - (this.tMaxA * atMaxDownAcc.acceleration) - this.vMaxA
+		val tMaxDownAcc = (atMaxDownAcc.velocity - vJerkUpTwo) / atMaxDownAcc.acceleration
+
+		val toJerkUpTwo = new ConstantAccelerationPathLeg(atMaxDownAcc, tMaxDownAcc);
+		val atJerkUpTwo = toJerkUpTwo.nextMoment(listBuilder, this.maxJerk)
+
+		val toBrakes = new ConstantJerkPathLeg(atJerkUpTwo, tJerkUpTwo)
+		val atBrakes = toBrakes.nextMoment(listBuilder, 0)
+
+		return JourneyArc.fromList(
+			new ConstantAccelerationPathLeg(atBrakes, this.tStopBrk).endPath(listBuilder)
+		)
+	}
+
+	private def JourneyArc computeDownwardArch(PathMoment moment, double _maxSpeed) {
+		val listBuilder = ImmutableList.<PathLeg>builder()
+		val maxSpeed = if (_maxSpeed < 0) {
+				_maxSpeed
+			} else {
+				-1 * _maxSpeed
+			}
+
+		val tJerkDownOne = (this.maxAccel + moment.acceleration) / this.maxJerk;
+		val toMaxDownAcc = new ConstantJerkPathLeg(
+			moment.copy[jerk(-1 * this.maxJerk)],
+			tJerkDownOne
+		)
+		val atMaxDownAcc = toMaxDownAcc.nextMoment(listBuilder, 0);
+		Assert.isTrue(atMaxDownAcc.acceleration == (-1 * this.maxAccel), "Acceleration must reach maximum");
+
+		val vJerkUpOne = maxSpeed - (this.tMaxA * atMaxDownAcc.acceleration) - this.vMaxA
+		val tMaxDownAcc = (vJerkUpOne - atMaxDownAcc.velocity) / atMaxDownAcc.acceleration
+
+		val toJerkUpOne = new ConstantAccelerationPathLeg(atMaxDownAcc, tMaxDownAcc)
+		val atJerkUpOne = toJerkUpOne.nextMoment(listBuilder, this.maxJerk)
+
+		val toConstV = new ConstantJerkPathLeg(atJerkUpOne, this.tMaxA)
+		val atConstV = toConstV.nextMoment(listBuilder, 0)
+
+		val toJerkUpTwo = new ConstantVelocityPathLeg(atConstV, 0)
+		val atJerkUpTwo = toJerkUpTwo.nextMoment(listBuilder, this.maxJerk)
+
+		val toMaxUpAcc = new ConstantJerkPathLeg(atJerkUpTwo, this.tMaxA)
+		val atMaxUpAcc = toMaxUpAcc.nextMoment(listBuilder, 0)
+
+		// TODO: Proofcheck the signage here!
+		val tJerkDownTwo = (this.accelBrake - atMaxUpAcc.acceleration) / this.maxJerk
+		val vJerkDownTwo = (-1 * this.speedBrk) - (this.tMaxA * atMaxUpAcc.acceleration) + this.vMaxA
+		val tMaxUpAcc = (atMaxUpAcc.velocity - vJerkDownTwo) / atMaxUpAcc.acceleration
+
+		val toJerkDownTwo = new ConstantAccelerationPathLeg(atMaxUpAcc, tMaxUpAcc);
+		val atJerkDownTwo = toJerkDownTwo.nextMoment(listBuilder, -1 * this.maxJerk)
+
+		val toBrakes = new ConstantJerkPathLeg(atJerkDownTwo, tJerkDownTwo)
+		val atBrakes = toBrakes.nextMoment(listBuilder, 0)
+
+		return JourneyArc.fromList(
+			new ConstantAccelerationPathLeg(atBrakes, this.tStopBrk).endPath(listBuilder)
+		)
 	}
 
 	override expectedStopDuration(int boardingCount, int disembarkingCount) {
-		return this.doorProps.doorOpenCloseSlideTime + Math.max(
-			this.doorProps.minDoorHoldTimePerOpen,
+		return this.doorProps.doorOpenCloseSlideTime + Math.max(this.doorProps.minDoorHoldTimePerOpen,
 			(this.doorProps.doorHoldTimePerPerson * (boardingCount + disembarkingCount)));
 	}
 
@@ -223,20 +300,43 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 	}
 
 	override floorDistance(int fromFloorIndex, int toFloorIndex) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+		return (toFloorIndex - fromFloorIndex) * this.bldgProps.metersPerFloor;
 	}
 
-	override travelTime(int fromFloorIndex, int toFloorIndex) {
+	override double travelTime(int fromFloorIndex, int toFloorIndex) {
 		if (fromFloorIndex > toFloorIndex) {
-			return this.travelDownByDistance.get(fromFloorIndex - toFloorIndex);
+			return this.downwardArcs.get(fromFloorIndex - toFloorIndex).duration;
 		} else if (fromFloorIndex < toFloorIndex) {
-			return this.travelUpByDistance.get(toFloorIndex - fromFloorIndex);
+			return this.upwardArcs.get(toFloorIndex - fromFloorIndex).duration;
 		} else {
 			throw new IllegalArgumentException(
 				"to and from floor indices cannot both be <%d> and <%d>".format(fromFloorIndex, toFloorIndex));
 		}
 	}
+
+	def double travelDuration(ImmutableList<PathLeg> path) {
+		return path.get(path.size() - 1).finalTime - path.get(0).initialTime
+	}
+
+	def double travelDistance(ImmutableList<PathLeg> path) {
+		val displacement = path.get(path.size() - 1).finalHeight - path.get(0).initialHeight
+
+		return if (displacement < 0) {
+			displacement * -1
+		} else {
+			displacement
+		}
+	}
+	
+	override getTraversalPath(int fromFloorIndex, int toFloorIndex) {
+		if (fromFloorIndex < toFloorIndex) {
+			return this.upwardArcs.get(toFloorIndex - fromFloorIndex - 1)
+		} else {
+			return this.downwardArcs.get(fromFloorIndex - toFloorIndex - 1)
+		}
+	}
 }
+
 /*o		//
  * 		// We can reuse information from the reduction of acceleration from maximum to 0 as we now proceed from 0 to
  * 		// negative maximum while continuing to respect maximum jerk magnitude.  This will require the same amount of time,

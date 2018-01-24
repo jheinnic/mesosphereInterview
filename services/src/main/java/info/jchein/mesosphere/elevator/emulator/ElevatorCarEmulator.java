@@ -1,6 +1,7 @@
 package info.jchein.mesosphere.elevator.emulator;
 
 import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel;
+import info.jchein.mesosphere.elevator.domain.common.ElevatorCarSnapshot;
 import info.jchein.mesosphere.elevator.domain.hall.event.FloorSensorTriggered;
 import info.jchein.mesosphere.elevator.domain.sdk.IElevatorCarDriver;
 import info.jchein.mesosphere.elevator.domain.sdk.IElevatorCarPort;
@@ -14,9 +15,11 @@ public class ElevatorCarEmulator implements IElevatorCarDriver {
 	private double speed;
 	private double acceleration;
 	private double jerk;
+	private ElevatorCarSnapshot carSnapshot;
 
-	public ElevatorCarEmulator(IElevatorCarPort port, ElevatorMotorProperties motorProperties) {
+	public ElevatorCarEmulator(IElevatorCarPort port, ElevatorCarSnapshot carSnapshot, ElevatorMotorProperties motorProperties) {
 		this.port = port;
+		this.carSnapshot = carSnapshot;
 		this.motorProperties = motorProperties;
 	}
 

@@ -5,12 +5,12 @@ import info.jchein.mesosphere.domain.clock.IClock
 import info.jchein.mesosphere.elevator.domain.car.event.DestinationChanged
 import info.jchein.mesosphere.elevator.domain.car.event.DestinationRetained
 import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel
+import info.jchein.mesosphere.elevator.domain.common.DoorState
 import info.jchein.mesosphere.elevator.domain.common.ElevatorCarSnapshot
 import info.jchein.mesosphere.elevator.domain.sdk.IElevatorCarDriver
 import info.jchein.mesosphere.elevator.domain.sdk.IElevatorCarPort
 import javax.validation.constraints.Min
 import javax.validation.constraints.NotNull
-import info.jchein.mesosphere.elevator.domain.common.DoorState
 
 class ElevatorCar implements IElevatorCar, IElevatorCarPort {
 	final IClock systemClock

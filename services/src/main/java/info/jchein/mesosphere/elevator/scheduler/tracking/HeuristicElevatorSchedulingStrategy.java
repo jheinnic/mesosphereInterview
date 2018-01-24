@@ -11,12 +11,12 @@ import info.jchein.mesosphere.elevator.domain.hall.event.PickupCallAdded;
 import info.jchein.mesosphere.elevator.domain.hall.event.PickupCallRemoved;
 import info.jchein.mesosphere.elevator.domain.sdk.IElevatorSchedulerDriver;
 import info.jchein.mesosphere.elevator.domain.sdk.IElevatorSchedulerPort;
-import info.jchein.mesosphere.elevator.physics.BuildingProperties;
-import info.jchein.mesosphere.elevator.physics.ElevatorDoorProperties;
-import info.jchein.mesosphere.elevator.physics.ElevatorMotorProperties;
-import info.jchein.mesosphere.elevator.physics.ElevatorWeightProperties;
+import info.jchein.mesosphere.elevator.configuration.properties.BuildingProperties;
+import info.jchein.mesosphere.elevator.configuration.properties.ElevatorDoorProperties;
+import info.jchein.mesosphere.elevator.configuration.properties.ElevatorMotorProperties;
+import info.jchein.mesosphere.elevator.configuration.properties.ElevatorWeightProperties;
 import info.jchein.mesosphere.elevator.physics.IElevatorPhysicsService;
-import info.jchein.mesosphere.elevator.physics.PassengerToleranceProperties;
+import info.jchein.mesosphere.elevator.configuration.properties.PassengerToleranceProperties;
 
 public class HeuristicElevatorSchedulingStrategy implements IElevatorSchedulerDriver {
 

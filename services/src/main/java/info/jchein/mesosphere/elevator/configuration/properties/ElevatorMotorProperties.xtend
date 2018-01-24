@@ -1,4 +1,4 @@
-package info.jchein.mesosphere.elevator.physics
+package info.jchein.mesosphere.elevator.configuration.properties
 
 import de.oehme.xtend.contrib.Buildable
 

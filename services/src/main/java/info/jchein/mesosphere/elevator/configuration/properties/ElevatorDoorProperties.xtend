@@ -1,9 +1,8 @@
-package info.jchein.mesosphere.elevator.physics
+package info.jchein.mesosphere.elevator.configuration.properties
 
 import de.oehme.xtend.contrib.Buildable
-import org.eclipse.xtend.lib.annotations.Data;
-import javax.validation.constraints.Min
 import info.jchein.mesosphere.validator.annotation.Positive
+import org.eclipse.xtend.lib.annotations.Data
 
 @Data
 @Buildable

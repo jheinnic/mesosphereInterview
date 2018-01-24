@@ -21,8 +21,8 @@ public interface IElevatorCarPort {
 
 	void slowedForArrival(int floorIndex);
 
-	void passengerLoadUpdated(
-		int estimatedArrivals, int estimatedDepartures, int estimatedPassengerCount,
-		double weightOnArrival, double weightOnDeparture);
+//	void passengerLoadUpdated(
+//		int estimatedArrivals, int estimatedDepartures, int estimatedPassengerCount,
+//		double weightOnArrival, double weightOnDeparture);
 
 }

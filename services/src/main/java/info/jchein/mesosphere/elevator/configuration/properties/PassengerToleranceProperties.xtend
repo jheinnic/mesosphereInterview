@@ -1,4 +1,4 @@
-package info.jchein.mesosphere.elevator.physics
+package info.jchein.mesosphere.elevator.configuration.properties
 
 import de.oehme.xtend.contrib.Buildable
 import org.eclipse.xtend.lib.annotations.Data;
@@ -22,11 +22,11 @@ class PassengerToleranceProperties {
 	val double passengerPickupTimeTolerance
 	
 	@NotNull
-	val ServiceLevelGoal slaPriorityOne 
+	val info.jchein.mesosphere.elevator.physics.ServiceLevelGoal slaPriorityOne 
 
 	@NotNull
-	val ServiceLevelGoal slaPriorityTwo 
+	val info.jchein.mesosphere.elevator.physics.ServiceLevelGoal slaPriorityTwo 
 
 	@NotNull
-	val ServiceLevelGoal slaPriorityThree 
+	val info.jchein.mesosphere.elevator.physics.ServiceLevelGoal slaPriorityThree 
 }
