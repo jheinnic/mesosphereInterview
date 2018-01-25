@@ -63,4 +63,16 @@ implements IHallPanelDriver, IEmulatedLandingButtonPanel
 	public void pickupRequestCleared(DirectionOfTravel direction) {
 		this.port.cancelPickupRequest(direction);
 	}
+
+	@Override
+	public void pollForBootstrap() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void pollForClock() {
+		// TODO Auto-generated method stub
+		
+	}
 }

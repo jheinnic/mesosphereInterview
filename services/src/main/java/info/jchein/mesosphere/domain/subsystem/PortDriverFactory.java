@@ -9,9 +9,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 
 import info.jchein.mesosphere.domain.factory.IDirector;
-import info.jchein.mesosphere.domain.factory.IFactory;
+import info.jchein.mesosphere.domain.factory.IBuilderFactory;
 import info.jchein.mesosphere.domain.factory.IImmutableListBuilder;
-import info.jchein.mesosphere.domain.factory.ImmutableListBuilderSupplier;
+import info.jchein.mesosphere.domain.factory.ImmutableListSupplierBuilder;
 
 /**
  * Reusable Factory implementation that Bridges strategies for Port and Drive
@@ -25,11 +25,11 @@ import info.jchein.mesosphere.domain.factory.ImmutableListBuilderSupplier;
  * @param <PortBuilder>
  */
 public class PortDriverFactory<Port, Driver, PortBuilder> implements IPortDriverFactory<Port, Driver, PortBuilder> {
-	private final IFactory<Port, PortBuilder> portFactory;
-	private final IFactory<Driver, Consumer<Port>> driverFactory;
+	private final IBuilderFactory<Port, PortBuilder> portFactory;
+	private final IBuilderFactory<Driver, Consumer<Port>> driverFactory;
 	private final Function<Port, Consumer<Driver>> injectionAdapter;
 
-	public PortDriverFactory(IFactory<Port, PortBuilder> portBinder, IFactory<Driver, Consumer<Port>> driverFactory,
+	public PortDriverFactory(IBuilderFactory<Port, PortBuilder> portBinder, IBuilderFactory<Driver, Consumer<Port>> driverFactory,
 			Function<Port, Consumer<Driver>> injectionAdapter) {
 		this.portFactory = portBinder;
 		this.driverFactory = driverFactory;
@@ -48,8 +48,8 @@ public class PortDriverFactory<Port, Driver, PortBuilder> implements IPortDriver
 	public final ImmutableList<? extends Driver> buildPortDrivers(Builder<Port> portListBuilder,
 		IDirector<PortBuilder> portItemDirector)
 	{
-		final IFactory<ImmutableList<Port>, IImmutableListBuilder<PortBuilder>> listBuilderSupplier =
-			new ImmutableListBuilderSupplier<Item, ItemBuilder>(this.portFactory);
+		final IBuilderFactory<ImmutableList<Port>, IImmutableListBuilder<PortBuilder>> listBuilderSupplier =
+			new ImmutableListSupplierBuilder<Item, ItemBuilder>(this.portFactory);
 		this.portFactory.apply(portItemDirector);
 		final ImmutableList.Builder<Driver> driverListBuilder = ImmutableList.<Driver>builder();
 

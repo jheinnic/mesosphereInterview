@@ -2,37 +2,33 @@ package info.jchein.mesosphere.elevator.domain.model
 
 import com.google.common.eventbus.EventBus
 import info.jchein.mesosphere.domain.clock.IClock
-import info.jchein.mesosphere.elevator.domain.car.event.DestinationChanged
-import info.jchein.mesosphere.elevator.domain.car.event.DestinationRetained
+import info.jchein.mesosphere.elevator.domain.car.event.DropOffRequested
+import info.jchein.mesosphere.elevator.domain.car.event.ParkedForBoarding
+import info.jchein.mesosphere.elevator.domain.car.event.ReadyForDeparture
 import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel
-import info.jchein.mesosphere.elevator.domain.common.DoorState
 import info.jchein.mesosphere.elevator.domain.common.ElevatorCarSnapshot
 import info.jchein.mesosphere.elevator.domain.sdk.IElevatorCarDriver
 import info.jchein.mesosphere.elevator.domain.sdk.IElevatorCarPort
 import javax.validation.constraints.Min
 import javax.validation.constraints.NotNull
+import info.jchein.mesosphere.elevator.domain.common.TravelItineraryItem
+import java.util.concurrent.atomic.AtomicInteger
 
 class ElevatorCar implements IElevatorCar, IElevatorCarPort {
+	private static final AtomicInteger ID_SEQUENCE = new AtomicInteger(0);
+	
 	final IClock systemClock
 	final EventBus eventBus
-	final ElevatorCarSnapshot state
 	final int carIndex
 
 	IElevatorCarDriver driver = null
+	ElevatorCarSnapshot state = null
+	TravelItineraryItem[] itinerary = null
 
-	new(@Min(0) int carIndex, @NotNull IClock systemClock, @NotNull EventBus eventBus) {
-		this(carIndex, systemClock, eventBus, null);
-	}
-
-	new(@Min(0) int carIndex, @NotNull IClock systemClock, @NotNull EventBus eventBus, ElevatorCarSnapshot initialState) {
+	new(@NotNull IClock systemClock, @NotNull EventBus eventBus) {
 		this.systemClock = systemClock;
 		this.eventBus = eventBus
-		this.carIndex = carIndex
-		if (initialState === null) {
-			this.state = ElevatorCarSnapshot.builder().build()
-		} else {
-			this.state = initialState.copy().build()
-		}
+		this.carIndex = ID_SEQUENCE.incrementAndGet();
 	}
 
 	public def void attachDriver(IElevatorCarDriver driver) {
@@ -43,60 +39,64 @@ class ElevatorCar implements IElevatorCar, IElevatorCarPort {
 	}
 
 
-	override assignDestination(int floorIndex, DirectionOfTravel direction) {
-		this.driver.moveToDestination(floorIndex, direction);
+	override pollForBootstrap() {
+		return this.driver.pollForBootstrap();
+	}
+	
+	override pollForClock() {
+//		ElevatorCarSnapshot state this.driver.pollForService(this.itinerary);
+	}
+	
+	override cancelPickupRequest(int floorIndex, DirectionOfTravel direction) {
+//		this.driver.cancelQueuedPickup(floorIndex, direction);
+	}
+	
+	override enqueuePickupRequest(int floorIndex, DirectionOfTravel direction) {
+//		this.driver.queueForPickup(floorIndex, direction);
+	}	
+	
+	override dropOffRequested(int floorIndex) {
+		this.eventBus.post(
+			DropOffRequested.build[
+				it.timeIndex(this.systemClock.now())
+				.carIndex(this.carIndex)
+				.dropOffFloorIndex(floorIndex)
+			]
+		)
 	}
 
-	override destinationAccepted(int floorIndex, DirectionOfTravel direction) {
+	override readyForDeparture(int floorIndex, double weightLoad) {
 		this.eventBus.post(
-			DestinationChanged.build[bldr |
-				bldr.floorIndex(floorIndex)
-				.direction(direction)
-				.timeIndex(this.systemClock.now())]
+			ReadyForDeparture.build[ bldr |
+				bldr.carIndex(this.carIndex)
+					.floorIndex(floorIndex)
+					.timeIndex(this.systemClock.now())
+					.weightOnDeparture(weightLoad)
+			]
 		);
 	}
-
-	override destinationRejected(int rejectedFloorIndex, int retainedFloorIndex, DirectionOfTravel direction, String reason)
-	{
+	
+	override parkedForBoarding(int floorIndex, double weightLoad) {
 		this.eventBus.post(
-			DestinationRetained.build[bldr |
-				bldr.carIndex(carIndex)
-				.rejectedDestination(rejectedFloorIndex)
-				.retainedDestination(retainedFloorIndex)
-				.currentDirection(this.state.direction)
-				.currentSpeed(this.state.speed)
-				.timeIndex(this.systemClock.now())
-				.reason(reason)]
+			ParkedForBoarding.build[ bldr |
+				bldr.carIndex(this.carIndex)
+					.floorIndex(floorIndex)
+					.timeIndex(this.systemClock.now())
+					.weightOnArrival(weightLoad)
+			]
 		);
 	}
-
 	
-	override idleForDeparture(int floorIndex) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
-	}
+//	override slowedForArrival(int floorIndex) {
+//		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+//	}
 	
-	override parkedForBoarding(int floorIndex) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
-	}
+//	override travelledThroughFloor(int floorIndex, DirectionOfTravel direction) {
+//		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+//	}
 	
-	override passengerLoadUpdated(int estimatedArrivals, int estimatedDepartures, int estimatedPassengerCount, double weightOnArrival, double weightOnDeparture) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
-	}
-	
-	override slowedForArrival(int floorIndex) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
-	}
-	
-	override travelledThroughFloor(int floorIndex, DirectionOfTravel direction) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
-	}
-	
-	override doorStateChanging(DoorState newStatus) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
-	}
-	
-	override dropOffRequsted(int floorIndex) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
-	}
+//	override doorStateChanging(DoorState newStatus) {
+//		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+//	}
 
 }

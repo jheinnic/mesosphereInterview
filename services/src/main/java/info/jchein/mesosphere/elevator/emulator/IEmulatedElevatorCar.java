@@ -1,8 +1,6 @@
 package info.jchein.mesosphere.elevator.emulator;
 
-import java.util.concurrent.TimeUnit;
-
-import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel;
+import info.jchein.mesosphere.domain.factory.IDirector;
 
 /**
  * IEmulated interfaces are software entities that play the role of physical control elements by providing methods that 
@@ -17,7 +15,6 @@ import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel;
 public interface IEmulatedElevatorCar
 {
 	public void pressCallButton(int floorIndex);
-	public void blockDoorClosing(long duration, TimeUnit timeUnit);
-	public void boardPassengers(int actualGroupSize, int estimatedCount, double cumulativeWeight );
-	public void disembarkPassengers(int actualGroupSize, int estimatedCount, double cumulativeWeight );
+	public void registerLandingDirector(IDirector<IEmulatedPassengerStop> callback);
+	public void initCarPhysics(double height, double velocity, double acceleration);
 }

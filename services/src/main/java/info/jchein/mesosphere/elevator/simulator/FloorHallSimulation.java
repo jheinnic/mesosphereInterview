@@ -26,7 +26,7 @@ implements IPassengerArrivalStrategy
 		new ArrayList<SimulatedPassenger>(10);
 
 	@Autowired
-	public FloorHallSimulation(IEmulatedLandingButtonPanel emulatedControl, int floorIndex) {
+	public FloorHallSimulation(IEmulatedLandingButtonPanel emulatedControl) {
 		this.emulatedControl = emulatedControl;
 		this.floorIndex = emulatedControl.readFloorIndex();
 	}

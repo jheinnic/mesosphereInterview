@@ -10,10 +10,10 @@ import javax.validation.executable.ValidateOnExecution;
 import info.jchein.mesosphere.domain.factory.IBinder;
 import info.jchein.mesosphere.domain.factory.IBuilder;
 import info.jchein.mesosphere.domain.factory.IDirector;
-import info.jchein.mesosphere.domain.factory.IFactory;
+import info.jchein.mesosphere.domain.factory.IBuilderFactory;
 
 @ValidateOnExecution(type= {ExecutableType.CONSTRUCTORS})
-public class SimpleDriverFactory<Port, Driver> implements IFactory<Driver, Consumer<Port>>
+public class SimpleDriverFactory<Port, Driver> implements IBuilderFactory<Driver, Consumer<Port>>
 {
 	private final Function<Port, Driver> factoryFunction;
 	SimpleDriverFactory(@NotNull Function<Port, Driver> factoryFunction) {

@@ -9,6 +9,8 @@ import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel;
  * @author jheinnic
  */
 interface ILandingControls {
+	void pollForBootstrap();
+	void pollForClock();
 	void parkIdleCar(IElevatorCarParkRelease release, DirectionOfTravel direction, int carIndex);
 	void releaseParkedCar(DirectionOfTravel direction, int carIndex);
 }

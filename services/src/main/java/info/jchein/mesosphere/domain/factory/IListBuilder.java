@@ -1,5 +1,7 @@
 package info.jchein.mesosphere.domain.factory;
 
-public interface IListBuilder<ItemBuilder, ListBuilder extends IListBuilder<ItemBuilder, ListBuilder>> {
-	ListBuilder add(IDirector<ItemBuilder> director);
+import java.util.function.Consumer;
+
+public interface IListBuilder<ItemBuilder> extends IBuilderWithList<ItemBuilder, IListBuilder<ItemBuilder>> {
+	IListBuilder<ItemBuilder> add(Consumer<ItemBuilder> director);
 }

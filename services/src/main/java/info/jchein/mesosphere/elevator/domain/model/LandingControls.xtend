@@ -5,34 +5,36 @@ import info.jchein.mesosphere.domain.clock.IClock
 import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel
 import info.jchein.mesosphere.elevator.domain.hall.event.FloorSensorTriggered
 import info.jchein.mesosphere.elevator.domain.hall.event.PickupCallAdded
+import info.jchein.mesosphere.elevator.domain.hall.event.PickupCallRemoved
 import info.jchein.mesosphere.elevator.domain.sdk.IHallPanelDriver
 import info.jchein.mesosphere.elevator.domain.sdk.IHallPanelPort
 import java.util.ArrayList
+import java.util.concurrent.atomic.AtomicInteger
 import javax.validation.constraints.Min
 import javax.validation.constraints.NotNull
 import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Component
-import info.jchein.mesosphere.elevator.domain.hall.event.PickupCallRemoved
-import info.jchein.mesosphere.elevator.physics.BuildingProperties
-import javax.validation.Valid
+import info.jchein.mesosphere.elevator.configuration.properties.BuildingProperties
 
 @Component
 @Scope(scopeName="prototype")
 class LandingControls implements ILandingControls, IHallPanelPort {
+	private static val AtomicInteger ID_SEQUENCE = new AtomicInteger();
+	
 	@NotNull private val EventBus eventBus
 	@NotNull private val IClock systemClock
 	@Min(0) private val int floorIndex
 
 	private IHallPanelDriver driver;
-	private ArrayList<IElevatorCarParkRelease> parkedKeys;
+	private val ArrayList<IElevatorCarParkRelease> parkedKeys;
 
-	new(@Min(0) int floorIndex, @NotNull IClock systemClock, @NotNull EventBus eventBus, @Min(1) int elevatorCount
+	new(@NotNull IClock systemClock, @NotNull EventBus eventBus, @NotNull BuildingProperties bldgProperties
 	) {
 		super()
 		this.eventBus = eventBus
 		this.systemClock = systemClock;
-		this.parkedKeys = new ArrayList<IElevatorCarParkRelease>(elevatorCount);
-		this.floorIndex = floorIndex
+		this.parkedKeys = new ArrayList<IElevatorCarParkRelease>(bldgProperties.numElevators);
+		this.floorIndex = ID_SEQUENCE.incrementAndGet();
 	}
 
 	def void attachDriver(@NotNull IHallPanelDriver driver) {
@@ -94,4 +96,13 @@ class LandingControls implements ILandingControls, IHallPanelPort {
 			]
 		)
 	}
+	
+	override pollForBootstrap() {
+		this.driver.pollForBootstrap();
+	}
+	
+	override pollForClock() {
+		this.driver.pollForClock();
+	}
+	
 }

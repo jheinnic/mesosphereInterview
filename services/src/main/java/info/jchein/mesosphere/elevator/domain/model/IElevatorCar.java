@@ -1,6 +1,7 @@
 package info.jchein.mesosphere.elevator.domain.model;
 
 import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel;
+import info.jchein.mesosphere.elevator.domain.common.ElevatorCarSnapshot;
 
 /**
  * The inward facing interface the software adapter for an elevator car provides for the elevator group control's
@@ -10,8 +11,8 @@ import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel;
  * @author jheinnic
  */
 interface IElevatorCar {
-	void assignDestination(int floorIndex, DirectionOfTravel direction);
-//	void removeDestination();
-//	void launch();
-//	void park();
+	ElevatorCarSnapshot pollForBootstrap();
+	void pollForClock();
+	void enqueuePickupRequest(int floorIndex, DirectionOfTravel direction);
+	void cancelPickupRequest(int floorIndex, DirectionOfTravel direction);
 }

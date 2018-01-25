@@ -2,7 +2,7 @@ package info.jchein.mesosphere.domain.subsystem;
 
 import com.google.common.collect.ImmutableList;
 
-import info.jchein.mesosphere.domain.factory.IFactory;
+import info.jchein.mesosphere.domain.factory.IBuilderFactory;
 import info.jchein.mesosphere.domain.factory.IImmutableListBuilder;
 
 /**
@@ -18,7 +18,7 @@ import info.jchein.mesosphere.domain.factory.IImmutableListBuilder;
  * @param <Port>
  * @param <Driver>
  */
-public interface IPortFactory<Port, PortBuilder> extends IFactory<Port, PortBuilder> {
+public interface IPortFactory<Port, PortBuilder> extends IBuilderFactory<Port, PortBuilder> {
 	// Implied by functional inheritance
 	// ImmutableList<Port> apply(IDirector<IImmutableListBuilder<PortBuilder>> director);
 }

@@ -11,11 +11,11 @@ import info.jchein.mesosphere.elevator.configuration.properties.ElevatorDoorProp
 import info.jchein.mesosphere.elevator.configuration.properties.ElevatorMotorProperties;
 import info.jchein.mesosphere.elevator.configuration.properties.ElevatorWeightProperties;
 import info.jchein.mesosphere.elevator.configuration.properties.PassengerToleranceProperties;
+import info.jchein.mesosphere.elevator.configuration.properties.SystemRuntimeProperties;
 
-//@Component("ElevatorConfigurationProperties")
 @Configuration
 @ConfigurationProperties("mesosphere.elevator")
-public class ElevatorConfigurationProperties {
+public class ExternalConfigurationProperties {
 
 	public int foo;
 
@@ -51,7 +51,7 @@ public class ElevatorConfigurationProperties {
 
 	public int doorOpenCloseSlideTime = 2000;
 
-	public int simulationTickTime = 20;
+	public int clockTickDuration = 20;
 
 	public double brakingDistance = 300;
 
@@ -132,7 +132,7 @@ public class ElevatorConfigurationProperties {
 	}
 
 	public double getSimulationTickTime() {
-		return simulationTickTime;
+		return clockTickDuration;
 	}
 
 	public double getBrakingDistance() {
@@ -169,13 +169,21 @@ public class ElevatorConfigurationProperties {
 
 	@Bean
 	@Scope(BeanDefinition.SCOPE_SINGLETON)
+	SystemRuntimeProperties getSystemRuntimeProperties() {
+		return SystemRuntimeProperties.build(builder -> {
+			builder.clockTickDuration(this.clockTickDuration);
+		});
+	}
+
+	@Bean
+	@Scope(BeanDefinition.SCOPE_SINGLETON)
 	ElevatorMotorProperties getMotorProperties() {
 		return ElevatorMotorProperties.build(builder -> {
 			builder.brakingDistance(this.brakingDistance)
 				.brakingSpeed(this.brakeSpeed)
 				.maxJerk(this.maxJerk)
 				.maxAcceleration(this.maxAcceleration)
-				.maxSlowSpeed(this.maxSlowSpeed)
+				.slowSpeed(this.slowSpeed)
 				.maxDescentSpeed(this.maxDescentSpeed)
 				.maxRiseSpeed(this.maxRiseSpeed);
 		});

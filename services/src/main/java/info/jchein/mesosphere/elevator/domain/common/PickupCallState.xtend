@@ -5,9 +5,8 @@ import org.eclipse.xtend.lib.annotations.Data
 
 @Data
 @Buildable
-class TravelItineraryItem {
+class PickupCallState {
     val int floorIndex
-    val DirectionOfTravel travelDirection
-    val boolean forPickup
-    val boolean forDropOff
+    val boolean goingUp
+    val boolean goingDown
 }

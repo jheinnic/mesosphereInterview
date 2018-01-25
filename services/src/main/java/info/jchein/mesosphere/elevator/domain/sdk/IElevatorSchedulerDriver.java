@@ -1,12 +1,11 @@
 package info.jchein.mesosphere.elevator.domain.sdk;
 
-import info.jchein.mesosphere.elevator.domain.car.event.DestinationRetained;
 import info.jchein.mesosphere.elevator.domain.car.event.DropOffRequested;
-import info.jchein.mesosphere.elevator.domain.car.event.ReadyForDeparture;
 import info.jchein.mesosphere.elevator.domain.car.event.ParkedForBoarding;
+import info.jchein.mesosphere.elevator.domain.car.event.ReadyForDeparture;
 import info.jchein.mesosphere.elevator.domain.car.event.SlowedForArrival;
 import info.jchein.mesosphere.elevator.domain.car.event.TravelledThroughFloor;
-import info.jchein.mesosphere.elevator.domain.common.ElevatorGroupSnapshot;
+import info.jchein.mesosphere.elevator.domain.common.ElevatorCarSnapshot;
 import info.jchein.mesosphere.elevator.domain.hall.event.PickupCallAdded;
 import info.jchein.mesosphere.elevator.domain.hall.event.PickupCallRemoved;
 
@@ -24,20 +23,15 @@ import info.jchein.mesosphere.elevator.domain.hall.event.PickupCallRemoved;
  * @author jheinnic
  */
 public interface IElevatorSchedulerDriver {
-//	public void init();
+	public void pollForClock();
 	
-//	public void start();
+	public void bootstrapModel(ElevatorCarSnapshot[] carState);
 	
-//	public void stop();
-	public void bootstrapModel(ElevatorGroupSnapshot currentState);
-	
-	public void onPickupCallAdded(PickupCallAdded event);
+	public int assignPickupCall(PickupCallAdded event);
 	
 	public void onPickupCallRemoved(PickupCallRemoved event);
 	
 	public void onDropOffRequested(DropOffRequested event);
-	
-	public void onDestinationRetained(DestinationRetained event);
 	
 	public void onReadyForDeparture(ReadyForDeparture event);
 	

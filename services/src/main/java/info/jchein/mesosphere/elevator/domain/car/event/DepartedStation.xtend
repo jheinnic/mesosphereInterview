@@ -8,7 +8,7 @@ import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel
 @Buildable
 @Data
 class DepartedStation implements CarEvent {
-	override getEventType() { return CarEventType.DEPARTED_FROM_FLOOR; }
+	override getEventType() { return CarEventType.DEPARTED_PREVIOUS_FLOOR; }
 	val long timeIndex;
 	val int carIndex;
 	val int floorIndex;

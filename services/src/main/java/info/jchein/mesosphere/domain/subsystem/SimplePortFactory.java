@@ -7,10 +7,10 @@ import javax.validation.executable.ValidateOnExecution;
 import com.google.common.base.Supplier;
 
 import info.jchein.mesosphere.domain.factory.IDirector;
-import info.jchein.mesosphere.domain.factory.IFactory;
+import info.jchein.mesosphere.domain.factory.IBuilderFactory;
 
 @ValidateOnExecution(type= {ExecutableType.CONSTRUCTORS})
-public class SimplePortFactory<Port, PortBuilder> implements IFactory<Port, PortBuilder>
+public class SimplePortFactory<Port, PortBuilder> implements IBuilderFactory<Port, PortBuilder>
 {
 	private final Supplier<Port> supplierFunction;
 

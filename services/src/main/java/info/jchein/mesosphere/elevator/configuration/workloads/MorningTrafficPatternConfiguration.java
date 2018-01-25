@@ -23,7 +23,6 @@ import rx.Scheduler.Worker;
 @Configuration
 public class MorningTrafficPatternConfiguration {
 	private IClock systemClock;
-	private LandingControlEmulator groundFloor;
 	private IPassengerArrivalStrategy arrivalStrategy;
 
 	@Autowired
@@ -32,13 +31,11 @@ public class MorningTrafficPatternConfiguration {
 	{
 		this.systemClock = systemClock;
 		this.arrivalStrategy = arrivalStrategy;
-		for (final LandingControlEmulator nextFloor : floors) {
-			if (nextFloor.getFloorIndex() == 0) {
-				this.groundFloor = nextFloor;
-				break;
-			}
-		}
 	}
+	
+//	@Bean
+//	@Scope(BeanDefinition.SCOPE_SINGLETON)
+//	public ElevatorCarSnapshot 
 	
 	@Bean
 	@Scope(BeanDefinition.SCOPE_SINGLETON)
@@ -55,7 +52,7 @@ public class MorningTrafficPatternConfiguration {
 		Worker schedulingWorker, int destinationFloor, double interarrivalTime)
 	{
 		return new SimulatedSimplePassengerSource(
-			this.systemClock, interarrivalTime, this.groundFloor.getFloorIndex(), destinationFloor, this.arrivalStrategy);
+			this.systemClock, interarrivalTime, 0, destinationFloor, this.arrivalStrategy);
 	}
 	
 	@Bean

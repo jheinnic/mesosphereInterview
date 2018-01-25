@@ -2,18 +2,18 @@ package info.jchein.mesosphere.elevator.physics
 
 import com.google.common.base.Preconditions
 import com.google.common.collect.ImmutableList
+import info.jchein.mesosphere.elevator.configuration.properties.BuildingProperties
+import info.jchein.mesosphere.elevator.configuration.properties.ElevatorDoorProperties
+import info.jchein.mesosphere.elevator.configuration.properties.ElevatorMotorProperties
+import info.jchein.mesosphere.elevator.configuration.properties.ElevatorWeightProperties
+import info.jchein.mesosphere.elevator.configuration.properties.PassengerToleranceProperties
 import org.eclipse.xtend.lib.annotations.ToString
 import org.springframework.util.Assert
 
-import info.jchein.mesosphere.elevator.configuration.properties.BuildingProperties
-import info.jchein.mesosphere.elevator.configuration.properties.ElevatorMotorProperties
-import info.jchein.mesosphere.elevator.configuration.properties.ElevatorDoorProperties
-import info.jchein.mesosphere.elevator.configuration.properties.PassengerToleranceProperties
-import info.jchein.mesosphere.elevator.configuration.properties.ElevatorWeightProperties
-
-import static extension java.lang.String.format
 import static extension java.lang.Math.floor
 import static extension java.lang.Math.round
+import static extension java.lang.String.format
+
 //import static extension java.lang.Math.sqrt
 
 @ToString
@@ -133,19 +133,6 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		}
 	}
 
-	/**
-	 * For paths that are sufficiently short, there is no span at constant velocity.  Between the starting point and the
-	 * half-way point there is one region of constant jerk with increasing acceleration, followed by a second span where
-	 * the body is at constant acceleration, but does not achieve constant speed before reaching its apex.  However, there
-	 * is symmetry between both sides of the curve, and we can therefore use that halfway point to find a usable maximum velocity
-	 * and recompute.
-	 */
-	private def double computeShortPathMaxSpeed(double maxDistance) {
-		val d0 = this.dMaxA
-		val dMid = (maxDistance - d0) / 2; // - this.distBrk) / 2
-		val v0 = this.vMaxA
-		return Math.sqrt((v0 * v0) + (2 * this.maxAccel * dMid));
-	}
 
 	private def PathMoment nextMoment(PathLeg pathLeg, ImmutableList.Builder<PathLeg> listBuilder, double nextJerk) {
 		listBuilder.add(pathLeg);
@@ -292,7 +279,6 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		val toMaxUpAcc = new ConstantJerkPathLeg(atJerkUpTwo, this.tMaxA)
 		val atMaxUpAcc = toMaxUpAcc.nextMoment(listBuilder, 0)
 
-		// TODO: Proofcheck the signage here!
 		val tJerkDownTwo = (atMaxUpAcc.acceleration - this.accelBrake) / this.maxJerk
 		val vJerkDownTwo = (-1 * this.speedBrk) - (tJerkDownTwo * atMaxUpAcc.acceleration) + ((this.maxJerk * tJerkDownTwo * tJerkDownTwo) / 2.0)
 
@@ -301,20 +287,6 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 
 		val toJerkDownTwo = new ConstantAccelerationPathLeg(atMaxUpAcc, tMaxUpAcc);
 		val atJerkDownTwo = toJerkDownTwo.nextMoment(listBuilder, -1 * this.maxJerk)
-		
-		
-//		val toMaxDownAcc = new ConstantJerkPathLeg(atJerkDownTwo, this.tMaxA)
-//		val atMaxDownAcc = toMaxDownAcc.nextMoment(listBuilder, 0)
-//
-//		val tJerkUpTwo = (0 - this.accelBrake - atMaxDownAcc.acceleration) / this.maxJerk
-//		val vJerkUpTwo = this.speedBrk - (tJerkUpTwo * atMaxDownAcc.acceleration) - (this.maxJerk * tJerkUpTwo * tJerkUpTwo / 2.0)
-//		
-//		// Unlike the global maxAccel value, which stores an unsigned magnitude, the value we get from a PathMoment is a signed quantity!
-//		val tMaxDownAcc = -1 * (atMaxDownAcc.velocity - vJerkUpTwo) / atMaxDownAcc.acceleration
-
-		
-		
-		
 
 		val toBrakes = new ConstantJerkPathLeg(atJerkDownTwo, tJerkDownTwo)
 		val atBrakes = toBrakes.nextMoment(listBuilder, 0)

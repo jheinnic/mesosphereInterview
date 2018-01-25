@@ -1,6 +1,8 @@
 package info.jchein.mesosphere.elevator.domain.sdk;
 
 import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel;
+import info.jchein.mesosphere.elevator.domain.common.ElevatorCarSnapshot;
+import info.jchein.mesosphere.elevator.domain.common.TravelItineraryItem;
 import info.jchein.mesosphere.elevator.domain.hall.event.FloorSensorTriggered;
 
 /**
@@ -9,8 +11,6 @@ import info.jchein.mesosphere.elevator.domain.hall.event.FloorSensorTriggered;
  *
  */
 public interface IElevatorCarDriver {
-	void moveToDestination(int floorIndex, DirectionOfTravel direction);
-	void onFloorSensorEvent(FloorSensorTriggered event);
-	void parkForBoarding();
-	void launchForService();
+	ElevatorCarSnapshot pollForBootstrap();
+	ElevatorCarSnapshot pollForService(TravelItineraryItem[] destinationQueue);
 }
