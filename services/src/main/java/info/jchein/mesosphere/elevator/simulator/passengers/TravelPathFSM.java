@@ -1,27 +1,12 @@
 package info.jchein.mesosphere.elevator.simulator.passengers;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.validation.constraints.NotNull;
-
-import org.javasim.streams.NormalStream;
-import org.javasim.streams.RandomStream;
-import org.javasim.streams.UniformStream;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.statefulj.framework.core.annotations.StatefulController;
-import org.statefulj.framework.core.annotations.Transition;
-import org.statefulj.framework.core.model.impl.FactoryImpl;
+import org.statefulj.persistence.annotations.State;
 import org.statefulj.persistence.annotations.State.AccessorType;
 
 import com.google.common.eventbus.EventBus;
 
 import info.jchein.mesosphere.domain.clock.IClock;
-import info.jchein.mesosphere.elevator.simulator.traveller.IBehaviorStrategy;
-import info.jchein.mesosphere.elevator.simulator.traveller.TravellerContext;
-
-import org.statefulj.persistence.annotations.State;
 
 public class TravelPathFSM {
 	@State(accessorType = AccessorType.METHOD, getMethodName = "getState", setMethodName = "setState")
@@ -31,10 +16,10 @@ public class TravelPathFSM {
 	// private NormalStream durationStream;
 
 	private final IClock systemClock;
-	private final IBehaviorStrategy behaviorStrategy;
+	// private final IBehaviorStrategy behaviorStrategy;
 	private final EventBus eventBus;
 
-	private TravellerContext travellerContext;
+//	private TravellerContext travellerContext;
 
 	public final static String BEAN_ID = "TravelPathFSM";
 
@@ -53,11 +38,11 @@ public class TravelPathFSM {
 	public final static String BEGIN_FROM_C = "beginFromFloorC";
 
 	@Autowired
-	public TravelPathFSM(IClock systemClock, IBehaviorStrategy behaviorStrategy, EventBus eventBus) {
+	public TravelPathFSM(IClock systemClock, /* IBehaviorStrategy behaviorStrategy, */ EventBus eventBus) {
 		this.systemClock = systemClock;
-		this.behaviorStrategy = behaviorStrategy;
+//		this.behaviorStrategy = behaviorStrategy;
 		this.eventBus = eventBus;
-		this.travellerContext = behaviorStrategy.allocateNewTraveller();
+//		this.travellerContext = behaviorStrategy.allocateNewTraveller();
 	}
 
 	/*

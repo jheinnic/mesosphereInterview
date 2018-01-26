@@ -1,8 +1,5 @@
 package info.jchein.mesosphere.elevator.configuration;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
@@ -15,10 +12,8 @@ import info.jchein.mesosphere.elevator.configuration.properties.ElevatorMotorPro
 import info.jchein.mesosphere.elevator.configuration.properties.ElevatorWeightProperties;
 import info.jchein.mesosphere.elevator.configuration.properties.PassengerToleranceProperties;
 import info.jchein.mesosphere.elevator.domain.sdk.IElevatorSchedulerPort;
-import info.jchein.mesosphere.elevator.emulator.IEmulatedLandingButtonPanel;
 import info.jchein.mesosphere.elevator.physics.IElevatorPhysicsService;
 import info.jchein.mesosphere.elevator.scheduler.tracking.HeuristicElevatorSchedulingStrategy;
-import info.jchein.mesosphere.elevator.simulator.FloorHallSimulation;
 import rx.Scheduler.Worker;
 import rx.schedulers.Schedulers;
 import rx.schedulers.TestScheduler;
@@ -50,9 +45,9 @@ public class ElevatorSchedulerConfiguration {
 		return scheduler.createWorker();
 	}
 	
-	@Bean
-	@Scope(BeanDefinition.SCOPE_SINGLETON)
-	List<FloorHallSimulation> getFloorHall(List<IEmulatedLandingButtonPanel> emulatedControl) {
-		return emulatedControl.stream().map( control -> new FloorHallSimulation(control)).collect(Collectors.toList());
-	}
+//	@Bean
+//	@Scope(BeanDefinition.SCOPE_SINGLETON)
+//	List<FloorHallSimulation> getFloorHall(List<IEmulatedLandingButtonPanel> emulatedControl) {
+//		return emulatedControl.stream().map( control -> new FloorHallSimulation(control)).collect(Collectors.toList());
+//	}
 }

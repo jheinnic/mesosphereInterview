@@ -18,7 +18,7 @@ public class GenericFactory<BuilderImpl extends Supplier<Item> & ICastable<ItemB
 	 * 
 	 * @param builderFactory
 	 */
-	GenericFactory(@NotNull Supplier<BuilderImpl> builderFactory) {
+	public GenericFactory(@NotNull Supplier<BuilderImpl> builderFactory) {
 		this.builderFactory = builderFactory;
 	}
 

@@ -1,7 +1,5 @@
 package info.jchein.mesosphere.elevator.configuration.workloads;
 
-import java.util.List;
-
 import org.javasim.streams.UniformStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -11,7 +9,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Scope;
 
 import info.jchein.mesosphere.domain.clock.IClock;
-import info.jchein.mesosphere.elevator.emulator.LandingControlEmulator;
 import info.jchein.mesosphere.elevator.simulator.passengers.IPassengerArrivalStrategy;
 import info.jchein.mesosphere.elevator.simulator.passengers.IPathSelector;
 import info.jchein.mesosphere.elevator.simulator.passengers.RandomPathSelector;
@@ -27,7 +24,7 @@ public class MorningTrafficPatternConfiguration {
 
 	@Autowired
 	public MorningTrafficPatternConfiguration(
-		List<LandingControlEmulator> floors, IClock systemClock, IPassengerArrivalStrategy arrivalStrategy)
+		IClock systemClock, IPassengerArrivalStrategy arrivalStrategy)
 	{
 		this.systemClock = systemClock;
 		this.arrivalStrategy = arrivalStrategy;

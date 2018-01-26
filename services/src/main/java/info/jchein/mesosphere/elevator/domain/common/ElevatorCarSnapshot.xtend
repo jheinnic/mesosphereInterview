@@ -7,12 +7,12 @@ import org.eclipse.xtend.lib.annotations.Data
 @Data
 @Buildable
 class ElevatorCarSnapshot {
+	long clockTime
+	int carIndex
 	val BitSet dropOffRequests
 	val BitSet upBoundPickups
 	val BitSet downBoundPickups
-	val DirectionOfTravel direction
+	val ServiceLifecycleStage serviceStage
 	val double weightLoad
-	val double acceleration
-	val double speed
-	val double height
+	val double floorHeight
 }

@@ -2,13 +2,11 @@ package info.jchein.mesosphere.elevator.domain.car.event
 
 import de.oehme.xtend.contrib.Buildable
 import org.eclipse.xtend.lib.annotations.Data;
-import info.jchein.mesosphere.elevator.domain.car.event.CarEvent
 
 @Buildable
 @Data
-class ReadyForDeparture implements CarEvent {
-	override getEventType() { return CarEventType.DESTINATION_REQUIRED; }
-	val long timeIndex;
+class ReadyForDeparture implements ElevatorCarEvent {
+	val long clockTime;
 	val int carIndex;
 	val int floorIndex;
 	val double weightOnDeparture;

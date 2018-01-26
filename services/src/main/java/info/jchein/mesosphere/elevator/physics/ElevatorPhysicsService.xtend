@@ -40,6 +40,8 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 
 	JourneyArc[] upwardArcs
 	JourneyArc[] downwardArcs
+	
+	int minFastDistance
 
 	public new(
 		BuildingProperties bldgProps,
@@ -121,6 +123,9 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 			)	
 			nextHeight += floorHeight
 		}
+
+		this.minFastDistance = ii+1
+		
 		for (var jj=ii; jj<lastFloorPair; jj++) {
 			System.out.println(String.format("%d is fast", jj));
 			this.upwardArcs.set(
@@ -294,6 +299,16 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		return JourneyArc.fromList(
 			new ConstantAccelerationPathLeg(atBrakes, this.tStopBrk).endPath(listBuilder)
 		)
+	}
+
+	override isTravelFast(int fromFloorIndex, int toFloorIndex) {
+		return if (fromFloorIndex > toFloorIndex) {
+			((fromFloorIndex - toFloorIndex) >= this.minFastDistance)
+		} else if (fromFloorIndex < toFloorIndex) {
+			((toFloorIndex - fromFloorIndex) >= this.minFastDistance)
+		} else {
+			false
+		}
 	}
 
 	override expectedStopDuration(int boardingCount, int disembarkingCount) {

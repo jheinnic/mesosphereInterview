@@ -5,8 +5,8 @@ import org.eclipse.xtend.lib.annotations.Data;
 
 @Buildable
 @Data
-class SlowedForArrival implements ElevatorCarEvent {
+class WeightLoadUpdated implements ElevatorCarEvent {
 	val long clockTime;
 	val int carIndex;
-	val int floorIndex;
+	val double weightLoad
 }

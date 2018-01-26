@@ -1,20 +1,12 @@
 package info.jchein.mesosphere.elevator.simulator.passengers;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
-
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
-import org.hibernate.validator.constraints.Range;
-import org.hibernate.validator.constraints.ScriptAssert;
 import org.javasim.streams.ExponentialStream;
 import org.javasim.streams.NormalStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.statefulj.framework.core.annotations.FSM;
 import org.statefulj.framework.core.annotations.StatefulController;
 import org.statefulj.framework.core.annotations.Transition;
@@ -22,16 +14,10 @@ import org.statefulj.framework.core.model.StatefulFSM;
 
 import com.google.common.eventbus.EventBus;
 
-import rx.Scheduler.Worker;
+import info.jchein.mesosphere.domain.clock.IClock;
+import info.jchein.mesosphere.validator.annotation.Positive;
 import rx.Subscription;
 import rx.functions.Action0;
-import info.jchein.mesosphere.domain.clock.IClock;
-import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel;
-import info.jchein.mesosphere.elevator.simulator.FloorHallSimulation;
-import info.jchein.mesosphere.elevator.simulator.SimulatedPassenger;
-import info.jchein.mesosphere.elevator.simulator.traveller.IBehaviorStrategy;
-import info.jchein.mesosphere.elevator.simulator.traveller.TravellerContext;
-import info.jchein.mesosphere.validator.annotation.Positive;
 
 @StatefulController(value = TravelPathFSM.BEAN_ID, clazz = TravelPathFSM.class, startState = TravelPathFSM.START_STATE, blockingStates = {},
 noops = { @Transition(from=TravelPathFSM.START_STATE, event=TravelPathFSM.BEGIN_FROM_LOBBY, to=TravelPathFSM.GO_TO_ACTIVITY)

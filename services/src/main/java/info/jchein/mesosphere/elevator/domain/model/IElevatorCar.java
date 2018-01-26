@@ -11,7 +11,6 @@ import info.jchein.mesosphere.elevator.domain.common.ElevatorCarSnapshot;
  * @author jheinnic
  */
 interface IElevatorCar {
-	ElevatorCarSnapshot pollForBootstrap();
 	void pollForClock();
 	void enqueuePickupRequest(int floorIndex, DirectionOfTravel direction);
 	void cancelPickupRequest(int floorIndex, DirectionOfTravel direction);

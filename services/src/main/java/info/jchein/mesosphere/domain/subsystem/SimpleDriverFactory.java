@@ -2,18 +2,16 @@ package info.jchein.mesosphere.domain.subsystem;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.executable.ExecutableType;
 import javax.validation.executable.ValidateOnExecution;
 
-import info.jchein.mesosphere.domain.factory.IBinder;
-import info.jchein.mesosphere.domain.factory.IBuilder;
-import info.jchein.mesosphere.domain.factory.IDirector;
 import info.jchein.mesosphere.domain.factory.IBuilderFactory;
 
 @ValidateOnExecution(type= {ExecutableType.CONSTRUCTORS})
-public class SimpleDriverFactory<Port, Driver> implements IBuilderFactory<Driver, Consumer<Port>>
+public class SimpleDriverFactory<Port, Driver> implements IBuilderFactory<Consumer<Port>, Driver>
 {
 	private final Function<Port, Driver> factoryFunction;
 	SimpleDriverFactory(@NotNull Function<Port, Driver> factoryFunction) {
@@ -21,14 +19,14 @@ public class SimpleDriverFactory<Port, Driver> implements IBuilderFactory<Driver
 	}
 
 	@Override
-	public Driver apply(IDirector<Consumer<Port>> t) {
+	public Driver apply(Consumer<Consumer<Port>> t) {
 		SimpleDriverBuilder builder = new SimpleDriverBuilder();
 		t.accept(builder);
-		return builder.build();
+		return builder.get();
 	}
 	
 	@ValidateOnExecution(type= {ExecutableType.NON_GETTER_METHODS})
-	private class SimpleDriverBuilder implements Consumer<Port>, IBuilder<Driver> {
+	private class SimpleDriverBuilder implements Consumer<Port>, Supplier<Driver> {
 		Port input;
 
 		@Override
@@ -36,7 +34,7 @@ public class SimpleDriverFactory<Port, Driver> implements IBuilderFactory<Driver
 			this.input = t;
 		}
 		
-		public Driver build() {
+		public Driver get() {
 			return SimpleDriverFactory.this.factoryFunction.apply(this.input);
 		}
 	}

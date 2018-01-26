@@ -29,12 +29,19 @@
 			<groupId>org.jgrapht</groupId>
 			<artifactId>jgrapht-core</artifactId>
 		</dependency>
+        
+        <!-- Apache Math Commons -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+            <version>3.6.1</version>
+        </dependency>
 
 		<!-- JavaSIM -->
+        <!-- TODO: Replace this with Apache Math Commons! -->
 		<dependency>
 			<groupId>javasim</groupId>
 			<artifactId>javasim</artifactId>
-			<version>2.0-hbraun</version>
 		</dependency>
 
 		<!-- Joda Time -->
@@ -93,6 +100,19 @@
 		<dependency>
 			<groupId>javax.enterprise</groupId>
 			<artifactId>cdi-api</artifactId>
+		</dependency>
+		
+		<!-- Google Guava -->
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+		</dependency>
+		
+		<!-- LMAX Disruptor -->
+		<dependency>
+			<groupId>com.lmax</groupId>
+			<artifactId>disruptor</artifactId>
+			<version>3.3.7</version>
 		</dependency>
 
 		<!-- LogBack dependencies -->

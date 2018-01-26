@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import com.google.common.base.Preconditions;
 
 import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel;
-import info.jchein.mesosphere.elevator.emulator.IEmulatedLandingButtonPanel;
+import info.jchein.mesosphere.elevator.emulator.ISimulationScenario;
 import info.jchein.mesosphere.elevator.simulator.passengers.IPassengerArrivalStrategy;
 
 @Component
@@ -18,17 +18,15 @@ import info.jchein.mesosphere.elevator.simulator.passengers.IPassengerArrivalStr
 public class FloorHallSimulation
 implements IPassengerArrivalStrategy
 {
-	private final int floorIndex;
-	private final IEmulatedLandingButtonPanel emulatedControl;
+	private final ISimulationScenario emulatedControl;
 	private final ArrayList<SimulatedPassenger> upwardBoundPickups =
 		new ArrayList<SimulatedPassenger>(10);
 	private final ArrayList<SimulatedPassenger> downwardBoundPickups =
 		new ArrayList<SimulatedPassenger>(10);
 
 	@Autowired
-	public FloorHallSimulation(IEmulatedLandingButtonPanel emulatedControl) {
+	public FloorHallSimulation(ISimulationScenario emulatedControl) {
 		this.emulatedControl = emulatedControl;
-		this.floorIndex = emulatedControl.readFloorIndex();
 	}
 	
 	@Override

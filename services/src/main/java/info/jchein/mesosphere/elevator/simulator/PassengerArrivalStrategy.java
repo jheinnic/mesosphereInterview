@@ -5,20 +5,19 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import info.jchein.mesosphere.elevator.emulator.ElevatorCarEmulator;
-import info.jchein.mesosphere.elevator.emulator.IEmulatedElevatorCar;
-import info.jchein.mesosphere.elevator.emulator.IEmulatedLandingButtonPanel;
+import info.jchein.mesosphere.elevator.emulator.ElevatorCarSimulator;
+import info.jchein.mesosphere.elevator.emulator.ISimulationScenario;
 import info.jchein.mesosphere.elevator.simulator.passengers.IPassengerArrivalStrategy;
 
 @Component
 public class PassengerArrivalStrategy implements IPassengerArrivalStrategy {
 
-	private List<ElevatorCarEmulator> elevatorControls;
-	private List<? extends IEmulatedLandingButtonPanel> landingPanels;
+	private List<ElevatorCarSimulator> elevatorControls;
+	private ISimulationScenario scenarioControl;
 
 	@Autowired
-	public PassengerArrivalStrategy( List<? extends IEmulatedLandingButtonPanel> landingPanels, List<ElevatorCarEmulator> elevatorControls ) {
-		this.landingPanels = landingPanels;
+	public PassengerArrivalStrategy( ISimulationScenario scenarioControl, List<ElevatorCarSimulator> elevatorControls ) {
+		this.scenarioControl = scenarioControl;
 		this.elevatorControls = elevatorControls;
 	}
 
