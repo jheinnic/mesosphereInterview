@@ -1,303 +1,327 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>info.jchein.examples.mesosphere</groupId>
-		<artifactId>interview</artifactId>
-		<version>0.0.1</version>
-	</parent>
-	<groupId>info.jchein.examples.mesosphere.interview</groupId>
-	<artifactId>parent</artifactId>
-	<packaging>pom</packaging>
-	<name>Mesosphere Interview Project Parent Pom</name>
-	<description>Parent POM for Mesosphere interview challenge project</description>
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>info.jchein.examples.mesosphere</groupId>
+        <artifactId>interview</artifactId>
+        <version>0.0.1</version>
+    </parent>
+    <groupId>info.jchein.examples.mesosphere.interview</groupId>
+    <artifactId>parent</artifactId>
+    <packaging>pom</packaging>
+    <name>Mesosphere Interview Project Parent Pom</name>
+    <description>Parent POM for Mesosphere interview challenge project</description>
 
-	<properties>
-		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
-		<generated-sources-java-path>java</generated-sources-java-path>
-		<java.version>1.8</java.version>
-		<main.basedir>${basedir}/../..</main.basedir>
-		<maven.compiler.source>${java.version}</maven.compiler.source>
-		<maven.compiler.target>${java.version}</maven.compiler.target>
-		<maven.javadoc.failOnError>false</maven.javadoc.failOnError>
-		<maven.javadoc.skip>true</maven.javadoc.skip>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<useReleaseProfile>false</useReleaseProfile>
+    <properties>
+        <generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
+        <generated-sources-java-path>java</generated-sources-java-path>
+        <java.version>1.8</java.version>
+        <main.basedir>${basedir}/../..</main.basedir>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <useReleaseProfile>false</useReleaseProfile>
 
-		<dockerfile.plugin-version>1.3.5</dockerfile.plugin-version>
-		<gauge.plugin-version>1.3.0</gauge.plugin-version>
-		<maven-assembly.plugin-version>3.1.0</maven-assembly.plugin-version>
-		<maven-clean.plugin-version>2.6.1</maven-clean.plugin-version>
-		<maven-compiler.plugin-version>3.7.0</maven-compiler.plugin-version>
-		<maven-dependency.plugin-version>3.0.2</maven-dependency.plugin-version>
-		<maven-enforcer.plugin-version>1.4.1</maven-enforcer.plugin-version>
-		<maven-exec.plugin-version>1.2.1</maven-exec.plugin-version>
-		<maven-failsafe.plugin-version>2.20.1</maven-failsafe.plugin-version>
-		<maven-resources.plugin-version>3.0.2</maven-resources.plugin-version>
-		<maven-source.plugin-version>3.0.1</maven-source.plugin-version>
-		<maven-surefire.plugin-version>2.20.1</maven-surefire.plugin-version>
-		<maven-toolchain.plugin-version>1.1</maven-toolchain.plugin-version>
-		<os-maven.plugin-version>1.5.0.Final</os-maven.plugin-version>
-		<swagger-codegen.plugin-version>2.1.6</swagger-codegen.plugin-version>
-		<xtend.plugin-version>2.12.0</xtend.plugin-version>
+        <dockerfile.plugin-version>1.3.5</dockerfile.plugin-version>
+        <gauge.plugin-version>1.3.0</gauge.plugin-version>
+        <maven-assembly.plugin-version>3.1.0</maven-assembly.plugin-version>
+        <maven-clean.plugin-version>2.6.1</maven-clean.plugin-version>
+        <maven-compiler.plugin-version>3.7.0</maven-compiler.plugin-version>
+        <maven-dependency.plugin-version>3.0.2</maven-dependency.plugin-version>
+        <maven-enforcer.plugin-version>1.4.1</maven-enforcer.plugin-version>
+        <maven-exec.plugin-version>1.2.1</maven-exec.plugin-version>
+        <maven-failsafe.plugin-version>2.20.1</maven-failsafe.plugin-version>
+        <maven-resources.plugin-version>3.0.2</maven-resources.plugin-version>
+        <maven-source.plugin-version>3.0.1</maven-source.plugin-version>
+        <maven-surefire.plugin-version>2.20.1</maven-surefire.plugin-version>
+        <maven-toolchain.plugin-version>1.1</maven-toolchain.plugin-version>
+        <os-maven.plugin-version>1.5.0.Final</os-maven.plugin-version>
+        <swagger-codegen.plugin-version>2.1.6</swagger-codegen.plugin-version>
+        <lombok.plugin-version>1.16.20.0</lombok.plugin-version>
+        <xtend.plugin-version>2.12.0</xtend.plugin-version>
 
 
-		<!-- <guava.version>21.0</guava.version> <hamcrest.version>1.3</hamcrest.version> 
-			<hibernate-validator.version>5.2.4.Final</hibernate-validator.version> <jackson.version>2.8.1</jackson.version> 
-			<joda-time.version>2.9.4</joda-time.version> <junit.version>4.12</junit.version> 
-			<logback.version>1.1.7</logback.version> <slf4j.version>1.7.21</slf4j.version> 
-			<javax-el.version>2.2.4</javax-el.version> -->
-                <guava.version>19.0</guava.version>
-		<javax-cdi.version>1.2</javax-cdi.version>
-		<gauge.version>0.9.4</gauge.version>
-		<gauge-java.version>0.6.5</gauge-java.version>
-		<javasim.version>2.0-hbraun</javasim.version>
-		<jgrapht.version>1.1.0</jgrapht.version>
-		<rxjava.version>1.3.4</rxjava.version>
-		<scala-lib.version>2.11.0</scala-lib.version>
-		<springfox-version>2.5.0</springfox-version>
-		<xtend.version>2.12.0</xtend.version>
-		<xtend-contrib.version>1.1.0</xtend-contrib.version>
-	</properties>
+        <!-- <guava.version>21.0</guava.version> <hamcrest.version>1.3</hamcrest.version> 
+            <hibernate-validator.version>5.2.4.Final</hibernate-validator.version> <jackson.version>2.8.1</jackson.version> 
+            <joda-time.version>2.9.4</joda-time.version> <junit.version>4.12</junit.version> 
+            <logback.version>1.1.7</logback.version> <slf4j.version>1.7.21</slf4j.version> 
+            <javax-el.version>2.2.4</javax-el.version> -->
+        <guava.version>19.0</guava.version>
+        <javax-cdi.version>1.2</javax-cdi.version>
+        <gauge.version>0.9.4</gauge.version>
+        <gauge-java.version>0.6.5</gauge-java.version>
+        <javasim.version>2.0-hbraun</javasim.version>
+        <jgrapht.version>1.1.0</jgrapht.version>
+        <lombok.version>1.16.20</lombok.version>
+        <rxjava.version>1.3.4</rxjava.version>
+        <scala-lib.version>2.11.0</scala-lib.version>
+        <springfox-version>2.5.0</springfox-version>
+        <xtend.version>2.12.0</xtend.version>
+        <xtend-contrib.version>1.1.0</xtend-contrib.version>
+    </properties>
 
-	<build>
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-resources-plugin</artifactId>
-					<version>${maven-resources.plugin-version}</version>
-					<configuration>
-						<delimiters>
-							<delimiter>@</delimiter>
-						</delimiters>
-						<useDefaultDelimiters>false</useDefaultDelimiters>
-					</configuration>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-compiler-plugin</artifactId>
-					<version>${maven-compiler.plugin-version}</version>
-					<inherited>true</inherited>
-					<configuration>
-						<source>1.8</source>
-						<target>1.8</target>
-					</configuration>
-				</plugin>
-				<plugin>
-					<groupId>org.eclipse.xtend</groupId>
-					<artifactId>xtend-maven-plugin</artifactId>
-					<version>${xtend.plugin-version}</version>
-					<executions>
-						<execution>
-							<goals>
-								<goal>compile</goal>
-								<goal>testCompile</goal>
-							</goals>
-							<configuration>
-								<outputDirectory>${project.build.directory}/xtend-gen/main</outputDirectory>
-								<testOutputDirectory>${project.build.directory}/xtend-gen/test</testOutputDirectory>
-							</configuration>
-						</execution>
-					</executions>
-				</plugin>
-				<plugin>
-					<groupId>org.springframework.boot</groupId>
-					<artifactId>spring-boot-maven-plugin</artifactId>
-					<executions>
-						<execution>
-							<goals>
-								<goal>repackage</goal>
-							</goals>
-							<configuration>
-								<excludeDevtools>true</excludeDevtools>
-								<addResources>true</addResources>
-								<mainClass>${start-class}</mainClass>
-							</configuration>
-						</execution>
-					</executions>
-					<configuration>
-						<excludeDevtools>true</excludeDevtools>
-						<addResources>true</addResources>
-						<mainClass>${start-class}</mainClass>
-					</configuration>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-surefire-plugin</artifactId>
-					<version>${maven-surefire.plugin-version}</version>
-					<configuration>
-						<skipTests>true</skipTests>
-						<parallel>methods</parallel>
-						<threadCount>10</threadCount>
-					</configuration>
-				</plugin>
-				<plugin>
-					<groupId>com.thoughtworks.gauge.maven</groupId>
-					<artifactId>gauge-maven-plugin</artifactId>
-					<version>${gauge.plugin-version}</version>
-					<executions>
-						<execution>
-							<phase>test</phase>
-							<configuration>
-								<specsDir>acceptance/specs</specsDir>
-							</configuration>
-							<goals>
-								<goal>execute</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
-			</plugins>
-		</pluginManagement>
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>${maven-resources.plugin-version}</version>
+                    <configuration>
+                        <delimiters>
+                            <delimiter>@</delimiter>
+                        </delimiters>
+                        <useDefaultDelimiters>false</useDefaultDelimiters>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler.plugin-version}</version>
+                    <inherited>true</inherited>
+                    <configuration>
+                        <source>1.8</source>
+                        <target>1.8</target>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.projectlombok</groupId>
+                    <artifactId>lombok-maven-plugin</artifactId>
+                    <version>${lombok.plugin-version}</version>
+                    <executions>
+                        <execution>
+                            <phase>generate-sources</phase>
+                            <goals>
+                                <goal>delombok</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.eclipse.xtend</groupId>
+                    <artifactId>xtend-maven-plugin</artifactId>
+                    <version>${xtend.plugin-version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>compile</goal>
+                                <goal>testCompile</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${project.build.directory}/xtend-gen/main</outputDirectory>
+                                <testOutputDirectory>${project.build.directory}/xtend-gen/test</testOutputDirectory>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>repackage</goal>
+                            </goals>
+                            <configuration>
+                                <excludeDevtools>true</excludeDevtools>
+                                <addResources>true</addResources>
+                                <mainClass>${start-class}</mainClass>
+                            </configuration>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <excludeDevtools>true</excludeDevtools>
+                        <addResources>true</addResources>
+                        <mainClass>${start-class}</mainClass>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire.plugin-version}</version>
+                    <configuration>
+                        <skipTests>true</skipTests>
+                        <parallel>methods</parallel>
+                        <threadCount>10</threadCount>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>com.thoughtworks.gauge.maven</groupId>
+                    <artifactId>gauge-maven-plugin</artifactId>
+                    <version>${gauge.plugin-version}</version>
+                    <executions>
+                        <execution>
+                            <phase>test</phase>
+                            <configuration>
+                                <specsDir>acceptance/specs</specsDir>
+                            </configuration>
+                            <goals>
+                                <goal>execute</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
 
-		<resources>
-			<resource>
-				<directory>src/main/resources</directory>
-				<filtering>true</filtering>
-			</resource>
-			<resource>
-				<directory>src/main/binary-resources</directory>
-				<filtering>false</filtering>
-			</resource>
-		</resources>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+            <resource>
+                <directory>src/main/binary-resources</directory>
+                <filtering>false</filtering>
+            </resource>
+        </resources>
 
-		<extensions>
-			<extension>
-				<groupId>kr.motd.maven</groupId>
-				<artifactId>os-maven-plugin</artifactId>
-				<version>${os-maven.plugin-version}</version>
-			</extension>
-			<extension>
-				<groupId>com.spotify</groupId>
-				<artifactId>dockerfile-maven-extension</artifactId>
-				<version>${dockerfile.plugin-version}</version>
-			</extension>
-		</extensions>
-	</build>
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>${os-maven.plugin-version}</version>
+            </extension>
+            <extension>
+                <groupId>com.spotify</groupId>
+                <artifactId>dockerfile-maven-extension</artifactId>
+                <version>${dockerfile.plugin-version}</version>
+            </extension>
+        </extensions>
+    </build>
 
-	<dependencyManagement>
-		<dependencies>
-			<!-- RXJava -->
-			<dependency>
-				<groupId>io.reactivex</groupId>
-				<artifactId>rxjava</artifactId>
-				<version>${rxjava.version}</version>
-			</dependency>
+    <dependencyManagement>
+        <dependencies>
+            <!-- RXJava -->
+            <dependency>
+                <groupId>io.reactivex</groupId>
+                <artifactId>rxjava</artifactId>
+                <version>${rxjava.version}</version>
+            </dependency>
 
-			<!-- JGraphT -->
-			<dependency>
-				<groupId>org.jgrapht</groupId>
-				<artifactId>jgrapht-core</artifactId>
-				<version>${jgrapht.version}</version>
-			</dependency>
+            <!-- JGraphT -->
+            <dependency>
+                <groupId>org.jgrapht</groupId>
+                <artifactId>jgrapht-core</artifactId>
+                <version>${jgrapht.version}</version>
+            </dependency>
 
-			<!-- Xtend -->
-			<dependency>
-				<groupId>org.eclipse.xtend</groupId>
-				<artifactId>org.eclipse.xtend.lib</artifactId>
-				<version>${xtend.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.github.oehme.xtend</groupId>
-				<artifactId>xtend-contrib</artifactId>
-				<version>${xtend-contrib.version}</version>
-			</dependency>
+            <!-- Project Lombok -->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+                <scope>provided</scope>
+            </dependency>
 
-			<!-- SpringFox Swagger -->
-			<dependency>
-				<groupId>io.springfox</groupId>
-				<artifactId>springfox-swagger2</artifactId>
-				<version>${springfox-version}</version>
-			</dependency>
-			<dependency>
-				<groupId>io.springfox</groupId>
-				<artifactId>springfox-swagger-ui</artifactId>
-				<version>${springfox-version}</version>
-			</dependency>
+            <!-- Xtend -->
+            <dependency>
+                <groupId>org.eclipse.xtend</groupId>
+                <artifactId>org.eclipse.xtend.lib</artifactId>
+                <version>${xtend.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.oehme.xtend</groupId>
+                <artifactId>xtend-contrib</artifactId>
+                <version>${xtend-contrib.version}</version>
+            </dependency>
 
-			<!-- Guava -->
-			<dependency>
-				<groupId>com.google.guava</groupId>
-				<artifactId>guava</artifactId>
-				<version>${guava.version}</version>
-			</dependency>
-			
-			<dependency>
-				<groupId>javasim</groupId>
-				<artifactId>javasim</artifactId>
-				<version>${javasim.version}</version>
-			</dependency>
+            <!-- SpringFox Swagger -->
+            <dependency>
+                <groupId>io.springfox</groupId>
+                <artifactId>springfox-swagger2</artifactId>
+                <version>${springfox-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.springfox</groupId>
+                <artifactId>springfox-swagger-ui</artifactId>
+                <version>${springfox-version}</version>
+            </dependency>
 
-			<!-- Jackson -->
-			<!-- <dependency> <groupId>com.fasterxml.jackson.core</groupId> <artifactId>jackson-core</artifactId> 
-				<version>${jackson.version}</version> </dependency> <dependency> <groupId>com.fasterxml.jackson.core</groupId> 
-				<artifactId>jackson-annotations</artifactId> <version>${jackson.version}</version> 
-				</dependency> <dependency> <groupId>com.fasterxml.jackson.core</groupId> 
-				<artifactId>jackson-databind</artifactId> <version>${jackson.version}</version> 
-				</dependency> -->
+            <!-- Guava -->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
 
-			<!-- Joda -->
-			<!-- <dependency> <groupId>com.fasterxml.jackson.datatype</groupId> <artifactId>jackson-datatype-joda</artifactId> 
-				<version>${jackson.version}</version> </dependency> <dependency> <groupId>joda-time</groupId> 
-				<artifactId>joda-time</artifactId> <version>${joda-time.version}</version> 
-				</dependency> -->
+            <dependency>
+                <groupId>javasim</groupId>
+                <artifactId>javasim</artifactId>
+                <version>${javasim.version}</version>
+            </dependency>
 
-			<!-- Scala -->
-			<!-- <dependency> <groupId>org.scala-lang</groupId> <artifactId>scala-library</artifactId> 
-				<version>${scala-lib.version}</version> </dependency> -->
+            <!-- Jackson -->
+            <!-- <dependency> <groupId>com.fasterxml.jackson.core</groupId> 
+                <artifactId>jackson-core</artifactId> <version>${jackson.version}</version> 
+                </dependency> <dependency> <groupId>com.fasterxml.jackson.core</groupId> 
+                <artifactId>jackson-annotations</artifactId> <version>${jackson.version}</version> 
+                </dependency> <dependency> <groupId>com.fasterxml.jackson.core</groupId> 
+                <artifactId>jackson-databind</artifactId> <version>${jackson.version}</version> 
+                </dependency> -->
 
-			<!-- Hibernate Validator -->
-			<!-- <dependency> <groupId>org.hibernate</groupId> <artifactId>hibernate-validator</artifactId> 
-				<version>${hibernate-validator.version}</version> </dependency> -->
-			<dependency>
-				<groupId>org.hibernate</groupId>
-				<artifactId>hibernate-validator-cdi</artifactId>
-				<version>${hibernate-validator.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>javax.enterprise</groupId>
-				<artifactId>cdi-api</artifactId>
-				<version>${javax-cdi.version}</version>
-			</dependency>
+            <!-- Joda -->
+            <!-- <dependency> <groupId>com.fasterxml.jackson.datatype</groupId> 
+                <artifactId>jackson-datatype-joda</artifactId> <version>${jackson.version}</version> 
+                </dependency> <dependency> <groupId>joda-time</groupId> <artifactId>joda-time</artifactId> 
+                <version>${joda-time.version}</version> </dependency> -->
 
-			<!-- Java Expression Language -->
-			<!-- <dependency> <groupId>javax.el</groupId> <artifactId>javax.el-api</artifactId> 
-				<version>${javax-el.version}</version> <scope>provided</scope> </dependency> 
-				<dependency> <groupId>org.glassfish.web</groupId> <artifactId>javax.el</artifactId> 
-				<version>${javax-el.version}</version> </dependency> -->
+            <!-- Scala -->
+            <!-- <dependency> <groupId>org.scala-lang</groupId> <artifactId>scala-library</artifactId> 
+                <version>${scala-lib.version}</version> </dependency> -->
 
-			<!-- LogBack -->
-			<!-- <dependency> <groupId>ch.qos.logback</groupId> <artifactId>logback-classic</artifactId> 
-				<version>${logback.version}</version> </dependency> <dependency> <groupId>org.slf4j</groupId> 
-				<artifactId>jcl-over-slf4j</artifactId> <version>${slf4j.version}</version> 
-				</dependency> -->
+            <!-- Hibernate Validator -->
+            <!-- <dependency> <groupId>org.hibernate</groupId> <artifactId>hibernate-validator</artifactId> 
+                <version>${hibernate-validator.version}</version> </dependency> -->
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-validator-cdi</artifactId>
+                <version>${hibernate-validator.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.enterprise</groupId>
+                <artifactId>cdi-api</artifactId>
+                <version>${javax-cdi.version}</version>
+            </dependency>
 
-			<!-- Gauge -->
-			<dependency>
-				<groupId>com.thoughtworks.gauge</groupId>
-				<artifactId>gauge</artifactId>
-				<version>${gauge.version}</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>com.thoughtworks.gauge</groupId>
-				<artifactId>gauge-java</artifactId>
-				<version>${gauge-java.version}</version>
-				<scope>test</scope>
-			</dependency>
+            <!-- Java Expression Language -->
+            <!-- <dependency> <groupId>javax.el</groupId> <artifactId>javax.el-api</artifactId> 
+                <version>${javax-el.version}</version> <scope>provided</scope> </dependency> 
+                <dependency> <groupId>org.glassfish.web</groupId> <artifactId>javax.el</artifactId> 
+                <version>${javax-el.version}</version> </dependency> -->
 
-			<!-- JUnit -->
-			<!-- <dependency> <groupId>junit</groupId> <artifactId>junit</artifactId> 
-				<version>${junit.version}</version> <scope>test</scope> </dependency> -->
-		</dependencies>
-	</dependencyManagement>
+            <!-- LogBack -->
+            <!-- <dependency> <groupId>ch.qos.logback</groupId> <artifactId>logback-classic</artifactId> 
+                <version>${logback.version}</version> </dependency> <dependency> <groupId>org.slf4j</groupId> 
+                <artifactId>jcl-over-slf4j</artifactId> <version>${slf4j.version}</version> 
+                </dependency> -->
 
-	<repositories>
-		<repository>
-			<id>jboss-third-party</id>
-			<url>https://repository.jboss.org/nexus/content/repositories/thirdparty-releases</url>
-		</repository>
-	</repositories>
+            <!-- Gauge -->
+            <dependency>
+                <groupId>com.thoughtworks.gauge</groupId>
+                <artifactId>gauge</artifactId>
+                <version>${gauge.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.thoughtworks.gauge</groupId>
+                <artifactId>gauge-java</artifactId>
+                <version>${gauge-java.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- JUnit -->
+            <!-- <dependency> <groupId>junit</groupId> <artifactId>junit</artifactId> 
+                <version>${junit.version}</version> <scope>test</scope> </dependency> -->
+        </dependencies>
+    </dependencyManagement>
+
+    <repositories>
+        <repository>
+            <id>jboss-third-party</id>
+            <url>https://repository.jboss.org/nexus/content/repositories/thirdparty-releases</url>
+        </repository>
+    </repositories>
 </project>

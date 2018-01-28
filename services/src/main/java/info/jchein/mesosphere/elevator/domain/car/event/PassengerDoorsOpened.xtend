@@ -6,10 +6,9 @@ import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel
 
 @Buildable
 @Data
-class DepartedStation implements ElevatorCarEvent {
-	val long clockTime;
-	val int carIndex;
-	val int origin;
-	val int destination;
-	val DirectionOfTravel direction;
+class PassengerDoorsOpened implements ElevatorCarEvent {
+	val long clockTime
+	val int carIndex
+	val int floorIndex
+	val DirectionOfTravel direction
 }

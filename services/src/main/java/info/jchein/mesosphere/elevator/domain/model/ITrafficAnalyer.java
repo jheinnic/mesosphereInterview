@@ -1,7 +1,7 @@
 package info.jchein.mesosphere.elevator.domain.model;
 
 import info.jchein.mesosphere.elevator.domain.car.event.DropOffRequested;
-import info.jchein.mesosphere.elevator.domain.car.event.ParkedForBoarding;
+import info.jchein.mesosphere.elevator.domain.car.event.ParkedAtLanding;
 import info.jchein.mesosphere.elevator.domain.hall.event.PickupCallAdded;
 
 public interface ITrafficAnalyer {
@@ -9,5 +9,5 @@ public interface ITrafficAnalyer {
 	
 	public void onDropOffRequested(DropOffRequested event);
 	
-	public void onParkedForBoarding(ParkedForBoarding event);
+	public void onParkedForBoarding(ParkedAtLanding event);
 }

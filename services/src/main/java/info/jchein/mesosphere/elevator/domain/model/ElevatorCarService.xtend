@@ -18,15 +18,12 @@ class ElevatorCarService implements IElevatorCarService {
 	@FSM(ElevatorCar.BEAN_NAME)
 	StatefulFSM<ElevatorCar> fsm
 
-	EventBus eventBus
-
 	IClock systemClock
 
 	Scheduler systemScheduler
 
 	@Autowired
 	new(EventBus eventBus, IClock systemClock, Scheduler systemScheduler) {
-		this.eventBus = eventBus
 		this.systemClock = systemClock
 		this.systemScheduler = systemScheduler
 	}
@@ -34,7 +31,7 @@ class ElevatorCarService implements IElevatorCarService {
 	override bootstrapElevatorCar(double floorHeight, double weightLoad, BitSet floorStops,
 		Observer<StopItineraryUpdated> portAdapter) {
 		val elevatorCarPort = this.fsm.onEvent(
-			ElevatorCar.DRIVER_SENT_BOOTSTRAP, floorHeight, weightLoad, floorStops) as ElevatorCar
+			ElevatorCar.DRIVER_ATTACHED, floorHeight, weightLoad, floorStops) as ElevatorCar
 
 		return elevatorCarPort.attachDriver(portAdapter)
 	}

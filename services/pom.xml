@@ -77,6 +77,13 @@
 			<groupId>io.reactivex</groupId>
 			<artifactId>rxjava</artifactId>
 		</dependency>
+        
+        <!-- Project Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
 		<!-- Xtend Runtime -->
 		<dependency>
@@ -131,6 +138,14 @@
 			<artifactId>spring-boot-configuration-processor</artifactId>
 			<optional>true</optional>
 		</dependency>
+        
+        <dependency>
+    <groupId>org.javalite</groupId>
+    <artifactId>javalite-common</artifactId>
+    <version>1.4.13</version>
+    <scope>test</scope>
+</dependency>
+        
 	</dependencies>
 
 	<build>

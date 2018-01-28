@@ -7,12 +7,13 @@ import info.jchein.mesosphere.elevator.domain.car.event.DropOffRequested
 import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel
 import info.jchein.mesosphere.elevator.domain.hall.event.PickupCallAdded
 import info.jchein.mesosphere.elevator.emulator.ISimulationScenario
-import java.util.BitSet
+import info.jchein.mesosphere.elevator.simulator.ISimulatedPassenger
 import java.util.concurrent.TimeUnit
 import javax.validation.constraints.NotNull
 import org.springframework.stereotype.Component
 import java.util.Queue
-import info.jchein.mesosphere.elevator.simulator.ISimulatedPassenger
+import java.util.LinkedList
+import javax.validation.constraints.Min
 
 //@StatefulController(
 //	value=LandingControls.BEAN_ID,
@@ -20,25 +21,27 @@ import info.jchein.mesosphere.elevator.simulator.ISimulatedPassenger
 //	startState=LandingControls.BOOTSTRAPPING
 //)
 @Component
-class SimulationScenario implements ISimulationScenario {
+class SimulationFloor implements ISimulationScenario {
+	private val int floorIndex
 	@NotNull private val EventBus eventBus
 	@NotNull private val IClock systemClock
-	@NotNull private val BitSet upwardCalls
-	@NotNull private val BitSet downwardCalls
-	@NotNull private val Queue<ISimulatedPassenger>
+	@NotNull private val Queue<ISimulatedPassenger> goingUp
+	@NotNull private val Queue<ISimulatedPassenger> goingDown
 
 	BuildingProperties bldgProperties
 
 	new(
+		@Min(1) int floorIndex,
 		@NotNull IClock systemClock,
 		@NotNull EventBus eventBus,
 		@NotNull BuildingProperties bldgProperties
 	) {
+		this.floorIndex = floorIndex
 		this.eventBus = eventBus
 		this.systemClock = systemClock
 		this.bldgProperties = bldgProperties
-		this.upwardCalls = new BitSet()
-		this.downwardCalls = new BitSet()
+		this.goingDown = new LinkedList<ISimulatedPassenger>()
+		this.goingUp = new LinkedList<ISimulatedPassenger>()
 	}
 
 	override injectTraveller(long clockTime, int arrivalFloor, int destinationFloor) {

@@ -1,10 +1,10 @@
-import com.thoughtworks.gauge.Step;
-import com.thoughtworks.gauge.Table;
-import com.thoughtworks.gauge.TableRow;
+import static org.junit.Assert.assertEquals;
 
 import java.util.HashSet;
 
-import static org.junit.Assert.assertEquals;
+import com.thoughtworks.gauge.Step;
+import com.thoughtworks.gauge.Table;
+import com.thoughtworks.gauge.TableRow;
 
 public class StepImplementation {
 

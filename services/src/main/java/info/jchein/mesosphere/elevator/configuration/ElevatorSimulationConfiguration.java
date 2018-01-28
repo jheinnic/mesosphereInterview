@@ -14,7 +14,7 @@ import info.jchein.mesosphere.elevator.configuration.properties.ElevatorMotorPro
 import info.jchein.mesosphere.elevator.configuration.properties.ElevatorWeightProperties;
 import info.jchein.mesosphere.elevator.configuration.properties.PassengerToleranceProperties;
 import info.jchein.mesosphere.elevator.domain.sdk.IElevatorCarPort;
-import info.jchein.mesosphere.elevator.emulator.ElevatorCarSimulator;
+import info.jchein.mesosphere.elevator.emulator.SimulatedElevatorCar;
 import info.jchein.mesosphere.elevator.physics.ElevatorPhysicsService;
 import info.jchein.mesosphere.elevator.physics.IElevatorPhysicsService;
 import info.jchein.mesosphere.elevator.simulator.ElevatorSimulation;
@@ -65,9 +65,9 @@ public class ElevatorSimulationConfiguration {
 
 	@Bean
 	@Scope(BeanDefinition.SCOPE_PROTOTYPE)
-	public ElevatorCarSimulator getElevatorCarDriver(
+	public SimulatedElevatorCar getElevatorCarDriver(
 	   IElevatorCarPort port, IElevatorPhysicsService physicsService, BuildingProperties bldgProps
 	) {
-		return new ElevatorCarSimulator(port, physicsService, bldgProps);
+		return new SimulatedElevatorCar(port, physicsService, bldgProps);
 	}
 }

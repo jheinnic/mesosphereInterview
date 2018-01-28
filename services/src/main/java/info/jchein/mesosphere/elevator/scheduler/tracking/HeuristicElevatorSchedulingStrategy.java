@@ -14,7 +14,7 @@ import info.jchein.mesosphere.elevator.configuration.properties.ElevatorMotorPro
 import info.jchein.mesosphere.elevator.configuration.properties.ElevatorWeightProperties;
 import info.jchein.mesosphere.elevator.configuration.properties.PassengerToleranceProperties;
 import info.jchein.mesosphere.elevator.domain.car.event.DropOffRequested;
-import info.jchein.mesosphere.elevator.domain.car.event.ParkedForBoarding;
+import info.jchein.mesosphere.elevator.domain.car.event.ParkedAtLanding;
 import info.jchein.mesosphere.elevator.domain.car.event.ReadyForDeparture;
 import info.jchein.mesosphere.elevator.domain.car.event.SlowedForArrival;
 import info.jchein.mesosphere.elevator.domain.car.event.TravelledThroughFloor;
@@ -80,7 +80,7 @@ public class HeuristicElevatorSchedulingStrategy extends AbstractElevatorSchedul
 
 
 	@Override
-	public void onParkedForBoarding(ParkedForBoarding event) {
+	public void onParkedForBoarding(ParkedAtLanding event) {
 	}
 
 

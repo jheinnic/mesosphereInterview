@@ -59,8 +59,7 @@ public class ElevatorGroupControlConfiguration {
 	@Bean
 	@Scope(BeanDefinition.SCOPE_SINGLETON)
 	public SystemClock getSystemClock(Scheduler scheduler, SystemRuntimeProperties runtimeProperties) {
-	   int tickDuration = (int) Math.round(runtimeProperties.getClockTickDuration() * 1000);
-		return new SystemClock(tickDuration, scheduler);
+		return new SystemClock(runtimeProperties, scheduler);
 	}
 	
 	// TODO: This declaration should be replaced by use of the IElevatorCarService to specify bootstrap car count as

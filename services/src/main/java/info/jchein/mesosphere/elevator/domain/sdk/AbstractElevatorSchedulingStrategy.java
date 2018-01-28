@@ -4,7 +4,7 @@ import com.google.common.eventbus.Subscribe;
 
 import info.jchein.mesosphere.elevator.domain.car.event.DropOffRequested;
 import info.jchein.mesosphere.elevator.domain.car.event.LocationUpdated;
-import info.jchein.mesosphere.elevator.domain.car.event.ParkedForBoarding;
+import info.jchein.mesosphere.elevator.domain.car.event.ParkedAtLanding;
 import info.jchein.mesosphere.elevator.domain.car.event.ReadyForDeparture;
 import info.jchein.mesosphere.elevator.domain.car.event.SlowedForArrival;
 import info.jchein.mesosphere.elevator.domain.car.event.TravelledThroughFloor;
@@ -52,7 +52,7 @@ public abstract class AbstractElevatorSchedulingStrategy {
 	public void onReadyForDeparture(ReadyForDeparture event) { }
 	
    @Subscribe
-	public void onParkedForBoarding(ParkedForBoarding event) { }
+	public void onParkedForBoarding(ParkedAtLanding event) { }
 	
 //   @Subscribe
 //	public void onSlowedForArrival(SlowedForArrival event) { }

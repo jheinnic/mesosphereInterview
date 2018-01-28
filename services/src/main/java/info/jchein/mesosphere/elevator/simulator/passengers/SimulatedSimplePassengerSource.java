@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.math3.distribution.ExponentialDistribution;
 import org.hibernate.validator.constraints.Range;
 import org.hibernate.validator.constraints.ScriptAssert;
 import org.javasim.streams.ExponentialStream;
@@ -32,29 +33,16 @@ public class SimulatedSimplePassengerSource {
 	private final IClock systemClock;
 	private final IPassengerArrivalStrategy arrivalStrategy;
 
-	private final ExponentialStream stream;
-	private final long fallbackDelay;
+	private final ExponentialDistribution distribution;
 	private final DirectionOfTravel travelDirection;
 	private final int travelToFloorIndex;
 	private final int departFromFloorIndex;
-	private final Arrive action;
-
-	private Subscription subscription;
-
-
-	private class Arrive implements Action0 {
-		@Override
-		public void call() {
-			SimulatedSimplePassengerSource.this.onPassengerArrival();
-		}
-	}
 
 	@Autowired
 	public SimulatedSimplePassengerSource(@NotNull IClock systemClock, @Positive double medianSecondsBetweenArrivals,
 			@Min(0) int departFromFloorIndex, @Min(0) int travelToFloorIndex, @NotNull IPassengerArrivalStrategy arrivalStrategy) {
 		this.systemClock = systemClock;
 		this.arrivalStrategy = arrivalStrategy;
-		this.fallbackDelay = Math.round(medianSecondsBetweenArrivals * 1000);
 		this.departFromFloorIndex = departFromFloorIndex;
 		this.travelToFloorIndex = travelToFloorIndex;
 
@@ -66,32 +54,24 @@ public class SimulatedSimplePassengerSource {
 			throw new IllegalArgumentException("Source and destination floors must be different");
 		}
 
-		this.stream = new ExponentialStream(medianSecondsBetweenArrivals * 1000);
-		this.action = new Arrive();
+		this.distribution = new ExponentialDistribution(medianSecondsBetweenArrivals * 1000, 1e-6);
 	}
 
 	public void init() {
-		this.scheduleNextArrival();
+		this.systemClock.scheduleVariable(this.drawNextArrival(), TimeUnit.MILLISECONDS, 0, this::onPassengerArrival);
 	}
 
-	private void scheduleNextArrival() {
-		long delay;
-		try {
-			delay = Math.round(
-				this.stream.getNumber());
-		} catch (ArithmeticException | IOException e) {
-			LOG.warn("Interrarrival randomization stream threw exception on generate.  Using raw median.", e);
-			delay = this.fallbackDelay;
-		}
-
-		this.subscription = this.systemClock.scheduleOnce(this.action, delay, TimeUnit.MILLISECONDS);
+	private long drawNextArrival() {
+		return Math.round(
+		   this.distribution.sample());
 	}
 
-	public void onPassengerArrival() {
+	public long onPassengerArrival(long delta) {
 //		SimulatedPassenger nextPassenger =
 //			new SimulatedPassenger("temp", 1, this.travelToFloorIndex, this.systemClock.now());
-		this.arrivalStrategy.passengerArrival(this.systemClock.now(), this.departFromFloorIndex, this.travelToFloorIndex);
-		this.subscription.unsubscribe();
-		this.scheduleNextArrival();
+		this.arrivalStrategy.passengerArrival(
+		   this.systemClock.now(), this.departFromFloorIndex, this.travelToFloorIndex);
+
+		return this.drawNextArrival();
 	}
 }

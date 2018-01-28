@@ -9,5 +9,5 @@ import org.eclipse.xtend.lib.annotations.Data
 class LocationUpdated implements ElevatorCarEvent {
 	val long clockTime;
 	val int carIndex;
-	val double floorHeight;
+	val int floorIndex;
 }

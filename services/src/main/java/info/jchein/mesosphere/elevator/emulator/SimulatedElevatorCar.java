@@ -16,7 +16,7 @@ import info.jchein.mesosphere.elevator.physics.PathMoment;
 import rx.Observer;
 
 @Component
-public class ElevatorCarSimulator implements Observer<StopItineraryUpdated> {
+public class SimulatedElevatorCar implements Observer<StopItineraryUpdated> {
 	private final IElevatorCarPort port;
    private final IElevatorPhysicsService physics;
 
@@ -29,7 +29,7 @@ public class ElevatorCarSimulator implements Observer<StopItineraryUpdated> {
    private double metersPerFloor;
    private double tickDuration;
 	
-	public ElevatorCarSimulator(IElevatorCarPort port, IElevatorPhysicsService physics, BuildingProperties bldgProps)
+	public SimulatedElevatorCar(IElevatorCarPort port, IElevatorPhysicsService physics, BuildingProperties bldgProps)
 	{
 		this.port = port;
       this.physics = physics;
