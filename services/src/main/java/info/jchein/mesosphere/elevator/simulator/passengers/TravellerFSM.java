@@ -6,7 +6,7 @@ import org.statefulj.persistence.annotations.State.AccessorType;
 
 import com.google.common.eventbus.EventBus;
 
-import info.jchein.mesosphere.domain.clock.IClock;
+import info.jchein.mesosphere.elevator.runtime.IRuntimeService;
 
 public class TravellerFSM {
 	@State(accessorType = AccessorType.METHOD, getMethodName = "getState", setMethodName = "setState")
@@ -15,7 +15,7 @@ public class TravellerFSM {
 	// private final UniformStream probabilityStream;
 	// private NormalStream durationStream;
 
-	private final IClock systemClock;
+	private final IRuntimeService systemClock;
 	// private final IBehaviorStrategy behaviorStrategy;
 	private final EventBus eventBus;
 
@@ -38,7 +38,7 @@ public class TravellerFSM {
 	public final static String BEGIN_FROM_C = "beginFromFloorC";
 
 	@Autowired
-	public TravellerFSM(IClock systemClock, /* IBehaviorStrategy behaviorStrategy, */ EventBus eventBus) {
+	public TravellerFSM(IRuntimeService systemClock, /* IBehaviorStrategy behaviorStrategy, */ EventBus eventBus) {
 		this.systemClock = systemClock;
 //		this.behaviorStrategy = behaviorStrategy;
 		this.eventBus = eventBus;

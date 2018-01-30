@@ -1,42 +1,40 @@
 package info.jchein.mesosphere.elevator.domain.model
 
-import com.google.common.eventbus.EventBus
-import com.google.common.eventbus.Subscribe
+import com.google.common.base.Preconditions
+import com.google.common.collect.ImmutableList
 import de.oehme.xtend.contrib.logging.slf4j.Slf4j
-import info.jchein.mesosphere.domain.clock.IClock
-import info.jchein.mesosphere.elevator.domain.car.event.DepartedStation
+import info.jchein.mesosphere.elevator.domain.car.event.DepartedLanding
+import info.jchein.mesosphere.elevator.domain.car.event.DriverBootstrapped
 import info.jchein.mesosphere.elevator.domain.car.event.DropOffRequested
-import info.jchein.mesosphere.elevator.domain.car.event.ReadyForDeparture
+import info.jchein.mesosphere.elevator.domain.car.event.ParkedAtLanding
+import info.jchein.mesosphere.elevator.domain.car.event.PassengerDoorsClosed
+import info.jchein.mesosphere.elevator.domain.car.event.PassengerDoorsOpened
 import info.jchein.mesosphere.elevator.domain.car.event.SlowedForArrival
 import info.jchein.mesosphere.elevator.domain.car.event.TravelledThroughFloor
 import info.jchein.mesosphere.elevator.domain.car.event.WeightLoadUpdated
 import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel
-import info.jchein.mesosphere.elevator.domain.common.ElevatorCarSnapshot
-import info.jchein.mesosphere.elevator.domain.^dispatch.event.StopItineraryUpdated
+import info.jchein.mesosphere.elevator.domain.common.InitialElevatorCarState
 import info.jchein.mesosphere.elevator.domain.hall.event.FloorSensorTriggered
 import info.jchein.mesosphere.elevator.domain.sdk.IElevatorCarDriver
 import info.jchein.mesosphere.elevator.domain.sdk.IElevatorCarPort
 import info.jchein.mesosphere.elevator.physics.IElevatorPhysicsService
+import info.jchein.mesosphere.elevator.runtime.IRuntimeClock
+import info.jchein.mesosphere.elevator.runtime.IRuntimeEventBus
 import java.util.BitSet
-import java.util.Queue
 import java.util.concurrent.atomic.AtomicInteger
 import javax.annotation.PostConstruct
 import javax.validation.constraints.NotNull
+import org.eclipse.xtend.lib.annotations.AccessorType
+import org.eclipse.xtend.lib.annotations.Accessors
 import org.springframework.beans.factory.annotation.Autowired
 import org.statefulj.framework.core.annotations.FSM
 import org.statefulj.framework.core.annotations.StatefulController
 import org.statefulj.framework.core.annotations.Transition
+import org.statefulj.framework.core.annotations.Transitions
 import org.statefulj.framework.core.model.StatefulFSM
 import org.statefulj.persistence.annotations.State
-import org.statefulj.persistence.annotations.State.AccessorType
-import rx.Subscription
-import org.eclipse.xtend.lib.annotations.Accessors
-import org.statefulj.framework.core.annotations.Transitions
-import info.jchein.mesosphere.elevator.domain.car.event.ParkedAtLanding
-import info.jchein.mesosphere.elevator.domain.car.event.PassengerDoorsOpened
-import info.jchein.mesosphere.elevator.domain.car.event.PassengerDoorsClosed
-import com.google.common.base.Preconditions
-import info.jchein.mesosphere.elevator.configuration.properties.BuildingProperties
+
+import static extension org.eclipse.xtend.lib.annotations.AccessorType.*
 
 @StatefulController(
 	value=ElevatorCar.BEAN_NAME,
@@ -45,50 +43,46 @@ import info.jchein.mesosphere.elevator.configuration.properties.BuildingProperti
 	blockingStates = #[ElevatorCar.BOARDING],
     noops = #[
     		@Transition(from=ElevatorCar.BEFORE_ALLOCATION, event=ElevatorCar.ALLOCATED, to=ElevatorCar.WAITING_FOR_DRIVER),
-    		@Transition(from=ElevatorCar.WAITING_FOR_DRIVER, event=ElevatorCar.DRIVER_ATTACHED, to=ElevatorCar.PARKED),
-    		@Transition(from=ElevatorCar.TRAVELLING, event=ElevatorCar.LANDING_BRAKE_APPLIED, to=ElevatorCar.LANDING),
+    		@Transition(from=ElevatorCar.TRAVELLING, event=ElevatorCar.LANDING_BRAKE_APPLIED, to=ElevatorCar.SLOWING),
     		@Transition(from=ElevatorCar.TRAVELLING, event=ElevatorCar.TRAVELLED_THROUGH_FLOOR, to=ElevatorCar.TRAVELLING),
-    		@Transition(from=ElevatorCar.LANDING, event=ElevatorCar.ARRIVED_AT_FLOOR, to=ElevatorCar.LANDING),
-    		@Transition(from=ElevatorCar.LANDING, event=ElevatorCar.OPENED_DOORS, to=ElevatorCar.BOARDING),
-    		
+    		@Transition(from=ElevatorCar.SLOWING, event=ElevatorCar.ARRIVED_AT_FLOOR, to=ElevatorCar.ARRIVING)
 	]
 )
 @Slf4j
 class ElevatorCar implements IElevatorCar, IElevatorCarPort {
-	// private static val Logger LOG = LoggerFactory.getLogger(typeof(ElevatorCar))
-	
 	private static val AtomicInteger ID_SEQUENCE = new AtomicInteger(0);
 
 	public static val String BEAN_NAME = "ElevatorCar"
 	
 	public static val String BEFORE_ALLOCATION = "StateBeforeAllocation";
 	public static val String WAITING_FOR_DRIVER = "StateWaitingForDriver";
-	public static val String PARKED = "StateParked";
+	public static val String AVAILABLE = "StateAvailable";
 	public static val String TRAVELLING = "StateTraveling";
-	public static val String LANDING = "StateLanding"
+	public static val String SLOWING = "StateSlowing"
+	public static val String ARRIVING = "StateAriving"
 	public static val String BOARDING = "StateBoarding"
 	public static val String SAFETY_LOCKOUT = "StateSafetyLockout"
 	
 	public static val String ALLOCATED = "EventAllocated";
 	public static val String DRIVER_ATTACHED = "EventDriverSentBootstrap";
-	public static val String PREPARED_FOR_DISPATCH = "EventPreparedForDispatch";
+	public static val String PARKED = "EventParked";
 	public static val String DISPATCHED = "EventDispatched";
 	public static val String LANDING_BRAKE_APPLIED = "EventLandingBrakeApplied"
 	public static val String TRIGGERED_FLOOR_SENSOR = "EventTriggeredFloorSensor"
 	public static val String TRAVELLED_THROUGH_FLOOR = "EventTravelledThroughFloor"
 	public static val String ARRIVED_AT_FLOOR = "EventArrivedAtFloor"
-	public static val String PARKED_AT_LANDING = "EventParkedAtLanding"
-	public static val String OPENED_DOORS = "EventOpenedDoors"
-	public static val String CLOSED_DOORS = "EventClosedDoors"
+	public static val String STOPPED_AT_LANDING = "EventStoppedAtLanding"
+	public static val String DOOR_CALL_RECEIVED = "EventDoorCallReceived"
+	public static val String DOOR_CALL_COMPLETED = "EventDoorCallCompleted"
 	public static val String DROPOFF_REQUESTED = "EventDropOffRequested"
 	public static val String WEIGHT_UPDATED = "EventWeightUpdated"
 	public static val String PANICKED = "EventPanicked"
 	
 
-	@State(accessorType = AccessorType.METHOD, getMethodName = "getState", setMethodName = "setState")
+	@State(accessorType = State.AccessorType.METHOD, getMethodName = "getState", setMethodName = "setState")
 	@Accessors(#[
-		org.eclipse.xtend.lib.annotations.AccessorType.PACKAGE_GETTER,
-		org.eclipse.xtend.lib.annotations.AccessorType.PACKAGE_SETTER
+		AccessorType.PACKAGE_GETTER,
+		AccessorType.PACKAGE_SETTER
 	])
 	private var String state;
 	
@@ -96,162 +90,65 @@ class ElevatorCar implements IElevatorCar, IElevatorCarPort {
 	var StatefulFSM<ElevatorCar> fsm;
 	
 	val int carIndex
-	val IClock systemClock
-	val EventBus eventBus
+	val IRuntimeClock clock
+	val IRuntimeEventBus eventBus
 	val IElevatorPhysicsService physicsService
-	val BuildingProperties bldgProps
 	
+	var IElevatorCarDriver driver = null
+	var double currentWeightLoad = 0
+	var int currentFloorIndex = -1
+	
+	var BitSet currentDropRequests = null
 	val BitSet pickupsGoingUp = new BitSet()
 	val BitSet pickupsGoingDown = new BitSet()
 	var int reversePathFloorIndex = -1
 
-	IElevatorCarDriver driver = null
-	BitSet currentDropRequests = null
-	double currentWeightLoad = 0
-	int currentFloorIndex = -1
-	int currentDestination
+//	Subscription schedulerPlanSubscription
 	
-	Subscription schedulerPlanSubscription
+	var DirectionOfTravel currentDirection
+	var int currentDestination
+	var DirectionOfTravel nextDirection
+	var int nextDestination
 	
-	DirectionOfTravel currentDirection
+	var long nextEventIndex = 1
+	var long lastAckReceived = 0
+	var long lastAckRequired = 0
 	
-	int nextDestination
-	
+//	PriorityQueue<ScheduledStop> nextStopQueue 
+//	Comparator<ScheduledStop> latestSortOrigin
 	
 	@Autowired
 	new(
-		@NotNull IClock systemClock, @NotNull EventBus eventBus,
-		@NotNull IElevatorPhysicsService physicsService, @NotNull BuildingProperties bldgProps
+		@NotNull IRuntimeClock clock, @NotNull IRuntimeEventBus eventBus, @NotNull IElevatorPhysicsService physicsService
 	) {
 		this.carIndex = ID_SEQUENCE.incrementAndGet();
 		this.physicsService = physicsService
-		this.systemClock = systemClock;
+		this.clock = clock;
 		this.eventBus = eventBus
-		this.bldgProps = bldgProps
 	}
 	
 	@PostConstruct
 	def init() {
-		this.eventBus.register(this);
+		this.eventBus.registerListener(this);
 	}
 
-	def void attachDriver(IElevatorCarDriver driver)
+	def void attachDriver(IElevatorCarDriver driver, InitialElevatorCarState data)
 	{
 		if (this.driver !== null) {
 			throw new RuntimeException("Driver has already been attached")
 		}
-		
-		driver.bootstrap[int floorHeight, double weightLoad, BitSet dropRequests|
-			this.currentDestination = -1
-			this.currentFloorIndex = floorHeight
-			this.currentWeightLoad = weightLoad
-			this.currentDropRequests = dropRequests.clone() as BitSet
-			
-			Preconditions.checkArgument(
-				this.currentDropRequests.get(floorHeight) == false, 
-				"Initial drop requests may not include the starting floor")
-
-			val firstStopAbove = this.currentDropRequests.nextSetBit(floorHeight)
-			val firstStopBelow = this.currentDropRequests.previousSetBit(floorHeight)
-
-			if (firstStopAbove > 0) {
-				Preconditions.checkArgument(
-					firstStopBelow == -1,
-					"Initial drop requests must all be above or all be below initial floor"
-				)
-
-				this.currentDirection = DirectionOfTravel.GOING_UP
-				this.currentDestination = -1
-				this.nextDestination = firstStopAbove
-				this.reversePathFloorIndex = 
-					this.currentDropRequests.previousSetBit(
-						this.bldgProps.numFloors - 1)
-			} else if (firstStopBelow > 0) {
-				this.currentDirection = DirectionOfTravel.GOING_DOWN
-				this.currentDestination = -1
-				this.nextDestination = firstStopBelow
-				this.reversePathFloorIndex =
-					this.currentDropRequests.nextSetBit(0)
-			} else {
-				this.currentDirection = DirectionOfTravel.STOPPED
-				this.nextDestination = -1
-				this.currentDestination = -1
-				this.reversePathFloorIndex = -1
-			}
-/*
-			val driverFeed = Observable.create(SyncOnSubscribe.<ItineraryPublisher, StopItineraryUpdated>createStateful([
-				val Queue<StopItineraryUpdated> queue = new LinkedList<StopItineraryUpdated>();
-				val eventHandler = new ItineraryPublisher(queue);
-				this.eventBus.register(eventHandler);
-				return eventHandler;
-			], [eventHandler, observer | 
-				val StopItineraryUpdated nextPlan = eventHandler.getQueue().poll();
-				if (nextPlan !== null) {
-					observer.onNext(nextPlan);
-				}
-				return eventHandler;
-			], [ItineraryPublisher eventHandler| 
-				this.eventBus.unregister(eventHandler);
-			]));
-		
-			// TODO: What to do with the subscription returned?
-			this.schedulerPlanSubscription = driverFeed.subscribe(driver.scheduleObserver);
-*/
-
-			// This final event carries no state, but signals that the stream of floor request inforation is done.
-			this.eventBus.post(
-				DriverBootstrapped.build[bldr|
-					bldr.clockTime(this.systemClock.now())
-						.carIndex(this.carIndex)
-						.dispatchTarget(this)
-						.floorIndex(this.currentFloorIndex)
-						.weightLoad(this.currentWeightLoad)
-						.initialDirection(this.currentDirection)
-						.dropRequests(this.currentDropRequests.clone() as BitSet)
-				]
-			)
-
-			this.fsm.onEvent(this, ElevatorCar.DRIVER_ATTACHED, driver);
-		]
+		this.fsm.onEvent(this, ElevatorCar.DRIVER_ATTACHED, driver, data);
 	}
 	
-	/**
-	 * Helper class to honor Reactive Stream contract requiring no more than one value sent to onNext() per call to
-	 * the handler passed to create.  We do not control the rate of arrival, so must 
-	 */
-	static class ItineraryPublisher {
-		private val Queue<StopItineraryUpdated> queue;
-
-		new(Queue<StopItineraryUpdated> queue) {
-			this.queue = queue;
-		}
-
-		@Subscribe
-		def void receiveItineraryUpdate(StopItineraryUpdated event) {
-			this.queue.offer(event);
-		}
-		
-		def Queue<StopItineraryUpdated> getQueue() {
-			return this.queue;
-		}
-	}
-	
-	def ElevatorCarSnapshot getSnapshot() {
-		return ElevatorCarSnapshot.build[bldr|
-			bldr.clockTime(this.systemClock.now())
-			.carIndex(this.carIndex)
-		]
-	}
-
 	override dropOffRequested(int floorIndex) {
 		this.fsm.onEvent(this, ElevatorCar.DROPOFF_REQUESTED, floorIndex);
 	}
 
 //	override readyForDeparture() {
 //		if (this.state.equals(ElevatorCar.BOARDING)) {
-//			this.fsm.onEvent(this, ElevatorCar.CLOSED_DOORS)
+//			this.fsm.onEvent(this, ElevatorCar.DOOR_CALL_COMPLETED)
 //		} else {
-//			this.fsm.onEvent(this, ElevatorCar.PARKED_AT_LANDING)
+//			this.fsm.onEvent(this, ElevatorCar.STOPPED_AT_LANDING)
 //		}
 //	}
 
@@ -260,16 +157,12 @@ class ElevatorCar implements IElevatorCar, IElevatorCarPort {
     }
 
 	override parkedAtLanding() {
-		this.fsm.onEvent(this, ElevatorCar.PARKED_AT_LANDING)
+		this.fsm.onEvent(this, ElevatorCar.STOPPED_AT_LANDING)
 	}
 	
 	override passengerDoorsClosed() {
-		this.fsm.onEvent(this, ElevatorCar.CLOSED_DOORS)
+		this.fsm.onEvent(this, ElevatorCar.DOOR_CALL_COMPLETED)
 	}
-
-//	override updateLocation(double floorHeight, boolean isBraking) {
-//		this.fsm.onEvent(this, ElevatorCar.LOCATION_UPDATED, floorHeight)
-//	}
 	
 	override updateWeightLoad(double weightLoad) {
 		this.fsm.onEvent(this, ElevatorCar.WEIGHT_UPDATED, weightLoad)
@@ -284,171 +177,195 @@ class ElevatorCar implements IElevatorCar, IElevatorCarPort {
 			this.fsm.onEvent(this, ElevatorCar.TRIGGERED_FLOOR_SENSOR, event.floorIndex, event.direction)
 		}
 	}
+	
+    @Transition(from=ElevatorCar.WAITING_FOR_DRIVER, event=ElevatorCar.DRIVER_ATTACHED, to=ElevatorCar.AVAILABLE)
+    def onBootstrap(String event, IElevatorCarDriver driver, InitialElevatorCarState data)
+    {
+    		val initialFloor = data.getInitialFloor
+    		val initialWeight = data.getWeightLoaded
+    		val initialDropRequests = data.getRequestFloors
+    		
+		this.currentDestination = -1
+		this.currentFloorIndex = initialFloor
+		this.currentWeightLoad = initialWeight
+		this.currentDropRequests = initialDropRequests.toBitSet()
+		
+		Preconditions.checkArgument(
+			this.currentDropRequests.get(initialFloor) == false, 
+			"Initial drop requests may not include the starting floor")
+
+		val firstStopAbove = this.currentDropRequests.nextSetBit(initialFloor)
+		val firstStopBelow = this.currentDropRequests.previousSetBit(initialFloor)
+
+		Preconditions.checkArgument(
+			firstStopBelow == -1 || firstStopAbove == -1,
+			"Initial drop requests must all be above or all be below initial floor"
+		);
+
+		if (firstStopAbove > 0) {
+			this.currentDirection = DirectionOfTravel.GOING_UP
+			this.currentDestination = -1
+			this.nextDestination = firstStopAbove
+			this.reversePathFloorIndex = 
+				this.currentDropRequests.previousSetBit(
+					this.physicsService.numFloors - 1)
+		} else if (firstStopBelow > 0) {
+			this.currentDirection = DirectionOfTravel.GOING_DOWN
+			this.currentDestination = -1
+			this.nextDestination = firstStopBelow
+			this.reversePathFloorIndex =
+				this.currentDropRequests.nextSetBit(0)
+		} else {
+			this.currentDirection = DirectionOfTravel.STOPPED
+			this.nextDestination = -1
+			this.currentDestination = -1
+			this.reversePathFloorIndex = -1
+		}
+		
+		// This final event carries no state, but signals that the stream of floor request inforation is done.
+		this.eventBus.post(
+			DriverBootstrapped.build[bldr|
+				bldr.clockTime(this.clock.now())
+					.eventIndex(this.nextEventIndex++)
+					.carIndex(this.carIndex)
+					.floorIndex(this.currentFloorIndex)
+					.weightLoad(this.currentWeightLoad)
+					.initialDirection(this.currentDirection)
+					.dropRequests(this.currentDropRequests.clone() as BitSet)
+			]
+		)
+	}
 
 	@Transitions(#[
+		@Transition(from=ElevatorCar.AVAILABLE, event=ElevatorCar.DROPOFF_REQUESTED, to=ElevatorCar.AVAILABLE),
 		@Transition(from=ElevatorCar.TRAVELLING, event=ElevatorCar.DROPOFF_REQUESTED, to=ElevatorCar.TRAVELLING),
-		@Transition(from=ElevatorCar.LANDING, event=ElevatorCar.DROPOFF_REQUESTED, to=ElevatorCar.LANDING),
+		@Transition(from=ElevatorCar.SLOWING, event=ElevatorCar.DROPOFF_REQUESTED, to=ElevatorCar.SLOWING),
+		@Transition(from=ElevatorCar.ARRIVING, event=ElevatorCar.DROPOFF_REQUESTED, to=ElevatorCar.ARRIVING),
 		@Transition(from=ElevatorCar.BOARDING, event=ElevatorCar.DROPOFF_REQUESTED, to=ElevatorCar.BOARDING)
 	])
 	def onDropOffRequested(int floorIndex) {
+//		this.nextStopQueue.add(
+//			ScheduledPickup.builder().floorIndex(floorIndex.intValue).build())
 		this.currentDropRequests.set(floorIndex)
-		switch (this.currentDirection) {
-			case GOING_UP: {
-				
-			}
-			case GOING_DOWN: {
-				
-			}
-			case STOPPED: {
-				
-			}
-		}
-	
+
 		this.eventBus.post(
 			DropOffRequested.build[
-				it.clockTime(this.systemClock.now())
-				.carIndex(this.carIndex)
-				.dropOffFloorIndex(floorIndex)
+				it.clockTime(this.clock.now())
+					.eventIndex(this.nextEventIndex++)
+					.carIndex(this.carIndex)
+					.dropOffFloorIndex(floorIndex)
 			]
 		)
 	}
 	
+	@Transitions(#[
+		@Transition(from=ElevatorCar.AVAILABLE, event=ElevatorCar.DISPATCHED, to=ElevatorCar.TRAVELLING),
+		@Transition(from=ElevatorCar.BOARDING, event=ElevatorCar.DISPATCHED, to=ElevatorCar.TRAVELLING)
+	])
+	def void onDispatch(String event)
+	{
+		this.currentDestination = this.nextDestination
 
-	@Transition(from=ElevatorCar.BOARDING, event=ElevatorCar.CLOSED_DOORS, to=ElevatorCar.PARKED)
-	def onReadyForDeparture(String event) {
-		this.eventBus.post(
-			ReadyForDeparture.build[ bldr |
-				bldr.carIndex(this.carIndex)
-					.floorIndex(floorIndex)
-					.clockTime(this.systemClock.now())
-			]
-		);
-	}
-	
-	@Transition(from=ElevatorCar.PARKED, event=ElevatorCar.DISPATCHED, to=ElevatorCar.TRAVELLING)
-	def void onDispatch(String event) {
 		if (this.nextDestination == this.reversePathFloorIndex) {
 			// No need to consider STOPPED here by definition
 			if (this.currentDirection == DirectionOfTravel.GOING_UP) {
-				if (this.currentDestination > 0) {
-					var nextDrop = this.currentDropRequests.previousSetBit(this.currentDestination - 1)
-					if (nextDrop >= 0) {
-						this.currentDestination = this.nextDestination
-						this.nextDirection = DirectionOfTravel.GOING_DOWN
-						this.nextDestination = nextDrop
-					} else {
-						nextDrop = this.pickupsGoingDown.previousSetBit(this.currentDestination - 1)
-						if (nextDrop >= 0) {
-							this.currentDestination = this.nextDestination
-							this.nextDirection = DirectionOfTravel.GOING_DOWN
-							this.nextDestination = nextDrop
-						} else {
-							this.currentDestination = this.nextDestination
-							this.nextDirection = DirectionOfTravel.STOPPED
-							this.nextDestination = -1
-						}
-					}
-				} else {
-					this.currentDestination = this.nextDestination
-					this.nextDirection = DirectionOfTravel.STOPPED
-					this.nextDestination = -1
+				val stopsGoingDown = (this.currentDropRequests.clone() as BitSet)
+				stopsGoingDown.or(this.pickupsGoingDown)
+				stopsGoingDown.clear(this.reversePathFloorIndex)
+				
+				this.nextDestination = stopsGoingDown.previousSetBit(this.reversePathFloorIndex)
+				if (this.nextDestination >= 0) {
+					// this.nextDirection 
 				}
+				val nextPickupDown =
+					this.pickupsGoingDown.previousSetBit(this.reversePathFloorIndex - 1)
+				val firstPickupUp = this.pickupsGoingUp.nextSetBit(0)
+				val nextDropOff = this.currentDropRequests.previousSetBit(this.currentFloorIndex)
+				val lastDropOff = this.currentDropRequests.nextSetBit(0)
+				
+				var newNextDestination = Math.max(nextPickupDown, lastDropOff)
+				var newReversePathIndex = firstPickupUp
+				
+				if ((lastDropOff < 0) || (lastDropOff === this.reversePathFloorIndex))
+				if (newNextDestination < 0) {
+					if (firstPickupUp < 0) {
+					}
+				}
+			}
+
+			if (
+				(this.currentDirection == DirectionOfTravel.GOING_UP) && 
+				(
+					this.currentDropRequests.get(this.reversePathFloorIndex) ||
+				 	this.pickupsGoingDown.get(this.reversePathFloorIndex)
+				)
+			) {
+				this.nextDirection = DirectionOfTravel.GOING_DOWN
+				this.nextDestination = this.reversePathFloorIndex
+			} else if (
+				(this.currentDirection == DirectionOfTravel.GOING_DOWN) && 
+				(
+					this.currentDropRequests.get(this.reversePathFloorIndex) ||
+				 	this.pickupsGoingDown.get(this.reversePathFloorIndex)
+				)
+			) {
+				this.nextDirection = DirectionOfTravel.GOING_DOWN
+				this.nextDestination = this.reversePathFloorIndex
 			} else {
-				if (this.currentDestination < (this.bldgProps.numFloors - 1)) {
-					var nextDrop = this.currentDropRequests.nextSetBit(this.currentDestination + 1)
-					if (nextDrop >= 0) {
-						this.currentDestination = this.nextDestination
-						this.nextDirection = DirectionOfTravel.GOING_UP
-						this.nextDestination = nextDrop
-					} else {
-						nextDrop = this.pickupsGoingUp.nextSetBit(this.currentDestination + 1)
-						if (nextDrop >= 0) {
-							this.currentDestination = this.nextDestination
-							this.nextDirection = DirectionOfTravel.GOING_UP
-							this.nextDestination = nextDrop
-						} else {
-							this.currentDestination = this.nextDestination
-							this.nextDirection = DirectionOfTravel.STOPPED
-							this.nextDestination = -1
-						}
-					}
-				} else {
-					this.currentDestination = this.nextDestination
-					this.nextDirection = DirectionOfTravel.STOPPED
-					this.nextDestination = -1
-				}
+				this.nextDirection = DirectionOfTravel.STOPPED
+				this.nextDestination = -1
 			}
 		} else if (this.currentDirection == DirectionOfTravel.GOING_UP) {
 			this.currentDestination = this.nextDestination
 			var nextDrop = this.currentDropRequests.nextSetBit(this.currentDestination + 1)
-			var nextPickup = this.pickups
-		} else {
+			var nextPickup = this.pickupsGoingUp.nextSetBit(this.currentDestination + 1)
+			if (nextDrop > 0) {
+				if (nextPickup > 0) {
+					this.nextDestination = Math.min(nextDrop, nextPickup)
+				} else {
+					this.nextDestination = nextDrop
+				}
+			} else if (nextPickup > 0) {
+				this.nextDestination = nextPickup
+			}
+		} else if (this.currentDirection == DirectionOfTravel.GOING_DOWN) {
 			this.currentDestination = this.nextDestination
-			this.nextDestination = this.currentDropRequests.previousSetBit(this.currentDestination - 1)
+			var nextDrop = this.currentDropRequests.previousSetBit(this.currentDestination - 1)
+			var nextPickup = this.pickupsGoingUp.previousSetBit(this.currentDestination - 1)
+
+			// If nextPickup is negative, max will still return nextDrop, so no need to check
+			// whether it is or isn't before callng Math.max()
+			this.nextDestination = Math.max(nextDrop, nextPickup)
 		}
 
 		this.eventBus.post(
-			DepartedStation.build[ bldr |
+			DepartedLanding.build[ bldr |
 				bldr.carIndex(this.carIndex)
-				.origin(this.currentFloorIndex)	
-				.destination(this.currentDestination)
-				.direction(this.currentDirection)
-				.clockTime(this.systemClock.now())
+				    .eventIndex(this.nextEventIndex++)
+					.origin(this.currentFloorIndex)	
+					.destination(this.currentDestination)
+					.direction(this.currentDirection)
+					.clockTime(this.clock.now())
 			]
 		)
 	}
 	
 
-	@Transition(from=ElevatorCar.LANDING, event=ElevatorCar.PARKED_AT_LANDING)
-	def onParkedAtLanding(String event)
+	@Transition(from=ElevatorCar.ARRIVING, event=ElevatorCar.STOPPED_AT_LANDING)
+	def onStoppedAtLanding(String event)
 	{
-		this.eventBus.post(
-			ParkedAtLanding.build[bldr |
-				bldr.carIndex(this.carIndex)
-					.floorIndex(this.currentFloorIndex)
-					.direction(this.currentDirection)
-					.clockTime(this.systemClock.now())
-			]
-		);
-
 		this.currentDestination = -1
-		this.currentDirection = 
-			if (this.currentDirection == DirectionOfTravel.GOING_UP) {
-				var nextDirection = this.checkNextDirectionAfterGoingUp()
-				if (nextDirection == DirectionOfTravel.STOPPED) {
-					nextDirection = this.checkNextDirectionAfterGoingDown()
-					if (nextDirection == DirectionOfTravel.STOPPED) {
-						DirectionOfTravel.STOPPED
-					} else {
-						DirectionOfTravel.GOING_DOWN
-					}
-				} else {
-					DirectionOfTravel.GOING_UP
-				} 
-			} else if (this.currentDirection == DirectionOfTravel.GOING_DOWN) {
-				var nextDirection = this.checkNextDirectionAfterGoingDown()
-				if (nextDirection == DirectionOfTravel.STOPPED) {
-					nextDirection = this.checkNextDirectionAfterGoingUp()
-					if (nextDirection == DirectionOfTravel.STOPPED) {
-						DirectionOfTravel.STOPPED
-					} else {
-						DirectionOfTravel.GOING_UP
-					}
-				} else {
-					DirectionOfTravel.GOING_DOWN
-				} 
-			} else {
-				DirectionOfTravel.STOPPED
-			}
+		this.currentDirection = DirectionOfTravel.STOPPED
 
-		if ((this.currentDirection == DirectionOfTravel.STOPPED) &&
-			(! this.currentDropRequests.get(this.currentFloorIndex))) {
-			return ElevatorCar.PREPARED_FOR_DISPATCH
+		if ((this.nextDirection != DirectionOfTravel.STOPPED) ||
+			(this.currentDropRequests.get(this.currentFloorIndex))) {
+			return ElevatorCar.DOOR_CALL_RECEIVED
 		} else {
-			return ElevatorCar.OPENED_DOORS
+			return ElevatorCar.PARKED
 		}
 	}
 
+    /*
 	private def checkNextDirectionAfterGoingUp() {
 		return if (this.currentDropRequests.nextSetBit(this.currentFloorIndex) > 0) {
 			DirectionOfTravel.GOING_UP
@@ -472,26 +389,34 @@ class ElevatorCar implements IElevatorCar, IElevatorCarPort {
 			}
 		}
 	}
+	*/
 	
-	@Transition(from=ElevatorCar.LANDING, event=ElevatorCar.PREPARED_FOR_DISPATCH, to=ElevatorCar.PARKED)
-	def onReadyForDispatch(String event)
+	@Transitions(#[
+		@Transition(from=ElevatorCar.ARRIVING, event=ElevatorCar.PARKED, to=ElevatorCar.AVAILABLE),
+		@Transition(from=ElevatorCar.BOARDING, event=ElevatorCar.PARKED, to=ElevatorCar.AVAILABLE)
+	])
+	def onParkedPendingDispatch(String event)
 	{
 		this.eventBus.post(
-			ReadyForDeparture.build[bldr |
-				bldr.carIndex(this.carIndex)
+			ParkedAtLanding.build[bldr |
+				bldr.clockTime(this.clock.now())
+				    .eventIndex(this.nextEventIndex++)
+					.carIndex(this.carIndex)
 					.floorIndex(this.currentFloorIndex)
-					.clockTime(this.systemClock.now())
 			]
 		);
 	}
 			
-	@Transition(from=ElevatorCar.LANDING, event=ElevatorCar.OPENED_DOORS, to=ElevatorCar.BOARDING)
+	@Transitions(#[
+		@Transition(from=ElevatorCar.ARRIVING, event=ElevatorCar.DOOR_CALL_RECEIVED, to=ElevatorCar.BOARDING),
+		@Transition(from=ElevatorCar.AVAILABLE, event=ElevatorCar.DOOR_CALL_RECEIVED, to=ElevatorCar.BOARDING)
+	])
 	def onAnsweredCall(String event)
 	{
 		this.currentDropRequests.clear(this.currentFloorIndex)
-		if (this.currentDirection == DirectionOfTravel.GOING_UP) {
+		if (this.nextDirection == DirectionOfTravel.GOING_UP) {
 			this.pickupsGoingUp.clear(this.currentFloorIndex)
-		} else if(this.currentDirection == DirectionOfTravel.GOING_DOWN) {
+		} else if(this.nextDirection == DirectionOfTravel.GOING_DOWN) {
 			this.pickupsGoingDown.clear(this.currentFloorIndex)
 		} else {
 			throw new IllegalStateException("Cannot answer a call while planning to travel in the STOPPED direction");
@@ -499,79 +424,92 @@ class ElevatorCar implements IElevatorCar, IElevatorCarPort {
 
 		this.eventBus.post(
 			PassengerDoorsOpened.build[bldr |
-				bldr.carIndex(this.carIndex)
+				bldr.clockTime(this.clock.now())
+				    .eventIndex(this.nextEventIndex++)
+					.carIndex(this.carIndex)
 					.floorIndex(this.currentFloorIndex)
-					.direction(this.currentDirection)
-					.clockTime(this.systemClock.now())
+					.direction(this.nextDirection)
 			]
 		)
 	}
+	
 			
-	@Transition(from=ElevatorCar.BOARDING, event=ElevatorCar.CLOSED_DOORS, to=ElevatorCar.PARKED)
+	@Transition(from=ElevatorCar.BOARDING, event=ElevatorCar.DOOR_CALL_COMPLETED)
 	def onBoardingCompleted(String event)
 	{
 		this.eventBus.post(
 			PassengerDoorsClosed.build[bldr |
-				bldr.carIndex(this.carIndex)
-					.clockTime(this.systemClock.now())
+				bldr.clockTime(this.clock.now())
+				    .eventIndex(this.nextEventIndex++)
+					.carIndex(this.carIndex)
 			]
 		)
+
+		if (this.nextDestination < 0) {
+			return ElevatorCar.PARKED;
+		} else {
+			return ElevatorCar.DISPATCHED;
+		}
 	}
 
 	
-	@Transition(from=ElevatorCar.TRAVELLING, event=ElevatorCar.TRIGGERED_FLOOR_SENSOR)
+	@Transitions(#[
+		@Transition(from=ElevatorCar.SLOWING, event=ElevatorCar.TRIGGERED_FLOOR_SENSOR),
+		@Transition(from=ElevatorCar.TRAVELLING, event=ElevatorCar.TRIGGERED_FLOOR_SENSOR)
+	])
 	def String onTriggeredFloorSensor(String event, int floorIndex, DirectionOfTravel direction) 
 	{
+		this.currentFloorIndex = floorIndex
+
 		if (
-			(this.currentDestination !== floorIndex) && (this.currentDirection == direction) && (
-				((this.currentDestination < floorIndex) && (direction == DirectionOfTravel.GOING_UP)) ||
-				((this.currentDestination > floorIndex) && (direction == DirectionOfTravel.GOING_DOWN))
+			(this.state === ElevatorCar.TRAVELLING) &&
+			(this.currentDestination !== floorIndex) &&
+			(this.currentDirection == direction) && (
+				((this.currentDestination > floorIndex) && (direction == DirectionOfTravel.GOING_UP)) ||
+				((this.currentDestination < floorIndex) && (direction == DirectionOfTravel.GOING_DOWN))
 			)
 		) {
-			this.currentFloorIndex = floorIndex
-
 			this.eventBus.post(
 				TravelledThroughFloor.build[bldr|
-					bldr.clockTime(this.systemClock.now())
-					.carIndex(this.carIndex)
-					.floorIndex(floorIndex)
-					.direction(direction)
+					bldr.clockTime(this.clock.now())
+					    .eventIndex(this.nextEventIndex++)
+						.carIndex(this.carIndex)
+						.floorIndex(floorIndex)
+						.direction(direction)
 				]
 			);
 
 			return ElevatorCar.TRAVELLED_THROUGH_FLOOR
-		}
-
-		return ElevatorCar.PANICKED	
-	}
-	
-	@Transition(from=ElevatorCar.LANDING, event=ElevatorCar.TRIGGERED_FLOOR_SENSOR)
-	def String onTriggeredFloorSensorWithBrake(String event, int floorIndex, DirectionOfTravel direction)
-	{
-		if (this.currentDestination == floorIndex && this.currentDirection == direction) {
-			this.currentFloorIndex = floorIndex
-			
+		} else if(
+			(this.state === ElevatorCar.SLOWING) &&
+			(this.currentDestination === floorIndex) && 
+			(this.currentDirection === direction)
+		) {
 			this.eventBus.post(
 				SlowedForArrival.build[bldr|
-					bldr.clockTime(this.systemClock.now())
-					.carIndex(this.carIndex)
-					.floorIndex(floorIndex)
+					bldr.clockTime(this.clock.now())
+					    .eventIndex(this.nextEventIndex++)
+						.carIndex(this.carIndex)
+						.floorIndex(floorIndex)
 				]
 			);
 
 			return ElevatorCar.ARRIVED_AT_FLOOR
 		}
 
+		log.error("Stopping for panic after unexpected floor sensor trigger fired");
 		return ElevatorCar.PANICKED	
 	}
+	
 
 	@Transition(from="*", event=ElevatorCar.WEIGHT_UPDATED, to="*")
 	def onWeightUpdated(double weightLoad) {
 		this.eventBus.post(
 			WeightLoadUpdated.build[bldr|
-				bldr.clockTime(this.systemClock.now())
-				.carIndex(this.carIndex)
-				.weightLoad(weightLoad)
+				bldr.clockTime(this.clock.now())
+				    .eventIndex(this.nextEventIndex++)
+					.carIndex(this.carIndex)
+					.weightLoad(weightLoad)
 			]
 		);
 	} 
@@ -587,8 +525,8 @@ class ElevatorCar implements IElevatorCar, IElevatorCarPort {
 	override acceptPickupRequest(int floorIndex, DirectionOfTravel direction) {
 	}
 	
-	override dispatchNextDestination() {
-		this.
+	override dispatchToNextStop() {
+		this.fsm.onEvent(this, ElevatorCar.DISPATCHED)
 	}
 	
 //	override travelledThroughFloor(int floorIndex, DirectionOfTravel direction) {
@@ -599,5 +537,10 @@ class ElevatorCar implements IElevatorCar, IElevatorCarPort {
 //	override doorStateChanging(DoorState newStatus) {
 //		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 //	}
+	
+	private def BitSet toBitSet(ImmutableList<Integer> list)
+	{
+		return new BitSet() => [bits | list.forEach[nextBit | bits.set(nextBit)]]
+	}
 
 }

@@ -6,10 +6,9 @@ import org.springframework.stereotype.Component;
 
 import com.google.common.base.Preconditions;
 
-import info.jchein.mesosphere.elevator.configuration.properties.BuildingProperties;
 import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel;
-import info.jchein.mesosphere.elevator.domain.dispatch.event.StopItineraryUpdated;
 import info.jchein.mesosphere.elevator.domain.sdk.IElevatorCarPort;
+import info.jchein.mesosphere.elevator.domain.sdk.StopItineraryUpdated;
 import info.jchein.mesosphere.elevator.physics.IElevatorPhysicsService;
 import info.jchein.mesosphere.elevator.physics.JourneyArc;
 import info.jchein.mesosphere.elevator.physics.PathMoment;
@@ -29,11 +28,11 @@ public class EmulatedElevatorCar implements Observer<StopItineraryUpdated> {
    private double metersPerFloor;
    private double tickDuration;
 	
-	public EmulatedElevatorCar(IElevatorCarPort port, IElevatorPhysicsService physics, BuildingProperties bldgProps)
+	public EmulatedElevatorCar(IElevatorCarPort port, IElevatorPhysicsService physics)
 	{
 		this.port = port;
       this.physics = physics;
-      this.metersPerFloor = bldgProps.getMetersPerFloor();
+      this.metersPerFloor = physics.getMetersPerFloor();
 	}
 
    @Override

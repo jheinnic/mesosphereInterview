@@ -1,84 +1,87 @@
 package info.jchein.mesosphere.elevator.configuration;
 
+import java.time.ZoneId;
+
+import javax.validation.constraints.NotNull;
+
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
-
 import com.google.common.eventbus.EventBus;
-
-import info.jchein.mesosphere.domain.clock.IClock;
-import info.jchein.mesosphere.domain.clock.SystemClock;
-import info.jchein.mesosphere.elevator.configuration.properties.BuildingProperties;
-import info.jchein.mesosphere.elevator.configuration.properties.SystemRuntimeProperties;
+import rx.Scheduler;
+import info.jchein.mesosphere.elevator.runtime.SystemRuntimeProperties;
+import info.jchein.mesosphere.elevator.domain.common.ElevatorGroupBootstrap;
 import info.jchein.mesosphere.elevator.domain.model.ElevatorCar;
-import info.jchein.mesosphere.elevator.domain.model.ElevatorCarService;
+import info.jchein.mesosphere.elevator.domain.model.ElevatorGroupControlCompiler;
 import info.jchein.mesosphere.elevator.emulator.SimulationScenario;
 import info.jchein.mesosphere.elevator.physics.IElevatorPhysicsService;
-import rx.Scheduler;
+import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
+import info.jchein.mesosphere.elevator.runtime.IRuntimeEventBus;
+import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
+import info.jchein.mesosphere.elevator.runtime.IRuntimeService;
+import info.jchein.mesosphere.elevator.runtime.RuntimeClock;
+import info.jchein.mesosphere.elevator.runtime.RuntimeEventBus;
+import info.jchein.mesosphere.elevator.runtime.RuntimeScheduler;
+import info.jchein.mesosphere.elevator.runtime.RuntimeService;
 
 @Configuration
 public class ElevatorGroupControlConfiguration {
-//	@Bean
-//	@Autowired
-//	@Scope(BeanDefinition.SCOPE_SINGLETON)
-//	public ElevatorGroup getElevatorModelRoot(
-//		AbstractElevatorSchedulingStrategy scheduler, IClock systemClock, EventBus eventBus,
-//		BuildingProperties bldgProps)
-//	{
-//		final int floorCount = bldgProps.getNumFloors();
-//		final int elevatorCount = bldgProps.getNumElevators();
-//
-//		ImmutableList.Builder<LandingControls> hallListBuilder = ImmutableList.<LandingControls>builder();
-//		ImmutableList.Builder<ElevatorCar> carListBuilder = ImmutableList.<ElevatorCar>builder();
-//
-//		for (int ii = 0; ii < floorCount; ii++ ) {
-//			final LandingControls port = getLandingPort(systemClock, eventBus, bldgProps);
-//			port.attachDriver(
-//				driverFactory.attachFloorHallDriver(port));
-//			hallListBuilder.add(port);
-//		}
-//
-//		for (int ii = 0; ii < elevatorCount; ii++) {
-//			final ElevatorCar port = getElevatorCarPort(systemClock, eventBus);
-//			port.attachDriver(
-//				driverFactory.attachElevatorCarDriver(port));
-//			carListBuilder.add(port);
-//		}
-//		
-//		return new ElevatorGroup(
-//			hallListBuilder.build(), carListBuilder.build(), scheduler, null, eventBus, systemClock);
-//	}
-	
 	@Bean
 	@Scope(BeanDefinition.SCOPE_SINGLETON)
-	public EventBus getEventBus() {
+	public EventBus getGuavaEventBus() {
 		return new EventBus();
 	}
 	
 	@Bean
 	@Scope(BeanDefinition.SCOPE_SINGLETON)
-	public SystemClock getSystemClock(Scheduler scheduler, SystemRuntimeProperties runtimeProperties) {
-		return new SystemClock(runtimeProperties, scheduler);
+	public IRuntimeEventBus getRuntimeEventBus(EventBus guavaEventBus) {
+		return new RuntimeEventBus(guavaEventBus);
+	}
+	
+	@Bean
+	@Scope(BeanDefinition.SCOPE_SINGLETON)
+	public IRuntimeClock getRuntimeClock(@NotNull Scheduler rxScheduler, @NotNull SystemRuntimeProperties runtimeProps)
+	{
+		return new RuntimeClock(ZoneId.systemDefault(), rxScheduler, runtimeProps);
+	}
+	
+	@Bean
+	@Scope(BeanDefinition.SCOPE_SINGLETON)
+	public IRuntimeScheduler getRuntimeScheduler(@NotNull Scheduler rxScheduler, @NotNull SystemRuntimeProperties runtimeProps)
+	{
+		return new RuntimeScheduler(rxScheduler, runtimeProps);
+	}
+	
+	@Bean
+	@Scope(BeanDefinition.SCOPE_SINGLETON)
+//	public RuntimeService getSystemClock(Scheduler scheduler, SystemRuntimeProperties runtimeProperties) {
+	public IRuntimeService getRuntimeService(RuntimeService service)
+	{
+	   return service;
+//		return new RuntimeService(runtimeProperties, scheduler);
 	}
 	
 	// TODO: This declaration should be replaced by use of the IElevatorCarService to specify bootstrap car count as
 	//       driven by configuration.
 	@Bean
 	@Scope(BeanDefinition.SCOPE_PROTOTYPE)
-	public ElevatorCar getElevatorCarPort(IClock systemClock, EventBus eventBus, IElevatorPhysicsService physicsService) {
-		return new ElevatorCar(systemClock, eventBus, physicsService);
+	public ElevatorCar getElevatorCarPort(IRuntimeClock clock, IRuntimeEventBus eventBus, IElevatorPhysicsService physicsService) {
+		return new ElevatorCar(clock, eventBus, physicsService);
 	}
 	
 	@Bean
 	@Scope(BeanDefinition.SCOPE_SINGLETON)
-	public ElevatorCarService getElevatorCarService(IClock systemClock, EventBus eventBus, Scheduler systemScheduler) {
-	   return new ElevatorCarService(eventBus, systemClock, systemScheduler);
+//	public ElevatorGroupControlFactory getElevatorCarService(IClock systemClock, EventBus eventBus, Scheduler systemScheduler) {
+	public ElevatorGroupControlCompiler getElevatorGroupControlFactory(ElevatorGroupControlCompiler compiler) {
+	   return compiler;
 	}
 
 	@Bean
 	@Scope(BeanDefinition.SCOPE_SINGLETON)
-	public SimulationScenario getSimulationScenario(IClock systemClock, EventBus eventBus, BuildingProperties bldgProperties) {
-		return new SimulationScenario(systemClock, eventBus, bldgProperties);
+	public SimulationScenario getSimulationScenario(
+	   IRuntimeClock clock, IRuntimeEventBus eventBus, IRuntimeScheduler scheduler, ElevatorGroupBootstrap bldgProps )
+	{
+		return new SimulationScenario(clock, eventBus, scheduler, bldgProps);
 	}
 }

@@ -19,8 +19,8 @@ import org.springframework.stereotype.Component;
 import rx.Scheduler.Worker;
 import rx.Subscription;
 import rx.functions.Action0;
-import info.jchein.mesosphere.domain.clock.IClock;
 import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel;
+import info.jchein.mesosphere.elevator.runtime.IRuntimeService;
 import info.jchein.mesosphere.elevator.simulator.FloorHallSimulation;
 import info.jchein.mesosphere.elevator.simulator.SimulatedPassenger;
 import info.jchein.mesosphere.validator.annotation.Positive;
@@ -30,7 +30,7 @@ import info.jchein.mesosphere.validator.annotation.Positive;
 public class SimulatedSimplePassengerSource {
 	private static final Logger LOG = LoggerFactory.getLogger(SimulatedSimplePassengerSource.class);
 
-	private final IClock systemClock;
+	private final IRuntimeService systemClock;
 	private final IPassengerArrivalStrategy arrivalStrategy;
 
 	private final ExponentialDistribution distribution;
@@ -39,7 +39,7 @@ public class SimulatedSimplePassengerSource {
 	private final int departFromFloorIndex;
 
 	@Autowired
-	public SimulatedSimplePassengerSource(@NotNull IClock systemClock, @Positive double medianSecondsBetweenArrivals,
+	public SimulatedSimplePassengerSource(@NotNull IRuntimeService systemClock, @Positive double medianSecondsBetweenArrivals,
 			@Min(0) int departFromFloorIndex, @Min(0) int travelToFloorIndex, @NotNull IPassengerArrivalStrategy arrivalStrategy) {
 		this.systemClock = systemClock;
 		this.arrivalStrategy = arrivalStrategy;

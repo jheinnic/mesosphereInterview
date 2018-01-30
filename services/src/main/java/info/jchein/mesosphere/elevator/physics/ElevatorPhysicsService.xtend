@@ -2,27 +2,26 @@ package info.jchein.mesosphere.elevator.physics
 
 import com.google.common.base.Preconditions
 import com.google.common.collect.ImmutableList
-import info.jchein.mesosphere.elevator.configuration.properties.BuildingProperties
-import info.jchein.mesosphere.elevator.configuration.properties.ElevatorDoorProperties
-import info.jchein.mesosphere.elevator.configuration.properties.ElevatorMotorProperties
-import info.jchein.mesosphere.elevator.configuration.properties.ElevatorWeightProperties
-import info.jchein.mesosphere.elevator.configuration.properties.PassengerToleranceProperties
 import org.eclipse.xtend.lib.annotations.ToString
 import org.springframework.util.Assert
+
+import info.jchein.mesosphere.elevator.domain.common.BuildingProperties
+import info.jchein.mesosphere.elevator.domain.common.ElevatorGroupBootstrap
+import info.jchein.mesosphere.elevator.domain.common.ElevatorMotorProperties
+import info.jchein.mesosphere.elevator.domain.common.PhysicalDispatchContext
 
 import static extension java.lang.Math.floor
 import static extension java.lang.Math.round
 import static extension java.lang.String.format
+import de.oehme.xtend.contrib.Cached
 
 //import static extension java.lang.Math.sqrt
 
 @ToString
 class ElevatorPhysicsService implements IElevatorPhysicsService {
-	val BuildingProperties bldgProps;
-	val ElevatorDoorProperties doorProps;
-	val ElevatorMotorProperties motorProps;
-	val ElevatorWeightProperties weightProps;
-	val PassengerToleranceProperties toleranceProps;
+	val BuildingProperties buildingProps
+	val ElevatorMotorProperties motorProps
+	val PhysicalDispatchContext dispatchProps
 
 	final double tMaxA
 	final double vMaxA
@@ -42,22 +41,22 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 	JourneyArc[] downwardArcs
 	
 	int minFastDistance
+	
+	JourneyArc slowRise
+	
+	JourneyArc slowDescent
+	
+	JourneyArc fastRise
+	
+	JourneyArc fastDescent
 
-	public new(
-		BuildingProperties bldgProps,
-		ElevatorDoorProperties doorProps,
-		ElevatorMotorProperties motorProps,
-		ElevatorWeightProperties weightProps,
-		PassengerToleranceProperties toleranceProps
-	) {
-		this.bldgProps = bldgProps;
-		this.doorProps = doorProps;
-		this.motorProps = motorProps;
-		this.weightProps = weightProps;
-		this.toleranceProps = toleranceProps;
+	public new(ElevatorGroupBootstrap bldgProps) {
+		this.buildingProps = bldgProps.building
+		this.motorProps = bldgProps.motor
+		this.dispatchProps = bldgProps.dispatch
 
-		this.numFloors = this.bldgProps.numFloors;
-		this.metersPerFloor = this.bldgProps.metersPerFloor;
+		this.numFloors = this.buildingProps.numFloors
+		this.metersPerFloor = this.buildingProps.metersPerFloor
 		this.maxJerk = this.motorProps.maxJerk
 		this.maxAccel = this.motorProps.maxAcceleration
 		this.speedBrk = this.motorProps.brakingSpeed
@@ -91,20 +90,20 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		val floorHeight = this.metersPerFloor
 		var lastFloorPair = this.numFloors - 1;
 
-		val slowRise = this.computeUpwardArch(PathMoment.build [
+		this.slowRise = this.computeUpwardArch(PathMoment.build [
 			it.time(0).height(0).velocity(0).acceleration(0).jerk(0)
-		], this.motorProps.slowSpeed)
-		val slowDescent = this.computeDownwardArch(PathMoment.build [
+		], this.motorProps.shortTravelSpeed)
+		this.slowDescent = this.computeDownwardArch(PathMoment.build [
 			it.time(0).height(0).velocity(0).acceleration(0).jerk(0)
-		], -1 * this.motorProps.slowSpeed)
-		val fastRise = this.computeUpwardArch(PathMoment.build [
+		], -1 * this.motorProps.shortTravelSpeed)
+		this.fastRise = this.computeUpwardArch(PathMoment.build [
 			it.time(0).height(0).velocity(0).acceleration(0).jerk(0)
-		], this.motorProps.maxRiseSpeed)
-		val fastDescent = this.computeDownwardArch(PathMoment.build [
+		], this.motorProps.longAscentSpeed)
+		this.fastDescent = this.computeDownwardArch(PathMoment.build [
 			it.time(0).height(0).velocity(0).acceleration(0).jerk(0)
-		], this.motorProps.maxDescentSpeed)
+		], this.motorProps.longDescentSpeed)
 
-		fastRise.legIterator().forEach[ nextLeg | println(nextLeg.toString()); ]
+		// fastRise.legIterator().forEach[ nextLeg | println(nextLeg.toString()); ]
 
 		Assert.isTrue(slowDescent.shortestPossibleArc <= floorHeight,
 			"Must be able to traverse one floor within slow speed arc's path")
@@ -115,12 +114,14 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 
 		for (; ii < lastFloorPair && nextHeight < fastArcDistance; ii++) {
 			System.out.println(String.format("%d is slow", ii));
+			/*
 			this.upwardArcs.set(
 				ii, slowRise.adjustConstantRegion(nextHeight)
 			)	
 			this.downwardArcs.set(
 				ii, slowDescent.adjustConstantRegion(nextHeight)
-			)	
+			)
+			*/	
 			nextHeight += floorHeight
 		}
 
@@ -128,12 +129,14 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		
 		for (var jj=ii; jj<lastFloorPair; jj++) {
 			System.out.println(String.format("%d is fast", jj));
+			/*
 			this.upwardArcs.set(
 				jj, fastRise.adjustConstantRegion(nextHeight)
 			)	
 			this.downwardArcs.set(
 				jj, fastDescent.adjustConstantRegion(nextHeight)
-			)	
+			)
+			*/	
 			nextHeight += floorHeight
 		}
 	}
@@ -201,11 +204,7 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 	 */
 	private def JourneyArc computeUpwardArch(PathMoment moment, double _maxSpeed) {
  		val listBuilder = ImmutableList.<PathLeg>builder()
-		val maxSpeed = if (_maxSpeed > 0) {
-				_maxSpeed
-			} else {
-				-1 * _maxSpeed
-			}
+		val maxSpeed = if (_maxSpeed > 0) { _maxSpeed } else { -1 * _maxSpeed }
 
 		val tJerkUpOne = (this.maxAccel - moment.acceleration) / this.maxJerk;
 		val toMaxUpAcc = new ConstantJerkPathLeg( moment.copy[jerk(this.maxJerk)], tJerkUpOne)
@@ -237,7 +236,7 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		val vJerkUpTwo = this.speedBrk - (tJerkUpTwo * atMaxDownAcc.acceleration) - (this.maxJerk * tJerkUpTwo * tJerkUpTwo / 2.0)
 		
 		// Unlike the global maxAccel value, which stores an unsigned magnitude, the value we get from a PathMoment is a signed quantity!
-		val tMaxDownAcc = -1 * (atMaxDownAcc.velocity - vJerkUpTwo) / atMaxDownAcc.acceleration
+		val tMaxDownAcc = (vJerkUpTwo - atMaxDownAcc.velocity) / atMaxDownAcc.acceleration
 
 		val toJerkUpTwo = new ConstantAccelerationPathLeg(atMaxDownAcc, tMaxDownAcc);
 		val atJerkUpTwo = toJerkUpTwo.nextMoment(listBuilder, this.maxJerk)
@@ -252,11 +251,7 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 
 	private def JourneyArc computeDownwardArch(PathMoment moment, double _maxSpeed) {
 		val listBuilder = ImmutableList.<PathLeg>builder()
-		val maxSpeed = if (_maxSpeed < 0) {
-				_maxSpeed
-			} else {
-				-1 * _maxSpeed
-			}
+		val maxSpeed = if (_maxSpeed < 0) { _maxSpeed } else { -1 * _maxSpeed }
 
 		val tJerkDownOne = (this.maxAccel + moment.acceleration) / this.maxJerk;
 		val toMaxDownAcc = new ConstantJerkPathLeg( moment.copy[jerk(-1 * this.maxJerk)], tJerkDownOne)
@@ -312,22 +307,26 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 	}
 
 	override expectedStopDuration(int boardingCount, int disembarkingCount) {
-		return this.doorProps.doorOpenCloseSlideTime + Math.max(this.doorProps.minDoorHoldTimePerOpen,
-			(this.doorProps.doorHoldTimePerPerson * (boardingCount + disembarkingCount)));
+		return this.dispatchProps.doorOpenCloseSlideTime + Math.max(this.dispatchProps.minDoorHoldTimePerOpen,
+			(this.dispatchProps.doorHoldTimePerPerson * (boardingCount + disembarkingCount)));
 	}
 
 	override idealPassengerCount() {
-		return (this.weightProps.idealWeightLoad / this.weightProps.passengerWeight).round as int
+		return (this.dispatchProps.idealWeightLoad / this.dispatchProps.passengerWeight).round() as int
 	}
 
 	override maxTolerancePassengerCount() {
 		return ((
-			this.weightProps.maxWeightLoad * this.toleranceProps.getRefusePickupAfterWeightPct
-		) / this.weightProps.passengerWeight).floor as int
+			this.motorProps.maxWeightLoad * this.dispatchProps.pctMaxBoardingWeight
+		) / this.dispatchProps.passengerWeight).floor() as int
 	}
 
 	override floorDistance(int fromFloorIndex, int toFloorIndex) {
-		return (toFloorIndex - fromFloorIndex) * this.bldgProps.metersPerFloor;
+		if (toFloorIndex > fromFloorIndex) {
+			return (toFloorIndex - fromFloorIndex) * this.buildingProps.metersPerFloor
+		} else {
+			return (fromFloorIndex - toFloorIndex) * this.buildingProps.metersPerFloor
+		}
 	}
 
 	override double travelTime(int fromFloorIndex, int toFloorIndex) {
@@ -355,12 +354,58 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		}
 	}
 	
+//	@Cached
+	def JourneyArc doGetTraversalPath(int fromFloorIndex, int toFloorIndex) {
+		val JourneyArc baseOriginPath =
+			if (fromFloorIndex < toFloorIndex) {
+				if (this.isTravelFast(fromFloorIndex, toFloorIndex)) {
+					this.computeUpwardArch(
+						PathMoment.build[
+							time(0).height(fromFloorIndex * this.buildingProps.metersPerFloor).velocity(0).acceleration(0).jerk(0)
+						], this.motorProps.longAscentSpeed
+					)
+				} else {
+					this.computeUpwardArch(
+						PathMoment.build[
+							time(0).height(fromFloorIndex * this.buildingProps.metersPerFloor).velocity(0).acceleration(0).jerk(0)
+						], this.motorProps.shortTravelSpeed
+					)
+				}
+			} else {
+				if (this.isTravelFast(fromFloorIndex, toFloorIndex)) {
+					this.computeDownwardArch(
+						PathMoment.build[
+							time(0).height(fromFloorIndex * this.buildingProps.metersPerFloor).velocity(0).acceleration(0).jerk(0)
+						], this.motorProps.longDescentSpeed
+					)
+				} else {
+					this.computeDownwardArch(
+						PathMoment.build[
+							time(0).height(fromFloorIndex * this.buildingProps.metersPerFloor).velocity(0).acceleration(0).jerk(0)
+						], this.motorProps.shortTravelSpeed
+					)
+				}
+			}
+
+		// System.out.println(String.format("%d to %d targets a distance of %f", fromFloorIndex, toFloorIndex, this.floorDistance(fromFloorIndex, toFloorIndex)));
+		return baseOriginPath.adjustConstantRegion( this.floorDistance(fromFloorIndex, toFloorIndex) )
+	}
+
+	
 	override getTraversalPath(int fromFloorIndex, int toFloorIndex) {
-		if (fromFloorIndex < toFloorIndex) {
-			return this.upwardArcs.get(toFloorIndex - fromFloorIndex - 1)
-		} else {
-			return this.downwardArcs.get(fromFloorIndex - toFloorIndex - 1)
-		}
+		return this.doGetTraversalPath(fromFloorIndex, toFloorIndex)
+	}
+	
+	override getNumElevators() {
+		return this.numElevators
+	}
+	
+	override getNumFloors() {
+		return this.numFloors
+	}
+	
+	override getMetersPerFloor() {
+		return this.metersPerFloor
 	}
 }
 

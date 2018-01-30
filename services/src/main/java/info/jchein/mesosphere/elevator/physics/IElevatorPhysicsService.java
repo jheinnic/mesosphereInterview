@@ -14,4 +14,10 @@ public interface IElevatorPhysicsService {
 	int maxTolerancePassengerCount();
 	
 	JourneyArc getTraversalPath( int fromFloorIndex, int toFloorIndex );
+	
+	int getNumFloors();
+	
+	int getNumElevators();
+	
+	double getMetersPerFloor();
 }

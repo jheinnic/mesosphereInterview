@@ -1,7 +1,7 @@
 package info.jchein.mesosphere.elevator.physics
 
-import org.eclipse.xtend.lib.annotations.Data
 import java.util.Iterator
+import org.eclipse.xtend.lib.annotations.Data
 
 @Data
 class ConstantJerkPathLeg extends AbstractPathLeg {

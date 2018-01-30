@@ -1,13 +1,5 @@
 package info.jchein.mesosphere.elevator.domain.sdk;
 
-import java.util.BitSet;
-
-import info.jchein.mesosphere.elevator.domain.common.ElevatorCarSnapshot;
-import info.jchein.mesosphere.elevator.domain.common.SpeedOfTravel;
-import info.jchein.mesosphere.elevator.domain.dispatch.event.StopItineraryUpdated;
-import rx.Observer;
-import rx.Subscription;
-
 public interface IElevatorCarPort {
 //	Subscription bootstrapDriver(Observer<StopItineraryUpdated> observer, double floorHeight, double weightLoad, BitSet dropOffRequests);
 	

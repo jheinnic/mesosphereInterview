@@ -6,6 +6,7 @@ import java.util.Comparator;
 import com.google.common.base.Preconditions;
 
 import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel;
+import info.jchein.mesosphere.elevator.domain.scheduler.ScheduledStop;
 
 
 public class TravelPathDownComparator
@@ -21,21 +22,6 @@ implements Comparator<ScheduledStop>
       Preconditions.checkArgument(originFloor >= 0);
    }
 
-
-//   @Override
-//   public int doCompare(ScheduledStop o1, ScheduledStop o2)
-//   {
-//      int retVal = this.doCompare(o1, o2);
-//      if (retVal < 0) {
-//      System.out.println(String.format("%s is before %s", o1, o2));
-//      } else if (retVal > 0) {
-//      System.out.println(String.format("%s is after %s", o1, o2));
-//      } else {
-//      System.out.println(String.format("%s is concurrent with %s", o1, o2));
-//      }
-//      
-//      return retVal;
-//   }
 
    public int compare(ScheduledStop o1, ScheduledStop o2) 
    {
@@ -63,12 +49,6 @@ implements Comparator<ScheduledStop>
          }
       } else if (o1Floor > this.originFloor) {
          if (o2Floor <= this.originFloor) {
-            // If o2 is undirected or directed and up, then it is the very first path element.
-            // Otherwise, it is the first we hit in the opposite direction.  o1 is somewhere in the
-            // reverse direction path, not the start, therefore o2 is always earlier.
-            // -Or-
-            // o2 is ahead of the direction of travel, o1 is behind.  We will always reach o2 before o1,
-            // regardless of directions of travel.
             return 1;
          } else {
             // o1 and o2 are both behind the initial direction of travel

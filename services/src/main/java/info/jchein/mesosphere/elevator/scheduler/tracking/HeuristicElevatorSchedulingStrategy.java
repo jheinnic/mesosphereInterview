@@ -1,66 +1,43 @@
 package info.jchein.mesosphere.elevator.scheduler.tracking;
 
 import java.util.BitSet;
-import java.util.HashSet;
 import java.util.List;
-import java.util.PriorityQueue;
 import java.util.Set;
 
 import com.google.common.collect.ImmutableSet;
 
-import info.jchein.mesosphere.elevator.configuration.properties.BuildingProperties;
-import info.jchein.mesosphere.elevator.configuration.properties.ElevatorDoorProperties;
-import info.jchein.mesosphere.elevator.configuration.properties.ElevatorMotorProperties;
-import info.jchein.mesosphere.elevator.configuration.properties.ElevatorWeightProperties;
-import info.jchein.mesosphere.elevator.configuration.properties.PassengerToleranceProperties;
 import info.jchein.mesosphere.elevator.domain.car.event.DropOffRequested;
 import info.jchein.mesosphere.elevator.domain.car.event.ParkedAtLanding;
-import info.jchein.mesosphere.elevator.domain.car.event.ReadyForDeparture;
-import info.jchein.mesosphere.elevator.domain.car.event.SlowedForArrival;
 import info.jchein.mesosphere.elevator.domain.car.event.TravelledThroughFloor;
 import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel;
-import info.jchein.mesosphere.elevator.domain.common.ElevatorCarSnapshot;
-import info.jchein.mesosphere.elevator.domain.dispatch.event.StopItineraryUpdated;
+import info.jchein.mesosphere.elevator.domain.common.ElevatorGroupBootstrap;
 import info.jchein.mesosphere.elevator.domain.hall.event.PickupCallAdded;
 import info.jchein.mesosphere.elevator.domain.hall.event.PickupCallRemoved;
 import info.jchein.mesosphere.elevator.domain.sdk.AbstractElevatorSchedulingStrategy;
-import info.jchein.mesosphere.elevator.domain.sdk.IElevatorSchedulerPort;
+import info.jchein.mesosphere.elevator.domain.sdk.IElevatorDispatcherPort;
 import info.jchein.mesosphere.elevator.physics.IElevatorPhysicsService;
 import info.jchein.mesosphere.elevator.physics.JourneyArc;
 
 public class HeuristicElevatorSchedulingStrategy extends AbstractElevatorSchedulingStrategy {
 
-	private ITrafficPredictor trafficPredictor;
-	private BuildingProperties bldgProps;
-	private ElevatorDoorProperties doorProps;
-	private ElevatorMotorProperties motorProps;
-	private ElevatorWeightProperties weightProps;
-	private PassengerToleranceProperties toleranceProps;
-	private IElevatorPhysicsService physicsService;
-   private StopItineraryUpdated[] currentItineraries;
+	// private ElevatorGroupBootstrap rootProps;
+	private final IElevatorPhysicsService physicsService;
+   private final ElevatorGroupBootstrap bootstrapData;
 	
 
 	public HeuristicElevatorSchedulingStrategy(
-		final IElevatorSchedulerPort port, final ITrafficPredictor trafficPredictor,
-		final BuildingProperties bldgProps, final ElevatorDoorProperties doorProps,
-		final ElevatorMotorProperties motorProps, final ElevatorWeightProperties weightProps,
-		final PassengerToleranceProperties toleranceProps, final IElevatorPhysicsService physicsService
+		final IElevatorDispatcherPort port, final ElevatorGroupBootstrap bootstrapData, final IElevatorPhysicsService physicsService
 	) {
 		super(port);
-		this.trafficPredictor = trafficPredictor;
-		this.bldgProps = bldgProps;
-		this.doorProps = doorProps;
-		this.motorProps = motorProps;
-		this.weightProps = weightProps;
-		this.toleranceProps = toleranceProps;
+      this.bootstrapData = bootstrapData;
 		this.physicsService = physicsService;
 		
-		this.currentItineraries = new StopItineraryUpdated[bldgProps.getNumElevators()];
+		// this.currentItineraries = new StopItineraryUpdated[bldgProps.getNumElevators()];
 	}
 
 
 	@Override
-	public void assignPickupCall(PickupCallAdded event) {
+	public void onPickupCallAdded(PickupCallAdded event) {
 	}
 
 
@@ -75,12 +52,7 @@ public class HeuristicElevatorSchedulingStrategy extends AbstractElevatorSchedul
 
 
 	@Override
-	public void onReadyForDeparture(ReadyForDeparture event) {
-	}
-
-
-	@Override
-	public void onParkedForBoarding(ParkedAtLanding event) {
+	public void onParkedAtLanding(ParkedAtLanding event) {
 	}
 
 
@@ -89,9 +61,9 @@ public class HeuristicElevatorSchedulingStrategy extends AbstractElevatorSchedul
 //	}
 
 
-//	@Override
-//	public void onTravelledThroughFloor(TravelledThroughFloor event) {
-//	}
+	@Override
+	public void onTravelledThroughFloor(TravelledThroughFloor event) {
+	}
 	
 	static class PassengerManifest {
 	   private int pickupFloor;

@@ -7,6 +7,7 @@ import org.eclipse.xtend.lib.annotations.Data;
 @Data
 class WeightLoadUpdated implements ElevatorCarEvent {
 	val long clockTime;
+        val long eventIndex;
 	val int carIndex;
 	val double weightLoad
 }

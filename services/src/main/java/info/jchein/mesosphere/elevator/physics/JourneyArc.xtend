@@ -54,32 +54,62 @@ class JourneyArc {
 
 	def JourneyArc adjustConstantRegion(double newDistance) {
 		val minDistance = this.shortestPossibleArc
-		Preconditions.checkArgument(newDistance >= minDistance, "Cannot produce an arc shorter than %s", minDistance)
+		Preconditions.checkArgument(newDistance >= minDistance, "Cannot produce %s, an arc shorter than %s", newDistance, minDistance)
 
-		val deltaHeight = if (direction == DirectionOfTravel.GOING_UP) {
-			newDistance - terminalMoment.height - initialMoment.height
+		var double tempDeltaHeight = 0.0
+		if (direction == DirectionOfTravel.GOING_UP) {
+			tempDeltaHeight = newDistance - terminalMoment.height + initialMoment.height
 		} else { 
-			initialMoment.height - terminalMoment.height - newDistance
+			tempDeltaHeight = initialMoment.height - terminalMoment.height - newDistance
 		}
-		val deltaCVDuration = deltaHeight / this.constantVelocity.finalVelocity
-		val newConstantDuration = this.constantVelocity.duration + deltaCVDuration
+		val double deltaHeight = tempDeltaHeight
+		val double deltaCVDuration = deltaHeight / this.constantVelocity.finalVelocity
+		val double newConstantDuration = this.constantVelocity.duration + deltaCVDuration
 		
-		this.copy [ bldr |
+		// System.out.println(String.format("deltaHeight = %f, deltaDuration = %f, newDuration = %f", deltaHeight, deltaCVDuration, newConstantDuration));
+		
+		return this.copy [ bldr |
 			bldr.constantVelocity(
 				this.constantVelocity.withNewDuration(newConstantDuration)
 			).reverseJerkTwo(
-				this.reverseJerkTwo.withDeltaHeight(deltaHeight, deltaCVDuration)
+				this.reverseJerkTwo.withSpaceTimeShift(deltaHeight, deltaCVDuration)
 			).reverseAcceleration(
-				this.reverseAcceleration.withDeltaHeight(deltaHeight, deltaCVDuration)
+				this.reverseAcceleration.withSpaceTimeShift(deltaHeight, deltaCVDuration)
 			).forwardJerkTwo(
-				this.forwardJerkTwo.withDeltaHeight(deltaHeight, deltaCVDuration)
+				this.forwardJerkTwo.withSpaceTimeShift(deltaHeight, deltaCVDuration)
 			).terminalSegment(
-				this.terminalSegment.withDeltaHeight(deltaHeight, deltaCVDuration)
+				this.terminalSegment.withSpaceTimeShift(deltaHeight, deltaCVDuration)
 			).terminalMoment(
 				this.terminalMoment.copy[
 					time(this.terminalMoment.time + deltaCVDuration)
 					.height(this.terminalMoment.height + deltaHeight)
 				]
+			)
+		]
+	}
+	
+	def JourneyArc moveEndpointsByOffset(double offset) {
+		this.copy [ bldr |
+			bldr.initialMoment(
+				this.initialMoment.withHeightOffset(offset)
+			).forwardJerkOne(
+				this.forwardJerkOne.withHeightOffset(offset)
+			).forwardAcceleration(
+				this.forwardAcceleration.withHeightOffset(offset)
+			).reverseJerkOne(
+				this.reverseJerkOne.withHeightOffset(offset)
+			).constantVelocity(
+				this.constantVelocity.withHeightOffset(offset)
+			).reverseJerkTwo(
+				this.reverseJerkTwo.withHeightOffset(offset)
+			).reverseAcceleration(
+				this.reverseAcceleration.withHeightOffset(offset)
+			).forwardJerkTwo(
+				this.forwardJerkTwo.withHeightOffset(offset)
+			).terminalSegment(
+				this.terminalSegment.withHeightOffset(offset)
+			).terminalMoment(
+				this.terminalMoment.withHeightOffset(offset)
 			)
 		]
 	}
@@ -111,7 +141,9 @@ class JourneyArc {
 		]
 	}
 	
-	def ConstantJerkPathLeg withDeltaHeight(ConstantJerkPathLeg leg, double deltaHeight, double deltaTime) {
+	private def ConstantJerkPathLeg withSpaceTimeShift(
+		ConstantJerkPathLeg leg, double deltaHeight, double deltaTime
+	) {
 		new ConstantJerkPathLeg(
 			leg.initialMoment.copy[
 				time(leg.initialTime + deltaTime)
@@ -120,13 +152,37 @@ class JourneyArc {
 		)
 	}
 	
-	def ConstantAccelerationPathLeg withDeltaHeight(ConstantAccelerationPathLeg leg, double deltaHeight, double deltaTime) {
+	private def ConstantAccelerationPathLeg withSpaceTimeShift(
+		ConstantAccelerationPathLeg leg, double deltaHeight, double deltaTime
+	) {
 		new ConstantAccelerationPathLeg(
 			leg.initialMoment.copy[
 				time(leg.initialTime + deltaTime)
 				.height(leg.initialHeight + deltaHeight) 
 			], leg.duration
 		)
+	}
+	
+	private def ConstantJerkPathLeg withHeightOffset(ConstantJerkPathLeg leg, double heightOffset) {
+		return new ConstantJerkPathLeg(
+			leg.initialMoment.withHeightOffset(heightOffset), leg.duration
+		)
+	}
+	
+	private def ConstantAccelerationPathLeg withHeightOffset(ConstantAccelerationPathLeg leg, double heightOffset) {
+		return new ConstantAccelerationPathLeg(
+			leg.initialMoment.withHeightOffset(heightOffset), leg.duration
+		)
+	}
+	
+	private def ConstantVelocityPathLeg withHeightOffset(ConstantVelocityPathLeg leg, double heightOffset) {
+		return new ConstantVelocityPathLeg(
+			leg.initialMoment.withHeightOffset(heightOffset), leg.duration
+		)
+	}
+	
+	private def PathMoment withHeightOffset(PathMoment initialMoment, double shiftOffset) {
+		return initialMoment.copy[ height(initialMoment.height + shiftOffset) ]
 	}
 
 	def double getShortestPossibleArc() {

@@ -7,5 +7,6 @@ import org.eclipse.xtend.lib.annotations.Data;
 @Data
 class PassengerDoorsClosed implements ElevatorCarEvent {
 	val long clockTime;
+        val long eventIndex;
 	val int carIndex;
 }

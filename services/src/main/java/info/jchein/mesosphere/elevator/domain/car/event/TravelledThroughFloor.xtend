@@ -8,6 +8,7 @@ import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel
 @Data
 class TravelledThroughFloor implements ElevatorCarEvent {
 	val long clockTime
+        val long eventIndex;
 	val int carIndex
 	val int floorIndex
 	val DirectionOfTravel direction

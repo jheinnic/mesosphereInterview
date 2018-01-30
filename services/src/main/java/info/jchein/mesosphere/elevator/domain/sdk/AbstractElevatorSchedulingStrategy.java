@@ -2,14 +2,13 @@ package info.jchein.mesosphere.elevator.domain.sdk;
 
 import com.google.common.eventbus.Subscribe;
 
+import info.jchein.mesosphere.elevator.domain.car.event.DepartedLanding;
 import info.jchein.mesosphere.elevator.domain.car.event.DropOffRequested;
-import info.jchein.mesosphere.elevator.domain.car.event.LocationUpdated;
 import info.jchein.mesosphere.elevator.domain.car.event.ParkedAtLanding;
-import info.jchein.mesosphere.elevator.domain.car.event.ReadyForDeparture;
-import info.jchein.mesosphere.elevator.domain.car.event.SlowedForArrival;
+import info.jchein.mesosphere.elevator.domain.car.event.PassengerDoorsClosed;
+import info.jchein.mesosphere.elevator.domain.car.event.PassengerDoorsOpened;
 import info.jchein.mesosphere.elevator.domain.car.event.TravelledThroughFloor;
 import info.jchein.mesosphere.elevator.domain.car.event.WeightLoadUpdated;
-import info.jchein.mesosphere.elevator.domain.common.ElevatorCarSnapshot;
 import info.jchein.mesosphere.elevator.domain.hall.event.PickupCallAdded;
 import info.jchein.mesosphere.elevator.domain.hall.event.PickupCallRemoved;
 
@@ -27,20 +26,17 @@ import info.jchein.mesosphere.elevator.domain.hall.event.PickupCallRemoved;
  * @author jheinnic
  */
 public abstract class AbstractElevatorSchedulingStrategy {
-   protected final IElevatorSchedulerPort port;
+   protected final IElevatorDispatcherPort port;
 
-   protected AbstractElevatorSchedulingStrategy(IElevatorSchedulerPort port) {
+   protected AbstractElevatorSchedulingStrategy(IElevatorDispatcherPort port) {
       this.port = port;
    }
 
    @Subscribe
-	public void updateLocation(LocationUpdated event) { }
-	
-   @Subscribe
 	public void updateWeightLoad(WeightLoadUpdated event) { }
 	
    @Subscribe
-	public void assignPickupCall(PickupCallAdded event) { }
+	public void onPickupCallAdded(PickupCallAdded event) { }
 	
    @Subscribe
 	public void onPickupCallRemoved(PickupCallRemoved event) { }
@@ -49,14 +45,20 @@ public abstract class AbstractElevatorSchedulingStrategy {
 	public void onDropOffRequested(DropOffRequested event) { }
 	
    @Subscribe
-	public void onReadyForDeparture(ReadyForDeparture event) { }
+	public void onParkedAtLanding(ParkedAtLanding event) { }
 	
    @Subscribe
-	public void onParkedForBoarding(ParkedAtLanding event) { }
+	public void onDepartedLanding(DepartedLanding event) { }
+	
+   @Subscribe
+	public void onPassengerDoorsOpened(PassengerDoorsOpened event) { }
+	
+   @Subscribe
+	public void onPassengerDoorsClosed(PassengerDoorsClosed event) { }
 	
 //   @Subscribe
 //	public void onSlowedForArrival(SlowedForArrival event) { }
 	
-//   @Subscribe
-//	public void onTravelledThroughFloor(TravelledThroughFloor event) { }
+   @Subscribe
+	public void onTravelledThroughFloor(TravelledThroughFloor event) { }
 }

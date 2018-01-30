@@ -7,6 +7,7 @@ import org.eclipse.xtend.lib.annotations.Data
 @Data
 public class DropOffRequested implements ElevatorCarEvent {
 	val long clockTime
+        val long eventIndex;
 	val int carIndex
     val int dropOffFloorIndex;
 }

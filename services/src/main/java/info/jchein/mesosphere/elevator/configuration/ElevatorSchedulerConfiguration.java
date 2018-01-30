@@ -6,12 +6,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 
-import info.jchein.mesosphere.elevator.configuration.properties.BuildingProperties;
-import info.jchein.mesosphere.elevator.configuration.properties.ElevatorDoorProperties;
-import info.jchein.mesosphere.elevator.configuration.properties.ElevatorMotorProperties;
-import info.jchein.mesosphere.elevator.configuration.properties.ElevatorWeightProperties;
-import info.jchein.mesosphere.elevator.configuration.properties.PassengerToleranceProperties;
-import info.jchein.mesosphere.elevator.domain.sdk.IElevatorSchedulerPort;
+import info.jchein.mesosphere.elevator.domain.common.ElevatorGroupBootstrap;
+import info.jchein.mesosphere.elevator.domain.sdk.IElevatorDispatcherPort;
 import info.jchein.mesosphere.elevator.physics.IElevatorPhysicsService;
 import info.jchein.mesosphere.elevator.scheduler.tracking.HeuristicElevatorSchedulingStrategy;
 import rx.Scheduler.Worker;
@@ -23,14 +19,10 @@ public class ElevatorSchedulerConfiguration {
 	@Bean
 	@Autowired
 	@Scope(BeanDefinition.SCOPE_SINGLETON)
-	HeuristicElevatorSchedulingStrategy getElevatorScheduler(final IElevatorSchedulerPort port,
-			// final ITrafficPredictor trafficPredictor,
-			final BuildingProperties bldgProps, final ElevatorDoorProperties doorProps,
-			final ElevatorMotorProperties motorProps, final ElevatorWeightProperties weightProps,
-			final PassengerToleranceProperties toleranceProps, final IElevatorPhysicsService physicsService
+	HeuristicElevatorSchedulingStrategy getElevatorScheduler(final IElevatorDispatcherPort port,
+		final ElevatorGroupBootstrap rootProps, final IElevatorPhysicsService physicsService
 	) {
-		return new HeuristicElevatorSchedulingStrategy(
-			port, null, bldgProps, doorProps, motorProps, weightProps, toleranceProps, physicsService);
+		return new HeuristicElevatorSchedulingStrategy(port, rootProps, physicsService);
 	}
 
 	@Bean

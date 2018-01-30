@@ -11,8 +11,6 @@ import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.lmax.disruptor.RingBuffer;
-import com.lmax.disruptor.dsl.Disruptor;
 
 import info.jchein.mesosphere.elevator.configuration.properties.BuildingProperties;
 import info.jchein.mesosphere.elevator.configuration.properties.SystemRuntimeProperties;
@@ -74,8 +72,20 @@ public class TestSchedThred {
 			return this.elevatorId;
 		}
 
-		public void arrive() {
-			System.out.println(String.format("Arrived at %d on %d", this.port.now(), Thread.currentThread().getId()));
+		public void arriveOne() {
+			System.out.println(String.format("Arrived at %d on thread %d", this.port.now(), Thread.currentThread().getId()));
+		}
+
+		public void arriveTwo() {
+			System.out.println(String.format("Arrived again at %d on thread %d", this.port.now(), Thread.currentThread().getId()));
+		}
+
+		public void arriveThree() {
+			System.out.println(String.format("Arrived yet again at %d on thread %d", this.port.now(), Thread.currentThread().getId()));
+		}
+
+		public void arriveFour() {
+			System.out.println(String.format("Arrived for the last time at %d on thread %d", this.port.now(), Thread.currentThread().getId()));
 		}
 
 		@Subscribe
@@ -107,7 +117,15 @@ public class TestSchedThred {
 
 		public void scheduleArrival(Elevator elevator, long delay) {
 //			Observable.timer(delay, TimeUnit.MILLISECONDS, this.scheduler).doOnCompleted(elevator::arrive).subscribe();
-			worker.schedule(elevator::arrive, delay, TimeUnit.MILLISECONDS);
+		   System.out.println(String.format("Scheduling from thread %d", Thread.currentThread().getId()));
+		   Worker worker = this.scheduler.createWorker();
+			worker.schedule(elevator::arriveOne, delay, TimeUnit.MILLISECONDS);
+		   worker = this.scheduler.createWorker();
+			worker.schedule(elevator::arriveTwo, delay, TimeUnit.MILLISECONDS);
+		   worker = this.scheduler.createWorker();
+			worker.schedule(elevator::arriveThree, delay, TimeUnit.MILLISECONDS);
+		   worker = this.scheduler.createWorker();
+			worker.schedule(elevator::arriveFour, delay, TimeUnit.MILLISECONDS);
 		}
 	}
 
@@ -185,8 +203,10 @@ public class TestSchedThred {
 	public static void main(String[] args) {
 		ThreadFactory foo = threadFactory("Worker %d");
 		ExecutorService rxPool = Executors.newSingleThreadExecutor(foo);
+		ExecutorService rxPool2 = Executors.newFixedThreadPool(4, foo);
 		ExecutorService busPool = Executors.newSingleThreadExecutor(foo);
-		Scheduler scheduler = Schedulers.from(rxPool);
+		ExecutorService busPool2 = Executors.newFixedThreadPool(1, foo);
+		Scheduler scheduler = Schedulers.from(rxPool2);
 		EventBus eventBus = new AsyncEventBus(busPool);
 		SystemRuntimeProperties runtimeProps = SystemRuntimeProperties.build(bldr -> {
 			bldr.clockTickDuration(0.01);
@@ -195,8 +215,8 @@ public class TestSchedThred {
 			bldr.metersPerFloor(3.5).numElevators(4).numFloors(10);
 		});
 
-		TestSchedThred explorer = new TestSchedThred(scheduler, eventBus, runtimeProps, bldgProps);
-		explorer.doIt();
+//		TestSchedThred explorer = new TestSchedThred(scheduler, eventBus, runtimeProps, bldgProps);
+//		explorer.doIt();
 
 		// Construct the Disruptor
 		// Disruptor<LongEvent> disruptor = new Disruptor<>(LongEvent::new, 512,
@@ -220,7 +240,7 @@ public class TestSchedThred {
 		// }
 
 		TestScheduler schedulerTwo = Schedulers.test();
-		EventBus eventBusTwo = new EventBus();
+		EventBus eventBusTwo = new AsyncEventBus(busPool2);
 		TestSchedThred explorerTwo = new TestSchedThred(schedulerTwo, eventBusTwo, runtimeProps, bldgProps);
 		explorerTwo.doIt();
 		for (int ii = 0; ii < 80; ii++) {

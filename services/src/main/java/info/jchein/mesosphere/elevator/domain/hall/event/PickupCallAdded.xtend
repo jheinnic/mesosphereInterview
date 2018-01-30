@@ -7,9 +7,7 @@ import org.eclipse.xtend.lib.annotations.Data
 @Data
 @Buildable
 class PickupCallAdded implements HallEvent {
-	override getEventType() { return HallEventType.PICKUP_CALL_ADDED; }
-	
-	val long timeIndex;
+	val long clockTime;
 	val int floorIndex;
 	val DirectionOfTravel direction;
 }

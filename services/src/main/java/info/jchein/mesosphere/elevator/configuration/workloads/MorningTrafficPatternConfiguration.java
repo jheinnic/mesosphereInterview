@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Scope;
 
-import info.jchein.mesosphere.domain.clock.IClock;
+import info.jchein.mesosphere.elevator.runtime.IRuntimeService;
 import info.jchein.mesosphere.elevator.simulator.passengers.IPassengerArrivalStrategy;
 import info.jchein.mesosphere.elevator.simulator.passengers.IPathSelector;
 import info.jchein.mesosphere.elevator.simulator.passengers.RandomPathSelector;
@@ -19,12 +19,12 @@ import rx.Scheduler.Worker;
 @Profile({ "workload.morning" })
 @Configuration
 public class MorningTrafficPatternConfiguration {
-	private IClock systemClock;
+	private IRuntimeService systemClock;
 	private IPassengerArrivalStrategy arrivalStrategy;
 
 	@Autowired
 	public MorningTrafficPatternConfiguration(
-		IClock systemClock, IPassengerArrivalStrategy arrivalStrategy)
+		IRuntimeService systemClock, IPassengerArrivalStrategy arrivalStrategy)
 	{
 		this.systemClock = systemClock;
 		this.arrivalStrategy = arrivalStrategy;

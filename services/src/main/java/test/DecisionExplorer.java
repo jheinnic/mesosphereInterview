@@ -11,8 +11,6 @@ import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.lmax.disruptor.RingBuffer;
-import com.lmax.disruptor.dsl.Disruptor;
 
 import info.jchein.mesosphere.elevator.configuration.properties.BuildingProperties;
 import info.jchein.mesosphere.elevator.configuration.properties.SystemRuntimeProperties;

@@ -8,16 +8,16 @@ import org.springframework.stereotype.Component;
 
 import com.google.common.eventbus.EventBus;
 
-import info.jchein.mesosphere.domain.clock.IClock;
+import info.jchein.mesosphere.elevator.runtime.IRuntimeService;
 import rx.functions.Action0;
 
 @Component("ElevatorSimulation")
 public class ElevatorSimulation implements IElevatorSimulation {
-	private final IClock schedulingWorker;
+	private final IRuntimeService schedulingWorker;
 	private final Action0 action;
 	private final EventBus eventBus;
 
-	public ElevatorSimulation( @NotNull IClock schedulingWorker, @NotNull EventBus eventBus ) {
+	public ElevatorSimulation( @NotNull IRuntimeService schedulingWorker, @NotNull EventBus eventBus ) {
 		this.schedulingWorker = schedulingWorker;
 		this.eventBus = eventBus;
 		this.action = () -> {

@@ -7,16 +7,12 @@ import org.springframework.context.annotation.Scope;
 
 import com.google.common.eventbus.EventBus;
 
-import info.jchein.mesosphere.domain.clock.IClock;
-import info.jchein.mesosphere.elevator.configuration.properties.BuildingProperties;
-import info.jchein.mesosphere.elevator.configuration.properties.ElevatorDoorProperties;
-import info.jchein.mesosphere.elevator.configuration.properties.ElevatorMotorProperties;
-import info.jchein.mesosphere.elevator.configuration.properties.ElevatorWeightProperties;
-import info.jchein.mesosphere.elevator.configuration.properties.PassengerToleranceProperties;
+import info.jchein.mesosphere.elevator.domain.common.ElevatorGroupBootstrap;
 import info.jchein.mesosphere.elevator.domain.sdk.IElevatorCarPort;
 import info.jchein.mesosphere.elevator.emulator.SimulatedElevatorCar;
 import info.jchein.mesosphere.elevator.physics.ElevatorPhysicsService;
 import info.jchein.mesosphere.elevator.physics.IElevatorPhysicsService;
+import info.jchein.mesosphere.elevator.runtime.IRuntimeService;
 import info.jchein.mesosphere.elevator.simulator.ElevatorSimulation;
 import info.jchein.mesosphere.elevator.simulator.IElevatorSimulation;
 
@@ -24,7 +20,7 @@ import info.jchein.mesosphere.elevator.simulator.IElevatorSimulation;
 public class ElevatorSimulationConfiguration {
 	@Bean
 	@Scope(BeanDefinition.SCOPE_SINGLETON)
-	public IElevatorSimulation getSimulation(IClock systemClock, EventBus eventBus) {
+	public IElevatorSimulation getSimulation(IRuntimeService systemClock, EventBus eventBus) {
 		return new ElevatorSimulation(systemClock, eventBus);
 	}
 
@@ -52,9 +48,8 @@ public class ElevatorSimulationConfiguration {
 
 	@Bean
 	@Scope(BeanDefinition.SCOPE_SINGLETON)
-	IElevatorPhysicsService getElevatorPhysicsService(BuildingProperties bldgProperties, ElevatorDoorProperties doorProps,
-		ElevatorMotorProperties motorProps, ElevatorWeightProperties weightProps, PassengerToleranceProperties toleranceProps) {
-		return new ElevatorPhysicsService(bldgProperties, doorProps, motorProps, weightProps, toleranceProps);
+	IElevatorPhysicsService getElevatorPhysicsService(ElevatorGroupBootstrap bootstrapData) {
+		return new ElevatorPhysicsService(bootstrapData);
 	}
 
 //	@Bean
@@ -65,9 +60,7 @@ public class ElevatorSimulationConfiguration {
 
 	@Bean
 	@Scope(BeanDefinition.SCOPE_PROTOTYPE)
-	public SimulatedElevatorCar getElevatorCarDriver(
-	   IElevatorCarPort port, IElevatorPhysicsService physicsService, BuildingProperties bldgProps
-	) {
-		return new SimulatedElevatorCar(port, physicsService, bldgProps);
+	public SimulatedElevatorCar getElevatorCarDriver(IElevatorCarPort port, IElevatorPhysicsService physicsService) {
+		return new SimulatedElevatorCar(port, physicsService);
 	}
 }
