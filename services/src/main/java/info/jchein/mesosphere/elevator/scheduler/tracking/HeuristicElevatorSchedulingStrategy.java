@@ -13,10 +13,10 @@ import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel;
 import info.jchein.mesosphere.elevator.domain.common.ElevatorGroupBootstrap;
 import info.jchein.mesosphere.elevator.domain.hall.event.PickupCallAdded;
 import info.jchein.mesosphere.elevator.domain.hall.event.PickupCallRemoved;
+import info.jchein.mesosphere.elevator.domain.physics.IElevatorPhysicsService;
 import info.jchein.mesosphere.elevator.domain.sdk.AbstractElevatorSchedulingStrategy;
 import info.jchein.mesosphere.elevator.domain.sdk.IElevatorDispatcherPort;
-import info.jchein.mesosphere.elevator.physics.IElevatorPhysicsService;
-import info.jchein.mesosphere.elevator.physics.JourneyArc;
+import JourneyArc;
 
 public class HeuristicElevatorSchedulingStrategy extends AbstractElevatorSchedulingStrategy {
 

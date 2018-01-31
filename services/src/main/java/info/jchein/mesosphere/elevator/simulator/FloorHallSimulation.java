@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import com.google.common.base.Preconditions;
 
 import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel;
-import info.jchein.mesosphere.elevator.emulator.ISimulationScenario;
+import info.jchein.mesosphere.elevator.domain.emulator.ISimulationScenario;
 import info.jchein.mesosphere.elevator.simulator.passengers.IPassengerArrivalStrategy;
 
 @Component

@@ -8,10 +8,10 @@ import org.springframework.context.annotation.Scope;
 import com.google.common.eventbus.EventBus;
 
 import info.jchein.mesosphere.elevator.domain.common.ElevatorGroupBootstrap;
+import info.jchein.mesosphere.elevator.domain.emulator.SimulatedElevatorCar;
+import info.jchein.mesosphere.elevator.domain.physics.IElevatorPhysicsService;
 import info.jchein.mesosphere.elevator.domain.sdk.IElevatorCarPort;
-import info.jchein.mesosphere.elevator.emulator.SimulatedElevatorCar;
-import info.jchein.mesosphere.elevator.physics.ElevatorPhysicsService;
-import info.jchein.mesosphere.elevator.physics.IElevatorPhysicsService;
+import ElevatorPhysicsService;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeService;
 import info.jchein.mesosphere.elevator.simulator.ElevatorSimulation;
 import info.jchein.mesosphere.elevator.simulator.IElevatorSimulation;

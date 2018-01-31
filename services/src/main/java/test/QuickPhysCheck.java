@@ -5,10 +5,10 @@ import info.jchein.mesosphere.elevator.domain.common.BuildingProperties;
 import info.jchein.mesosphere.elevator.domain.common.PhysicalDispatchContext;
 import info.jchein.mesosphere.elevator.domain.common.ElevatorMotorProperties;
 import info.jchein.mesosphere.elevator.domain.common.ElevatorGroupBootstrap;
-import info.jchein.mesosphere.elevator.physics.ElevatorPhysicsService;
-import info.jchein.mesosphere.elevator.physics.JourneyArc;
-import info.jchein.mesosphere.elevator.physics.PathLeg;
-import info.jchein.mesosphere.elevator.physics.PathMoment;
+import ElevatorPhysicsService;
+import JourneyArc;
+import PathLeg;
+import PathMoment;
 
 
 public class QuickPhysCheck

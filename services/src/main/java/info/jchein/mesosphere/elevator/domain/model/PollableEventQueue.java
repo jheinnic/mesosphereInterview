@@ -8,7 +8,7 @@ import javax.annotation.PostConstruct;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-import info.jchein.mesosphere.elevator.domain.car.event.ElevatorCarEvent;
+import info.jchein.mesosphere.elevator.domain.event.ElevatorCarEvent;
 
 public class PollableEventQueue
 {

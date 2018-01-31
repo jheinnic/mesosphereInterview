@@ -5,8 +5,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import info.jchein.mesosphere.elevator.emulator.SimulatedElevatorCar;
-import info.jchein.mesosphere.elevator.emulator.ISimulationScenario;
+import info.jchein.mesosphere.elevator.domain.emulator.ISimulationScenario;
+import info.jchein.mesosphere.elevator.domain.emulator.SimulatedElevatorCar;
 import info.jchein.mesosphere.elevator.simulator.passengers.IPassengerArrivalStrategy;
 
 @Component

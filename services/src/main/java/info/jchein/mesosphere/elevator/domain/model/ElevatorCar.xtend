@@ -17,7 +17,7 @@ import info.jchein.mesosphere.elevator.domain.common.InitialElevatorCarState
 import info.jchein.mesosphere.elevator.domain.hall.event.FloorSensorTriggered
 import info.jchein.mesosphere.elevator.domain.sdk.IElevatorCarDriver
 import info.jchein.mesosphere.elevator.domain.sdk.IElevatorCarPort
-import info.jchein.mesosphere.elevator.physics.IElevatorPhysicsService
+import IElevatorPhysicsService
 import info.jchein.mesosphere.elevator.runtime.IRuntimeClock
 import info.jchein.mesosphere.elevator.runtime.IRuntimeEventBus
 import java.util.BitSet
