@@ -6,7 +6,7 @@ import org.statefulj.persistence.annotations.State.AccessorType;
 
 import com.google.common.eventbus.EventBus;
 
-import info.jchein.mesosphere.elevator.runtime.IRuntimeService;
+import info.jchein.mesosphere.elevator.runtime.virtual.IVirtualRuntimeService;
 
 public class TravelPathFSM {
 	@State(accessorType = AccessorType.METHOD, getMethodName = "getState", setMethodName = "setState")
@@ -15,7 +15,7 @@ public class TravelPathFSM {
 	// private final UniformStream probabilityStream;
 	// private NormalStream durationStream;
 
-	private final IRuntimeService systemClock;
+	private final IVirtualRuntimeService systemClock;
 	// private final IBehaviorStrategy behaviorStrategy;
 	private final EventBus eventBus;
 
@@ -38,7 +38,7 @@ public class TravelPathFSM {
 	public final static String BEGIN_FROM_C = "beginFromFloorC";
 
 	@Autowired
-	public TravelPathFSM(IRuntimeService systemClock, /* IBehaviorStrategy behaviorStrategy, */ EventBus eventBus) {
+	public TravelPathFSM(IVirtualRuntimeService systemClock, /* IBehaviorStrategy behaviorStrategy, */ EventBus eventBus) {
 		this.systemClock = systemClock;
 //		this.behaviorStrategy = behaviorStrategy;
 		this.eventBus = eventBus;

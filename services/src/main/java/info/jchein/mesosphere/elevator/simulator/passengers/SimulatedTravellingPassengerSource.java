@@ -14,7 +14,7 @@ import org.statefulj.framework.core.model.StatefulFSM;
 
 import com.google.common.eventbus.EventBus;
 
-import info.jchein.mesosphere.elevator.runtime.IRuntimeService;
+import info.jchein.mesosphere.elevator.runtime.virtual.IVirtualRuntimeService;
 import info.jchein.mesosphere.validator.annotation.Positive;
 import rx.Subscription;
 import rx.functions.Action0;
@@ -28,7 +28,7 @@ public class SimulatedTravellingPassengerSource {
 	@FSM
 	StatefulFSM<TravelPathFSM> fsm;
 
-	private final IRuntimeService systemClock;
+	private final IVirtualRuntimeService systemClock;
 	private final EventBus eventBus;
 	private final IPassengerArrivalStrategy arrivalStrategy;
 //	private final IBehaviorStrategy traversalBehavior;
@@ -54,7 +54,7 @@ public class SimulatedTravellingPassengerSource {
 
 	@Autowired
 	public SimulatedTravellingPassengerSource(
-			@NotNull IRuntimeService systemClock,
+			@NotNull IVirtualRuntimeService systemClock,
 			@NotNull EventBus eventBus,
 			@Positive double medianSecondsBetweenArrivals,
 			@Positive double medianSecondsBetweenFloorChanges,

@@ -19,10 +19,12 @@ import org.springframework.stereotype.Component;
 import rx.Scheduler.Worker;
 import rx.Subscription;
 import rx.functions.Action0;
-import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeService;
-import info.jchein.mesosphere.elevator.simulator.FloorHallSimulation;
-import info.jchein.mesosphere.elevator.simulator.SimulatedPassenger;
+import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
+import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
+import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
+import info.jchein.mesosphere.elevator.runtime.virtual.IVirtualRuntimeService;
+import info.jchein.mesosphere.elevator.simulator.model.FloorHallSimulation;
+import info.jchein.mesosphere.elevator.simulator.model.SimulatedPassenger;
 import info.jchein.mesosphere.validator.annotation.Positive;
 
 @Component
@@ -30,7 +32,7 @@ import info.jchein.mesosphere.validator.annotation.Positive;
 public class SimulatedSimplePassengerSource {
 	private static final Logger LOG = LoggerFactory.getLogger(SimulatedSimplePassengerSource.class);
 
-	private final IRuntimeService systemClock;
+	private final IRuntimeScheduler scheduler;
 	private final IPassengerArrivalStrategy arrivalStrategy;
 
 	private final ExponentialDistribution distribution;
@@ -38,10 +40,13 @@ public class SimulatedSimplePassengerSource {
 	private final int travelToFloorIndex;
 	private final int departFromFloorIndex;
 
+   private IRuntimeClock clock;
+
 	@Autowired
-	public SimulatedSimplePassengerSource(@NotNull IRuntimeService systemClock, @Positive double medianSecondsBetweenArrivals,
+	public SimulatedSimplePassengerSource(@NotNull IRuntimeClock clock, @NotNull IRuntimeScheduler scheduler, @Positive double medianSecondsBetweenArrivals,
 			@Min(0) int departFromFloorIndex, @Min(0) int travelToFloorIndex, @NotNull IPassengerArrivalStrategy arrivalStrategy) {
-		this.systemClock = systemClock;
+		this.clock = clock;
+      this.scheduler = scheduler;
 		this.arrivalStrategy = arrivalStrategy;
 		this.departFromFloorIndex = departFromFloorIndex;
 		this.travelToFloorIndex = travelToFloorIndex;
@@ -58,7 +63,7 @@ public class SimulatedSimplePassengerSource {
 	}
 
 	public void init() {
-		this.systemClock.scheduleVariable(this.drawNextArrival(), TimeUnit.MILLISECONDS, 0, this::onPassengerArrival);
+		this.scheduler.scheduleVariable(this.drawNextArrival(), TimeUnit.MILLISECONDS, 0, this::onPassengerArrival);
 	}
 
 	private long drawNextArrival() {
@@ -70,7 +75,7 @@ public class SimulatedSimplePassengerSource {
 //		SimulatedPassenger nextPassenger =
 //			new SimulatedPassenger("temp", 1, this.travelToFloorIndex, this.systemClock.now());
 		this.arrivalStrategy.passengerArrival(
-		   this.systemClock.now(), this.departFromFloorIndex, this.travelToFloorIndex);
+		   this.clock.now(), this.departFromFloorIndex, this.travelToFloorIndex);
 
 		return this.drawNextArrival();
 	}

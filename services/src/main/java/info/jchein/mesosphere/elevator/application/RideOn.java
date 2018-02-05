@@ -3,10 +3,10 @@ package info.jchein.mesosphere.elevator.application;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-import info.jchein.mesosphere.elevator.runtime.EnableElevatorRuntime;
+import info.jchein.mesosphere.elevator.runtime.virtual.EnableVirtualRuntime;
 
 @SpringBootApplication
-@EnableElevatorRuntime
+@EnableVirtualRuntime
 public class RideOn
 {
     public static void main(String[] args) {

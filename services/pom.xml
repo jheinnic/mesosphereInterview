@@ -10,6 +10,10 @@
     <artifactId>services</artifactId>
     <name>Interview Project Services Layer</name>
     <description>Services Layer for Mesopshere Interview Challenge Project</description>
+    
+    <properties>
+        <start-class>info.jchein.mesosphere.elevator.application.RideOn</start-class>
+    </properties>
 
     <dependencies>
         <!-- StatefulJ -->
@@ -150,6 +154,15 @@
         </dependency>
 
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <scope>test</scope>
@@ -181,24 +194,20 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok-maven-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.eclipse.xtend</groupId>
                 <artifactId>xtend-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.assertj</groupId>
@@ -206,13 +215,33 @@
                 <version>2.1.0</version>
                 <configuration>
                     <packages>
-                        <param>info.jchein.mesosphere.elevator.domain.model</param>
-                        <param>info.jchein.mesosphere.elevator.domain.car.event</param>
-                        <param>info.jchein.mesosphere.elevator.domain.hall.event</param>
+                        <param>info.jchein.mesosphere.elevator.common</param>
+                        <param>info.jchein.mesosphere.elevator.common.bootstrap</param>
+                        <param>info.jchein.mesosphere.elevator.common.evaluation</param>
+                        <param>info.jchein.mesosphere.elevator.common.graph</param>
+                        <param>info.jchein.mesosphere.elevator.control.event</param>
+                        <param>info.jchein.mesosphere.elevator.control.model</param>
+                        <param>info.jchein.mesosphere.elevator.control.sdk</param>
+                        <param>info.jchein.mesosphere.elevator.domain.scheduler</param>
+                        <param>info.jchein.mesosphere.elevator.emulator.event</param>
+                        <param>info.jchein.mesosphere.elevator.emulator.model</param>
+                        <param>info.jchein.mesosphere.elevator.emulator.physics</param>
+                        <param>info.jchein.mesosphere.elevator.simulator.model</param>
+                        <param>info.jchein.mesosphere.elevator.simulator.passengers</param>
+                        <param>info.jchein.mesosphere.elevator.runtime</param>
+                        <param>info.jchein.mesosphere.elevator.scheduler.tracking</param>
                     </packages>
                     <classes>
                     </classes>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

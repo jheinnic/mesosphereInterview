@@ -1,7 +1,5 @@
 package info.jchein.mesosphere.elevator.runtime;
 
-import java.util.function.Function;
-
 import org.apache.commons.math3.distribution.RealDistribution;
 
 import rx.functions.Action0;

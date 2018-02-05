@@ -1,6 +1,6 @@
 package info.jchein.mesosphere.elevator.domain.scheduler;
 
-import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel;
+import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 
 public interface ScheduledStop
 {

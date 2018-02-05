@@ -6,13 +6,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.springframework.cache.annotation.CachingConfigurationSelector;
 import org.springframework.context.annotation.Import;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Import(.class)
+@Import(TrackingDispatcherConfiguration.class)
 public @interface EnableTrackingDispatcher
 {
 

@@ -6,17 +6,17 @@ import java.util.Set;
 
 import com.google.common.collect.ImmutableSet;
 
-import info.jchein.mesosphere.elevator.domain.car.event.DropOffRequested;
-import info.jchein.mesosphere.elevator.domain.car.event.ParkedAtLanding;
-import info.jchein.mesosphere.elevator.domain.car.event.TravelledThroughFloor;
-import info.jchein.mesosphere.elevator.domain.common.DirectionOfTravel;
-import info.jchein.mesosphere.elevator.domain.common.ElevatorGroupBootstrap;
-import info.jchein.mesosphere.elevator.domain.hall.event.PickupCallAdded;
-import info.jchein.mesosphere.elevator.domain.hall.event.PickupCallRemoved;
-import info.jchein.mesosphere.elevator.domain.physics.IElevatorPhysicsService;
-import info.jchein.mesosphere.elevator.domain.sdk.AbstractElevatorSchedulingStrategy;
-import info.jchein.mesosphere.elevator.domain.sdk.IElevatorDispatcherPort;
-import JourneyArc;
+import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
+import info.jchein.mesosphere.elevator.common.bootstrap.ElevatorGroupBootstrap;
+import info.jchein.mesosphere.elevator.control.event.DropOffRequested;
+import info.jchein.mesosphere.elevator.control.event.ParkedAtLanding;
+import info.jchein.mesosphere.elevator.control.event.PickupCallAdded;
+import info.jchein.mesosphere.elevator.control.event.PickupCallRemoved;
+import info.jchein.mesosphere.elevator.control.event.TravelledThroughFloor;
+import info.jchein.mesosphere.elevator.control.sdk.AbstractElevatorSchedulingStrategy;
+import info.jchein.mesosphere.elevator.control.sdk.IElevatorDispatcherPort;
+import info.jchein.mesosphere.elevator.emulator.physics.IElevatorPhysicsService;
+import info.jchein.mesosphere.elevator.emulator.physics.JourneyArc;
 
 public class HeuristicElevatorSchedulingStrategy extends AbstractElevatorSchedulingStrategy {
 
