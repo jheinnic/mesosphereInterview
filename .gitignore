@@ -10,3 +10,8 @@
 **/*.swo
 /.metadata/
 /.recommenders/
+.eclipse-pmd
+.factorypath
+JET2Project
+*._dnetx
+*._avaj
