@@ -12,8 +12,8 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import info.jchein.mesosphere.elevator.configuration.properties.BuildingProperties;
-import info.jchein.mesosphere.elevator.configuration.properties.SystemRuntimeProperties;
+import info.jchein.mesosphere.elevator.common.bootstrap.BuildingProperties;
+import info.jchein.mesosphere.elevator.runtime.virtual.VirtualRuntimeProperties;
 import rx.Observable;
 import rx.Scheduler;
 import rx.Scheduler.Worker;
@@ -41,7 +41,7 @@ public class TestSchedThred {
 	}
 
 	private Scheduler scheduler;
-	private SystemRuntimeProperties runtimeProps;
+	private VirtualRuntimeProperties runtimeProps;
 	private BuildingProperties bldgProps;
 	private long clockTickDuration;
 	private EventBus eventBus;
@@ -154,13 +154,13 @@ public class TestSchedThred {
 		}
 	}
 
-	public TestSchedThred(Scheduler scheduler, EventBus eventBus, SystemRuntimeProperties runtimeProps,
+	public TestSchedThred(Scheduler scheduler, EventBus eventBus, VirtualRuntimeProperties runtimeProps,
 			BuildingProperties bldgProps) {
 		this.scheduler = scheduler;
 		this.eventBus = eventBus;
 		this.runtimeProps = runtimeProps;
 		this.bldgProps = bldgProps;
-		this.clockTickDuration = Math.round(this.runtimeProps.getClockTickDuration() * 1000);
+		this.clockTickDuration = Math.round(this.runtimeProps.getTickDurationMillis() * 1000);
 	}
 
 	public void doIt() {
@@ -208,9 +208,7 @@ public class TestSchedThred {
 		ExecutorService busPool2 = Executors.newFixedThreadPool(1, foo);
 		Scheduler scheduler = Schedulers.from(rxPool2);
 		EventBus eventBus = new AsyncEventBus(busPool);
-		SystemRuntimeProperties runtimeProps = SystemRuntimeProperties.build(bldr -> {
-			bldr.clockTickDuration(0.01);
-		});
+		VirtualRuntimeProperties runtimeProps = new VirtualRuntimeProperties(100);
 		BuildingProperties bldgProps = BuildingProperties.build(bldr -> {
 			bldr.metersPerFloor(3.5).numElevators(4).numFloors(10);
 		});

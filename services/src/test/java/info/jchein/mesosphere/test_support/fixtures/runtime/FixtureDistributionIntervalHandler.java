@@ -1,6 +1,8 @@
-package info.jchein.mesosphere.elevator.runtime;
+package info.jchein.mesosphere.test_support.fixtures.runtime;
 
 import org.apache.commons.math3.distribution.RealDistribution;
+
+import info.jchein.mesosphere.elevator.runtime.AbstractDistributionBasedIntervalFunction;
 
 public class FixtureDistributionIntervalHandler
 extends AbstractDistributionBasedIntervalFunction

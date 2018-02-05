@@ -12,8 +12,8 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import info.jchein.mesosphere.elevator.configuration.properties.BuildingProperties;
-import info.jchein.mesosphere.elevator.configuration.properties.SystemRuntimeProperties;
+import info.jchein.mesosphere.elevator.common.bootstrap.BuildingProperties;
+import info.jchein.mesosphere.elevator.runtime.virtual.VirtualRuntimeProperties;
 import rx.Observable;
 import rx.Scheduler;
 import rx.Scheduler.Worker;
@@ -41,7 +41,7 @@ public class DecisionExplorer {
 	}
 
 	private Scheduler scheduler;
-	private SystemRuntimeProperties runtimeProps;
+	private VirtualRuntimeProperties runtimeProps;
 	private BuildingProperties bldgProps;
 	private long clockTickDuration;
 	private EventBus eventBus;
@@ -134,13 +134,13 @@ public class DecisionExplorer {
 		}
 	}
 
-	public DecisionExplorer(Scheduler scheduler, EventBus eventBus, SystemRuntimeProperties runtimeProps,
+	public DecisionExplorer(Scheduler scheduler, EventBus eventBus, VirtualRuntimeProperties runtimeProps,
 			BuildingProperties bldgProps) {
 		this.scheduler = scheduler;
 		this.eventBus = eventBus;
 		this.runtimeProps = runtimeProps;
 		this.bldgProps = bldgProps;
-		this.clockTickDuration = Math.round(this.runtimeProps.getClockTickDuration() * 1000);
+		this.clockTickDuration = this.runtimeProps.getTickDurationMillis();
 	}
 
 	public void doIt() {
@@ -181,19 +181,19 @@ public class DecisionExplorer {
 	}
 
 	public static void main(String[] args) {
-		ThreadFactory foo = threadFactory("Worker %d");
-		ExecutorService rxPool = Executors.newSingleThreadExecutor(foo);
-		ExecutorService busPool = Executors.newSingleThreadExecutor(foo);
-		Scheduler scheduler = Schedulers.from(rxPool);
-		EventBus eventBus = new AsyncEventBus(busPool);
-		SystemRuntimeProperties runtimeProps = SystemRuntimeProperties.build(bldr -> {
-			bldr.clockTickDuration(0.01);
-		});
-		BuildingProperties bldgProps = BuildingProperties.build(bldr -> {
+		final ThreadFactory foo = threadFactory("Worker %d");
+		final ExecutorService rxPool = Executors.newSingleThreadExecutor(foo);
+		final ExecutorService busPool = Executors.newSingleThreadExecutor(foo);
+		final Scheduler scheduler = Schedulers.from(rxPool);
+		final EventBus eventBus = new AsyncEventBus(busPool);
+
+		final VirtualRuntimeProperties runtimeProps = new VirtualRuntimeProperties(100);
+
+		final BuildingProperties bldgProps = BuildingProperties.build(bldr -> {
 			bldr.metersPerFloor(3.5).numElevators(4).numFloors(10);
 		});
 
-		DecisionExplorer explorer = new DecisionExplorer(scheduler, eventBus, runtimeProps, bldgProps);
+		final DecisionExplorer explorer = new DecisionExplorer(scheduler, eventBus, runtimeProps, bldgProps);
 		explorer.doIt();
 
 		// Construct the Disruptor
@@ -217,9 +217,10 @@ public class DecisionExplorer {
 		// Thread.sleep(1000);
 		// }
 
-		TestScheduler schedulerTwo = Schedulers.test();
-		EventBus eventBusTwo = new EventBus();
-		DecisionExplorer explorerTwo = new DecisionExplorer(schedulerTwo, eventBusTwo, runtimeProps, bldgProps);
+		final TestScheduler schedulerTwo = Schedulers.test();
+		final EventBus eventBusTwo = new EventBus();
+		final DecisionExplorer explorerTwo = new DecisionExplorer(schedulerTwo, eventBusTwo, runtimeProps, bldgProps);
+
 		explorerTwo.doIt();
 		for (int ii = 0; ii < 80; ii++) {
 			System.out.println(String.format("Test iteration #%d", ii + 1));

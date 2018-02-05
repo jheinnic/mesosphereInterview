@@ -7,16 +7,14 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
-import info.jchein.mesosphere.elevator.configuration.ExternalConfigurationProperties;
-import info.jchein.mesosphere.elevator.runtime.RuntimeFrameworkConfiguration;
-import info.jchein.mesosphere.elevator.configuration.ElevatorGroupControlConfiguration;
-import info.jchein.mesosphere.elevator.configuration.ElevatorSimulationConfiguration;
-import info.jchein.mesosphere.elevator.simulator.IElevatorSimulation;
+import info.jchein.mesosphere.elevator.common.bootstrap.ExternalConfigurationProperties;
+import info.jchein.mesosphere.elevator.runtime.virtual.VirtualRuntimeConfiguration;
+import info.jchein.mesosphere.elevator.simulator.model.ElevatorSimulationConfiguration;
+import info.jchein.mesosphere.elevator.simulator.model.IElevatorSimulation;
 import info.jchein.mesosphere.elevator.simulator.passengers.SimulatedTravellingPassengerSource;
 
 @SpringBootApplication
-@Import({ RuntimeFrameworkConfiguration.class, ElevatorGroupControlConfiguration.class,
-		ElevatorSimulationConfiguration.class, ExternalConfigurationProperties.class })
+@Import({ VirtualRuntimeConfiguration.class, ElevatorSimulationConfiguration.class, ExternalConfigurationProperties.class })
 @ComponentScan(basePackages={
     "info.jchein.mesosphere.elevator.configuration",
     "info.jchein.mesosphere.elevator.configuration.workloads",
