@@ -24,7 +24,7 @@ import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
 import info.jchein.mesosphere.elevator.runtime.virtual.IVirtualRuntimeService;
 import info.jchein.mesosphere.elevator.simulator.model.FloorHallSimulation;
-import info.jchein.mesosphere.elevator.simulator.model.SimulatedPassenger;
+import info.jchein.mesosphere.elevator.simulator.model.SimulatedTraveller;
 import info.jchein.mesosphere.validator.annotation.Positive;
 
 @Component
@@ -33,7 +33,7 @@ public class SimulatedSimplePassengerSource {
 	private static final Logger LOG = LoggerFactory.getLogger(SimulatedSimplePassengerSource.class);
 
 	private final IRuntimeScheduler scheduler;
-	private final IPassengerArrivalStrategy arrivalStrategy;
+	private final ITravellerQueueService arrivalStrategy;
 
 	private final ExponentialDistribution distribution;
 	private final DirectionOfTravel travelDirection;
@@ -44,7 +44,7 @@ public class SimulatedSimplePassengerSource {
 
 	@Autowired
 	public SimulatedSimplePassengerSource(@NotNull IRuntimeClock clock, @NotNull IRuntimeScheduler scheduler, @Positive double medianSecondsBetweenArrivals,
-			@Min(0) int departFromFloorIndex, @Min(0) int travelToFloorIndex, @NotNull IPassengerArrivalStrategy arrivalStrategy) {
+			@Min(0) int departFromFloorIndex, @Min(0) int travelToFloorIndex, @NotNull ITravellerQueueService arrivalStrategy) {
 		this.clock = clock;
       this.scheduler = scheduler;
 		this.arrivalStrategy = arrivalStrategy;

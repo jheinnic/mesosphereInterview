@@ -1,38 +1,15 @@
-package info.jchein.mesosphere.elevator.common;
+package info.jchein.mesosphere.elevator.common.bootstrap;
 
-import java.util.function.Consumer;
+import java.util.LinkedList;
 
-import com.google.common.collect.ImmutableList;
-
-import info.jchein.mesosphere.elevator.common.bootstrap.PassengerBootstrap;
-import lombok.Builder;
 import lombok.Data;
 import lombok.Singular;
-import lombok.Value;
 
-@Value
-@Builder(toBuilder=true)
-public class InitialElevatorCarState
+@Data
+public class InitialCarState
 {
-   final int initialFloor;
-   
-   final double weightLoaded;
+   public int initialFloor;
    
    @Singular
-   final ImmutableList<Integer> requestFloors;
-   
-   @Singular
-   final ImmutableList<PassengerBootstrap> passengers;
-   
-   public static InitialElevatorCarState build(Consumer<InitialElevatorCarStateBuilder> director) {
-      InitialElevatorCarStateBuilder bldr = InitialElevatorCarState.builder();
-      director.accept(bldr);
-      return bldr.build();
-   }
-   
-   public InitialElevatorCarState copy(Consumer<InitialElevatorCarStateBuilder> director) {
-      InitialElevatorCarStateBuilder bldr = this.toBuilder();
-      director.accept(bldr);
-      return bldr.build();
-   }
+   public final LinkedList<PendingDropoff> passengers = new LinkedList<PendingDropoff>();
 }

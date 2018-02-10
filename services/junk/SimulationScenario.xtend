@@ -1,7 +1,6 @@
 package info.jchein.mesosphere.elevator.simulator.model
 
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel
-import info.jchein.mesosphere.elevator.common.bootstrap.ElevatorGroupBootstrap
 import info.jchein.mesosphere.elevator.control.event.DropOffRequested
 import info.jchein.mesosphere.elevator.control.event.PickupCallAdded
 import info.jchein.mesosphere.elevator.runtime.IRuntimeClock
@@ -14,6 +13,7 @@ import java.util.concurrent.TimeUnit
 import javax.validation.constraints.NotNull
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import info.jchein.mesosphere.elevator.common.bootstrap.EmulatorProperties
 
 //@StatefulController(
 //	value=LandingControls.BEAN_ID,
@@ -28,14 +28,14 @@ class SimulationScenario {
 	@NotNull private val BitSet upwardCalls
 	@NotNull private val BitSet downwardCalls
 	@NotNull private val Queue<ISimulatedPassenger> simulatedPassengers
-	@NotNull private val ElevatorGroupBootstrap bldgProperties
+	@NotNull private val EmulatorProperties bldgProperties
 
 	@Autowired
 	new(
 		@NotNull IRuntimeClock clock,
 		@NotNull IRuntimeEventBus eventBus,
 		@NotNull IRuntimeScheduler scheduler,
-		@NotNull ElevatorGroupBootstrap bldgProperties
+		@NotNull EmulatorProperties bldgProperties
 	) {
 		this.scheduler = scheduler
 		this.eventBus = eventBus

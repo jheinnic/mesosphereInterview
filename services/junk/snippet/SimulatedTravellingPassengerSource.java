@@ -30,7 +30,7 @@ public class SimulatedTravellingPassengerSource {
 
 	private final IVirtualRuntimeService systemClock;
 	private final EventBus eventBus;
-	private final IPassengerArrivalStrategy arrivalStrategy;
+	private final ITravellerQueueService arrivalStrategy;
 //	private final IBehaviorStrategy traversalBehavior;
 	private final ExponentialStream arrivalStream;
 //	private final long fallbackDelay;
@@ -61,7 +61,7 @@ public class SimulatedTravellingPassengerSource {
 			@Positive double medianTimeInBuilding,
 			@Positive double stdDevTimeInBuilding,
 			@NotNull IPathSelector pathSelector,
-			@NotNull IPassengerArrivalStrategy arrivalStrategy) {
+			@NotNull ITravellerQueueService arrivalStrategy) {
 //			@NotNull IBehaviorStrategy traversalBehavior) {
 		this.systemClock = systemClock;
 		this.eventBus = eventBus;

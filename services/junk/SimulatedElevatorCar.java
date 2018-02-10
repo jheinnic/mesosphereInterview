@@ -7,11 +7,11 @@ import org.springframework.stereotype.Component;
 import com.google.common.base.Preconditions;
 
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
+import info.jchein.mesosphere.elevator.common.physics.IElevatorPhysicsService;
+import info.jchein.mesosphere.elevator.common.physics.JourneyArc;
+import info.jchein.mesosphere.elevator.common.physics.PathMoment;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarPort;
 import info.jchein.mesosphere.elevator.control.sdk.StopItineraryUpdated;
-import info.jchein.mesosphere.elevator.emulator.physics.IElevatorPhysicsService;
-import info.jchein.mesosphere.elevator.emulator.physics.JourneyArc;
-import info.jchein.mesosphere.elevator.emulator.physics.PathMoment;
 import rx.Observer;
 
 @Component

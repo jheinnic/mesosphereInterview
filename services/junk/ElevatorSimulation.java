@@ -9,21 +9,21 @@ import org.springframework.stereotype.Component;
 import com.google.common.base.Preconditions;
 
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
-import info.jchein.mesosphere.elevator.emulator.model.IEmulatedLandingControls;
-import info.jchein.mesosphere.elevator.simulator.passengers.IPassengerArrivalStrategy;
+import info.jchein.mesosphere.elevator.emulator.model.IEmulatorControl;
+import info.jchein.mesosphere.elevator.simulator.passengers.ITravellerQueueService;
 
 @Component("ElevatorSimulation")
-public class ElevatorSimulation implements IElevatorSimulation, IPassengerArrivalStrategy
+public class ElevatorSimulation implements IElevatorSimulation, ITravellerQueueService
 {
-   private final IEmulatedLandingControls emulatedControl;
+   private final IEmulatorControl emulatedControl;
 //   private final ISimulatedLandingHall[] landingHalls;
 
-   private final ArrayList<SimulatedPassenger> upwardBoundPickups = new ArrayList<SimulatedPassenger>(10);
-   private final ArrayList<SimulatedPassenger> downwardBoundPickups = new ArrayList<SimulatedPassenger>(10);
+   private final ArrayList<SimulatedTraveller> upwardBoundPickups = new ArrayList<SimulatedTraveller>(10);
+   private final ArrayList<SimulatedTraveller> downwardBoundPickups = new ArrayList<SimulatedTraveller>(10);
 
 
    @Autowired
-   public ElevatorSimulation(IEmulatedLandingControls emulatedControl) {
+   public ElevatorSimulation(IEmulatorControl emulatedControl) {
       this.emulatedControl = emulatedControl;
    }
    
@@ -36,14 +36,14 @@ public class ElevatorSimulation implements IElevatorSimulation, IPassengerArriva
       if (originFloorIndex < destinationFloorIndex) {
          direction = DirectionOfTravel.GOING_UP;
          final UUID uuid = UUID.randomUUID();
-         final SimulatedPassenger p =
-            new SimulatedPassenger(uuid.toString(), destinationFloorIndex, destinationFloorIndex, timeIndex);
+         final SimulatedTraveller p =
+            new SimulatedTraveller(uuid.toString(), destinationFloorIndex, destinationFloorIndex, timeIndex);
          this.upwardBoundPickups.add(p);
       } else {
          direction = DirectionOfTravel.GOING_DOWN;
          final UUID uuid = UUID.randomUUID();
-         final SimulatedPassenger p =
-            new SimulatedPassenger(uuid.toString(), destinationFloorIndex, destinationFloorIndex, timeIndex);
+         final SimulatedTraveller p =
+            new SimulatedTraveller(uuid.toString(), destinationFloorIndex, destinationFloorIndex, timeIndex);
          this.downwardBoundPickups.add(p);
       }
    }

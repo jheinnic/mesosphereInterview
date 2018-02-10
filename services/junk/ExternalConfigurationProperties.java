@@ -7,11 +7,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 
-import info.jchein.mesosphere.elevator.common.InitialElevatorCarState;
-import info.jchein.mesosphere.elevator.common.bootstrap.BuildingProperties;
-import info.jchein.mesosphere.elevator.common.bootstrap.ElevatorGroupBootstrap;
+import info.jchein.mesosphere.elevator.common.bootstrap.DeploymentProperties;
+import info.jchein.mesosphere.elevator.common.bootstrap.EmulatorProperties;
 import info.jchein.mesosphere.elevator.common.bootstrap.ElevatorMotorProperties;
-import info.jchein.mesosphere.elevator.common.bootstrap.PassengerBootstrap;
+import info.jchein.mesosphere.elevator.common.bootstrap.PendingDropoff;
 import info.jchein.mesosphere.elevator.common.bootstrap.PhysicalDispatchContext;
 import info.jchein.mesosphere.elevator.runtime.virtual.VirtualRuntimeProperties;
 
@@ -191,9 +190,9 @@ public class ExternalConfigurationProperties
 
    @Bean
    @Scope(BeanDefinition.SCOPE_SINGLETON)
-   ElevatorGroupBootstrap getElevatorGroupConfigData(IScenarioInitializer scenarioInit)
+   EmulatorProperties getElevatorGroupConfigData(IScenarioInitializer scenarioInit)
    {
-      return ElevatorGroupBootstrap.build(gbldr -> {
+      return EmulatorProperties.build(gbldr -> {
          gbldr.motor( ElevatorMotorProperties.build( mbldr -> {
             mbldr.brakingDistance(this.brakingDistance)
                .brakingSpeed(this.brakeSpeed)
@@ -208,7 +207,7 @@ public class ExternalConfigurationProperties
                .minDoorHoldTimePerOpen(this.minDoorHoldTimePerOpen)
                .idealWeightLoad(this.idealWeightLoad)
                .passengerWeight(this.passengerWeight);
-         })).building( BuildingProperties.build( bbldr -> {
+         })).building( DeploymentProperties.build( bbldr -> {
             bbldr.metersPerFloor(this.metersPerFloor)
                .carDriverKey("emulator")
                .numElevators(numElevators)
@@ -225,70 +224,62 @@ public class ExternalConfigurationProperties
    IScenarioInitializer getInitialScenarioDirector() 
    {
       return gbldr -> {
-         gbldr.car(InitialElevatorCarState.build(cbldr -> {
+         gbldr.car(InitialCarState.build(cbldr -> {
             cbldr.initialFloor(3)
                .weightLoaded(150)
                .requestFloor(4)
                .requestFloor(6)
-               .passenger(PassengerBootstrap.build(pbldr -> {
+               .passenger(PendingDropoff.build(pbldr -> {
                   pbldr.floorBoarded(1)
                      .timeBoarded(1000)
                      .destination(4);
-               })).passenger(PassengerBootstrap.build(pbldr -> {
+               })).passenger(PendingDropoff.build(pbldr -> {
                   pbldr.floorBoarded(1)
                      .timeBoarded(1000)
                      .destination(4);
-               })).passenger(PassengerBootstrap.build(pbldr -> {
+               })).passenger(PendingDropoff.build(pbldr -> {
                   pbldr.floorBoarded(1)
                      .timeBoarded(1000)
                      .destination(6);
                }));
-          })).car(InitialElevatorCarState.build(cbldr -> {
+          })).car(InitialCarState.build(cbldr -> {
             cbldr.initialFloor(3)
                .weightLoaded(150)
                .requestFloor(4)
                .requestFloor(6)
-               .passenger(PassengerBootstrap.build(pbldr -> {
+               .passenger(PendingDropoff.build(pbldr -> {
                   pbldr.floorBoarded(1)
                      .timeBoarded(1000)
                      .destination(4);
-               })).passenger(PassengerBootstrap.build(pbldr -> {
+               })).passenger(PendingDropoff.build(pbldr -> {
                   pbldr.floorBoarded(1)
                      .timeBoarded(1000)
                      .destination(4);
-               })).passenger(PassengerBootstrap.build(pbldr -> {
+               })).passenger(PendingDropoff.build(pbldr -> {
                   pbldr.floorBoarded(1)
                      .timeBoarded(1000)
                      .destination(6);
                }));
-          })).car(InitialElevatorCarState.build(cbldr -> {
+          })).car(InitialCarState.build(cbldr -> {
             cbldr.initialFloor(3)
                .weightLoaded(150)
                .requestFloor(4)
                .requestFloor(6)
-               .passenger(PassengerBootstrap.build(pbldr -> {
+               .passenger(PendingDropoff.build(pbldr -> {
                   pbldr.floorBoarded(1)
                      .timeBoarded(1000)
                      .destination(4);
-               })).passenger(PassengerBootstrap.build(pbldr -> {
+               })).passenger(PendingDropoff.build(pbldr -> {
                   pbldr.floorBoarded(1)
                      .timeBoarded(1000)
                      .destination(4);
-               })).passenger(PassengerBootstrap.build(pbldr -> {
+               })).passenger(PendingDropoff.build(pbldr -> {
                   pbldr.floorBoarded(1)
                      .timeBoarded(1000)
                      .destination(6);
                }));
           }));
       };
-   }
-
-
-   @Bean
-   @Scope(BeanDefinition.SCOPE_SINGLETON)
-   VirtualRuntimeProperties getSystemRuntimeProperties()
-   {
-      return new VirtualRuntimeProperties(this.clockTickDuration);
    }
 
 

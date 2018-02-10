@@ -1,22 +1,13 @@
 package info.jchein.mesosphere.elevator.common.bootstrap;
 
-import java.util.function.Consumer;
-
-import lombok.Builder;
 import lombok.Data;
 
 @Data
-@Builder
-public class PassengerBootstrap
+public class PendingDropoff
 {
-   private long timeBoarded;
-   private int floorBoarded;
-   private int destination;
-   private double weightLoad;
-   
-   public static PassengerBootstrap build(Consumer<PassengerBootstrapBuilder> director) {
-      PassengerBootstrapBuilder bldr = PassengerBootstrap.builder();
-      director.accept(bldr);
-      return bldr.build();
-   }
+   public long callTime;
+   public long pickupTime;
+   public int pickupFloor;
+   public int dropoffFloor;
+   public double weight;
 }

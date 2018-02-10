@@ -6,10 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import info.jchein.mesosphere.elevator.emulator.model.IEmulatedLandingControls;
-import info.jchein.mesosphere.elevator.simulator.passengers.IPassengerArrivalStrategy;
+import info.jchein.mesosphere.elevator.simulator.passengers.ITravellerQueueService;
 
 @Component
-public class PassengerArrivalStrategy implements IPassengerArrivalStrategy {
+public class PassengerArrivalStrategy implements ITravellerQueueService {
 
 	private List<SimulatedElevatorCar> elevatorControls;
 	private IEmulatedLandingControls scenarioControl;

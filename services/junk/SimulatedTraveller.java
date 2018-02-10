@@ -11,7 +11,7 @@ import info.jchein.mesosphere.validator.annotation.UUIDString;
 @ScriptAssert.List({
 	@ScriptAssert(lang="javascript", script="_this.ingressFloorIndex < _this.egressFloorIndex")
 })
-public class SimulatedPassenger {
+public class SimulatedTraveller {
 	@NotNull
 	@UUIDString
 	private final String uuid;
@@ -25,7 +25,7 @@ public class SimulatedPassenger {
 	@Past
 	private long pickupCallTime;
 
-	SimulatedPassenger(String uuid, int ingressFloorIndex, int egressFloorIndex, long pickupCallTime ) {
+	SimulatedTraveller(String uuid, int ingressFloorIndex, int egressFloorIndex, long pickupCallTime ) {
 		this.uuid = uuid;
 		this.ingressFloorIndex = ingressFloorIndex;
 		this.egressFloorIndex = egressFloorIndex;
