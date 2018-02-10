@@ -1,58 +1,35 @@
 package info.jchein.mesosphere.elevator.simulator.model;
 
+import java.util.Properties;
+
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.ServiceLocatorFactoryBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 
-import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarPort;
-import info.jchein.mesosphere.elevator.emulator.physics.IElevatorPhysicsService;
+import info.jchein.mesosphere.elevator.simulator.passengers.ISimulatedTravellerSourceLookup;
+import info.jchein.mesosphere.elevator.simulator.passengers.TravellerSourceNames;
 
 @Configuration
+@ComponentScan({"info.jchein.mesosphere.elevator.simulator.workloads", "info.jchein.mesosphere.elevator.simulator.model"})
 public class ElevatorSimulationConfiguration {
-//	@Bean
-//	@Scope(BeanDefinition.SCOPE_SINGLETON)
-//	public IElevatorSimulation getSimulation(IRuntimeService systemClock, EventBus eventBus) {
-//		return new ElevatorSimulation(systemClock, eventBus);
-//	}
+   @Bean
+   @Lazy
+   @Scope(BeanDefinition.SCOPE_SINGLETON)
+   public ServiceLocatorFactoryBean simulatedTravellerSourceLocator(TravellerSourceNames sourceNames) {
+      final Properties serviceMappings = new Properties();
+      sourceNames.getSourceNames().stream().forEach( namePrefix -> {
+         serviceMappings.put( namePrefix, namePrefix + "TravellerSource" );
+      });
 
-//	@Bean
-//	@Scope(BeanDefinition.SCOPE_SINGLETON)
-//	public IElevatorDriverFactory getSimulationElevatorFactory() {
-//		return new IElevatorDriverFactory() {
-//			@Override
-//			public IHallPanelDriver attachFloorHallDriver(IHallPanelPort port) {
-//				return getFloorHallDriver(port);
-//			}
-//
-//			@Override
-//			public IElevatorCarDriver attachElevatorCarDriver(IElevatorCarPort port) {
-//				return getElevatorCarDriver(port);
-//			}
-//		};
-//	}
-	
-//	@Bean
-//	@Scope(BeanDefinition.SCOPE_SINGLETON)
-//	PassengerArrivalStrategy getPassengerArrivalStrategy( List<LandingControlEmulator> landingPanels, List<ElevatorCarEmulator> elevatorControls ) {
-//		return new PassengerArrivalStrategy(landingPanels, elevatorControls);
-//	}
+      final ServiceLocatorFactoryBean slFactory = new ServiceLocatorFactoryBean();
+      slFactory.setServiceLocatorInterface(ISimulatedTravellerSourceLookup.class);
+      slFactory.setServiceMappings(serviceMappings);
+      
+      return slFactory;
+   }
 
-//	@Bean
-//	@Scope(BeanDefinition.SCOPE_SINGLETON)
-//	IElevatorPhysicsService getElevatorPhysicsService(ElevatorGroupBootstrap bootstrapData) {
-//		return new ElevatorPhysicsService(bootstrapData);
-//	}
-
-//	@Bean
-//	@Scope(BeanDefinition.SCOPE_PROTOTYPE)
-//	public LandingControlEmulator getFloorHallDriver(IHallPanelPort port) {
-//		return new LandingControlEmulator(port);
-//	}
-
-	@Bean
-	@Scope(BeanDefinition.SCOPE_PROTOTYPE)
-	public SimulatedElevatorCar getElevatorCarDriver(IElevatorCarPort port, IElevatorPhysicsService physicsService) {
-		return new SimulatedElevatorCar(port, physicsService);
-	}
 }

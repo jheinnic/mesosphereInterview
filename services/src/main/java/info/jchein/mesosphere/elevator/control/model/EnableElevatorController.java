@@ -8,10 +8,10 @@ import java.lang.annotation.Target;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Import;
 
-import info.jchein.mesosphere.elevator.common.bootstrap.ElevatorGroupBootstrap;
+import info.jchein.mesosphere.elevator.common.bootstrap.EmulatorProperties;
 import info.jchein.mesosphere.elevator.runtime.virtual.EnableVirtualRuntime;
 
-@EnableConfigurationProperties(ElevatorGroupBootstrap.class)
+@EnableConfigurationProperties(EmulatorProperties.class)
 @Import(ElevatorControllerConfiguration.class)
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

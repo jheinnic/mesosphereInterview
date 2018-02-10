@@ -1,8 +1,8 @@
 package info.jchein.mesosphere.test_support.fixtures.physics;
 
 
-import info.jchein.mesosphere.elevator.emulator.physics.ConstantVelocityPathLeg;
-import info.jchein.mesosphere.elevator.emulator.physics.PathMoment;
+import info.jchein.mesosphere.elevator.common.physics.ConstantVelocityPathLeg;
+import info.jchein.mesosphere.elevator.common.physics.PathMoment;
 
 
 public class PhysicsDataFixture

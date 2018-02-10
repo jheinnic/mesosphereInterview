@@ -10,7 +10,7 @@
     <artifactId>services</artifactId>
     <name>Interview Project Services Layer</name>
     <description>Services Layer for Mesopshere Interview Challenge Project</description>
-    
+
     <properties>
         <start-class>info.jchein.mesosphere.elevator.application.RideOn</start-class>
     </properties>
@@ -33,6 +33,8 @@
             <groupId>org.jgrapht</groupId>
             <artifactId>jgrapht-core</artifactId>
         </dependency>
+
+        <!-- Java Combinatorial Optimzation Toolkit -->
 
         <!-- Java Concurrency Tools -->
         <dependency>
@@ -88,6 +90,11 @@
             <groupId>io.reactivex</groupId>
             <artifactId>rxjava</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.reactivex</groupId>
+            <artifactId>rxjava-guava</artifactId>
+            <version>1.0.3</version>
+        </dependency>
 
         <!-- Project Lombok -->
         <dependency>
@@ -130,6 +137,16 @@
             <groupId>io.jenetics</groupId>
             <artifactId>jenetics</artifactId>
             <version>4.0.0</version>
+        </dependency>
+
+        <!-- Jackson -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
 
         <!-- LMAX Disruptor -->

@@ -12,4 +12,6 @@ public class TestConstantVelocityPathLeg
 
    @Rule
    public final SpringMethodRule springMethodRule = new SpringMethodRule();
+   
+   
 }

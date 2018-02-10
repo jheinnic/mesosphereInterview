@@ -5,7 +5,13 @@ import lombok.Value;
 
 @Value
 @EqualsAndHashCode(doNotUseGetters=true)
-public class BuildingFloor
+public class BuildingFloor implements ISchedulingVertex
 {
-   private int floorIndex;
+   @Override
+   public SchedulingNodeType getNodeType()
+   {
+      return SchedulingNodeType.FLOOR_TERMINAL;
+   }
+
+   private final int floorIndex;
 }

@@ -1,0 +1,34 @@
+package info.jchein.mesosphere.elevator.control.event;
+
+import lombok.Builder;
+import lombok.Value;
+
+import java.util.function.Consumer;
+
+import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
+
+@Value
+@Builder(toBuilder=true)
+public class TravelledThroughFloor implements ElevatorCarEvent {
+	long clockTime;
+	long carSequence;
+	int carIndex;
+	int floorIndex;
+	DirectionOfTravel direction;
+	
+   public static TravelledThroughFloor build(Consumer<TravelledThroughFloorBuilder> director)
+   {
+      final TravelledThroughFloorBuilder bldr = TravelledThroughFloor.builder();
+      director.accept(bldr);
+      return bldr.build();
+   }
+
+
+   public TravelledThroughFloor copy(Consumer<TravelledThroughFloorBuilder> director)
+   {
+      final TravelledThroughFloorBuilder bldr = this.toBuilder();
+      director.accept(bldr);
+      return bldr.build();
+   }
+
+}

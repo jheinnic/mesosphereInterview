@@ -2,6 +2,7 @@ package info.jchein.mesosphere.elevator.runtime;
 
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.concurrent.TimeUnit;
 
 public interface IRuntimeClock
 {
@@ -16,4 +17,6 @@ public interface IRuntimeClock
    ZoneId getZone();
    
    IRuntimeClock withZone(ZoneId zoneId);
+   
+   void advanceBy(long delta, TimeUnit timeUnit);
 }

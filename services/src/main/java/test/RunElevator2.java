@@ -14,7 +14,7 @@ import info.jchein.mesosphere.elevator.simulator.model.IElevatorSimulation;
 import info.jchein.mesosphere.elevator.simulator.passengers.SimulatedTravellingPassengerSource;
 
 @SpringBootApplication
-@Import({ VirtualRuntimeConfiguration.class, ElevatorSimulationConfiguration.class, ExternalConfigurationProperties.class })
+@Import({ VirtualRuntimeConfiguration.class, ElevatorSimulationConfiguration.class }) // , ExternalConfigurationProperties.class })
 @ComponentScan(basePackages={
     "info.jchein.mesosphere.elevator.configuration",
     "info.jchein.mesosphere.elevator.configuration.workloads",

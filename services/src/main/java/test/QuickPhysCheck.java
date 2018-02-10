@@ -3,14 +3,16 @@ package test;
 
 import java.time.ZoneId;
 
-import info.jchein.mesosphere.elevator.common.bootstrap.BuildingProperties;
-import info.jchein.mesosphere.elevator.common.bootstrap.ElevatorGroupBootstrap;
-import info.jchein.mesosphere.elevator.common.bootstrap.ElevatorMotorProperties;
-import info.jchein.mesosphere.elevator.common.bootstrap.PhysicalDispatchContext;
-import info.jchein.mesosphere.elevator.emulator.physics.ElevatorPhysicsService;
-import info.jchein.mesosphere.elevator.emulator.physics.IPathLeg;
-import info.jchein.mesosphere.elevator.emulator.physics.JourneyArc;
-import info.jchein.mesosphere.elevator.emulator.physics.PathMoment;
+import info.jchein.mesosphere.elevator.common.bootstrap.BuildingDescription;
+import info.jchein.mesosphere.elevator.common.bootstrap.DeploymentConfiguration;
+import info.jchein.mesosphere.elevator.common.bootstrap.DoorTimeDescription;
+import info.jchein.mesosphere.elevator.common.bootstrap.StartStopDescription;
+import info.jchein.mesosphere.elevator.common.bootstrap.TravelSpeedDescription;
+import info.jchein.mesosphere.elevator.common.bootstrap.WeightDescription;
+import info.jchein.mesosphere.elevator.common.physics.ElevatorPhysicsService;
+import info.jchein.mesosphere.elevator.common.physics.IPathLeg;
+import info.jchein.mesosphere.elevator.common.physics.JourneyArc;
+import info.jchein.mesosphere.elevator.common.physics.PathMoment;
 import info.jchein.mesosphere.elevator.runtime.virtual.RuntimeClock;
 import info.jchein.mesosphere.elevator.runtime.virtual.VirtualRuntimeProperties;
 import rx.schedulers.Schedulers;
@@ -20,35 +22,47 @@ public class QuickPhysCheck
 {
    public static void main(String[] args)
    {
-      ElevatorMotorProperties motorProps = ElevatorMotorProperties.build(bldr -> {
-         bldr.brakingDistance(0.3)
-            .brakingSpeed(0.5)
+      StartStopDescription motorProps = StartStopDescription.build(bldr -> {
+         bldr.brakeDistance(0.3)
+            .brakeSpeed(0.5)
             .maxAcceleration(1.73205080756887729352744635)
-            .maxJerk(2.0)
-            .shortTravelSpeed(1.25)
-            .longDescentSpeed(1.75)
-            .longAscentSpeed(2.0);
+            .maxJerk(2.0);
       });
-      BuildingProperties bldgProps = BuildingProperties.build(bldr -> {
+      BuildingDescription bldgProps = BuildingDescription.build(bldr -> {
          bldr.numElevators(6)
             .numFloors(12)
             .metersPerFloor(3.75);
       });
-      PhysicalDispatchContext dispatchProps = PhysicalDispatchContext.build(bldr -> {
-         bldr.doorHoldTimePerPerson(0.02)
-            .doorOpenCloseSlideTime(2.6)
-            .minDoorHoldTimePerOpen(3.2)
-            .idealWeightLoad(0.45)
-            .passengerWeight(75.0);
-      });
 
-      ElevatorGroupBootstrap bootstrapData = ElevatorGroupBootstrap.build(bldr -> {
-         bldr.dispatch(dispatchProps)
-            .motor(motorProps)
-            .building(bldgProps);
+      TravelSpeedDescription speedProps = TravelSpeedDescription.build(bldr-> {
+         bldr.shortHop(1.25)
+            .longDescent(1.75)
+            .longAscent(2.0);
       });
       
-      VirtualRuntimeProperties runtimeProps = new VirtualRuntimeProperties(100);
+      WeightDescription weightProps = WeightDescription.build(bldr -> {
+         bldr.maxForTravel(3000)
+            .pctMaxForIdeal(0.45)
+            .pctMaxForPickup(0.88)
+            .avgPassenger(75.0);
+      });
+      
+      DoorTimeDescription doorProps = DoorTimeDescription.build(bldr -> {
+         bldr.personHold(0.02)
+            .minHold(3.2)
+            .openCloseTime(2.6);
+      });
+
+      DeploymentConfiguration bootstrapData = DeploymentConfiguration.build(bldr -> {
+         bldr.topSpeed(speedProps)
+            .motor(motorProps)
+            .building(bldgProps)
+            .weight(weightProps)
+            .doors(doorProps);
+      });
+      
+      VirtualRuntimeProperties runtimeProps = new VirtualRuntimeProperties();
+      runtimeProps.setTickDurationMillis(100);
 
       RuntimeClock clock = new RuntimeClock(ZoneId.systemDefault(), Schedulers.test(), runtimeProps);
       
@@ -69,7 +83,7 @@ public class QuickPhysCheck
       }
 
       System.out.println("from,to,time,height,velocity,acceleration,jerk");
-      for (int ii = 1; ii < 11; ii++) {
+      for (int ii = 1; ii < 3; ii++) {
          final JourneyArc anArc = physicsService.getTraversalPath(ii, ii + 1);
          double lastDuration = anArc.getDuration();
          for (int jj = ii+1; jj < 12; jj++) {

@@ -4,33 +4,36 @@ package info.jchein.mesosphere.elevator.runtime.virtual;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.concurrent.TimeUnit;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
+import info.jchein.mesosphere.elevator.runtime.IRuntime;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
-import info.jchein.mesosphere.elevator.runtime.virtual.VirtualRuntimeProperties;
-import rx.Scheduler;
+import rx.schedulers.TestScheduler;
 
-@Primary
+
 @Component
 public class RuntimeClock
 extends Clock
 implements IRuntimeClock
 {
-   private final ZoneId zoneId;
    @NotNull
-   private final Scheduler authority;
+   private final ZoneId zoneId;
+
+   @NotNull
+   private final TestScheduler authority;
+
    @NotNull
    private final long millisPerTick;
 
 
-   RuntimeClock( ZoneId zoneId, @NotNull Scheduler authority, @Min(10) long millisPerTick )
+   RuntimeClock( @NotNull ZoneId zoneId, @NotNull TestScheduler authority, @Min(10) long millisPerTick )
    {
       this.zoneId = zoneId;
       this.authority = authority;
@@ -38,23 +41,18 @@ implements IRuntimeClock
    }
 
 
-   public RuntimeClock( ZoneId zoneId, @NotNull Scheduler authority,
+   RuntimeClock( @NotNull ZoneId zoneId, @NotNull TestScheduler authority,
       @NotNull VirtualRuntimeProperties runtimeProps )
    {
-      this.zoneId = zoneId;
-      this.authority = authority;
-      this.millisPerTick = runtimeProps.getTickDurationMillis();
+      this(zoneId, authority, runtimeProps.getTickDurationMillis());
    }
 
 
    @Autowired
-   public RuntimeClock(
-      @NotNull @Qualifier(IVirtualRuntimeService.ELEVATOR_RUNTIME_QUALIFIER) Scheduler authority,
+   public RuntimeClock( @NotNull @Qualifier(IRuntime.ELEVATOR_RUNTIME_QUALIFIER) TestScheduler authority,
       @NotNull VirtualRuntimeProperties runtimeProps )
    {
-      this.zoneId = ZoneId.systemDefault();
-      this.authority = authority;
-      this.millisPerTick = runtimeProps.getTickDurationMillis();
+      this(ZoneId.systemDefault(), authority, runtimeProps.getTickDurationMillis());
    }
 
 
@@ -107,4 +105,10 @@ implements IRuntimeClock
       return this.millisPerTick;
    }
 
+
+   @Override
+   public void advanceBy(long delta, TimeUnit timeUnit)
+   {
+      this.authority.advanceTimeBy(delta, timeUnit);
+   }
 }

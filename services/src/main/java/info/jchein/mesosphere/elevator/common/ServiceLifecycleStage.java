@@ -4,7 +4,6 @@ public enum ServiceLifecycleStage
 {
    PARKED,
    BOARDING,
-   ASCENDING,
-   DESCENDING,
+   TRAVELLING,
    BRAKING;
 }

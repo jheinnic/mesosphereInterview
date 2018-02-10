@@ -208,7 +208,7 @@ public class TestSchedThred {
 		ExecutorService busPool2 = Executors.newFixedThreadPool(1, foo);
 		Scheduler scheduler = Schedulers.from(rxPool2);
 		EventBus eventBus = new AsyncEventBus(busPool);
-		VirtualRuntimeProperties runtimeProps = new VirtualRuntimeProperties(100);
+		VirtualRuntimeProperties runtimeProps = VirtualRuntimeProperties.builder().tickDurationMillis(100).build();
 		BuildingProperties bldgProps = BuildingProperties.build(bldr -> {
 			bldr.metersPerFloor(3.5).numElevators(4).numFloors(10);
 		});

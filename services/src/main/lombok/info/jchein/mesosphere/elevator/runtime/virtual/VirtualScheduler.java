@@ -13,7 +13,6 @@ import javax.validation.executable.ValidateOnExecution;
 import org.jgrapht.util.FibonacciHeap;
 import org.jgrapht.util.FibonacciHeapNode;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
@@ -23,14 +22,12 @@ import info.jchein.mesosphere.elevator.runtime.IIntervalHandler;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
 import info.jchein.mesosphere.elevator.runtime.IVariableIntervalFunction;
 import lombok.extern.slf4j.Slf4j;
-import rx.Scheduler;
 import rx.Scheduler.Worker;
 import rx.Subscription;
 import rx.functions.Action0;
 
 
 @Slf4j
-@Primary
 @Component
 @ValidateOnExecution(type= {ExecutableType.ALL})
 public class VirtualScheduler implements IRuntimeScheduler
@@ -286,10 +283,10 @@ public class VirtualScheduler implements IRuntimeScheduler
 
 
    @Autowired
-   public VirtualScheduler(@NotNull Scheduler scheduler, @NotNull VirtualRuntimeProperties systemProps)
+   public VirtualScheduler(@NotNull Worker worker, @NotNull VirtualRuntimeProperties systemProps)
    {
       this.tickMillis = systemProps.getTickDurationMillis();
-      this.worker = scheduler.createWorker();
+      this.worker = worker;
       this.interruptHeap = new FibonacciHeap<ScheduledCallback<?>>();
       this.interruptsSubscription = null;
    }

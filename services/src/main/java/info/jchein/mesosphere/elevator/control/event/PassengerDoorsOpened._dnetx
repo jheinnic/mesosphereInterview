@@ -1,0 +1,15 @@
+package info.jchein.mesosphere.elevator.control.event;
+
+import lombok.Value;
+import lombok.Builder;
+import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
+
+@Value
+@Builder(toBuilder=true)
+class PassengerDoorsOpened implements ElevatorCarEvent {
+	long clockTime;
+	long carSequence;
+	int carIndex;
+	int floorIndex;
+	DirectionOfTravel direction;
+}

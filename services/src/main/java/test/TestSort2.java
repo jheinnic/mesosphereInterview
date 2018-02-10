@@ -7,11 +7,11 @@ import java.util.Comparator;
 import java.util.stream.Collectors;
 
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
+import info.jchein.mesosphere.elevator.common.physics.TravelPathDownComparator;
+import info.jchein.mesosphere.elevator.common.physics.TravelPathUpComparator;
 import info.jchein.mesosphere.elevator.domain.scheduler.ScheduledDrop;
 import info.jchein.mesosphere.elevator.domain.scheduler.ScheduledPickup;
 import info.jchein.mesosphere.elevator.domain.scheduler.ScheduledStop;
-import info.jchein.mesosphere.elevator.emulator.physics.TravelPathDownComparator;
-import info.jchein.mesosphere.elevator.emulator.physics.TravelPathUpComparator;
 
 
 public class TestSort2

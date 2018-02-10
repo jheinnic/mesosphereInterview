@@ -18,11 +18,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import info.jchein.mesosphere.configuartion.tests.EnableTestVirtualRuntime;
 import info.jchein.mesosphere.elevator.common.Assertions;
-import info.jchein.mesosphere.elevator.common.bootstrap.BuildingProperties;
+import info.jchein.mesosphere.elevator.common.bootstrap.DeploymentProperties;
 import info.jchein.mesosphere.elevator.common.graph.ProtectedBitSet;
 import info.jchein.mesosphere.elevator.common.graph.VertexFactory;
-import info.jchein.mesosphere.elevator.emulator.physics.IElevatorPhysicsService;
-import info.jchein.mesosphere.elevator.emulator.physics.JourneyArc;
+import info.jchein.mesosphere.elevator.common.physics.IElevatorPhysicsService;
+import info.jchein.mesosphere.elevator.common.physics.JourneyArc;
 
 @RunWith(SpringRunner.class)
 @EnableTestVirtualRuntime

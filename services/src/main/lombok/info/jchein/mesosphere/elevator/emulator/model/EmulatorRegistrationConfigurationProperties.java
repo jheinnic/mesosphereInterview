@@ -2,9 +2,9 @@ package info.jchein.mesosphere.elevator.emulator.model;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import lombok.Value;
+import lombok.Data;
 
-@Value
+@Data
 @ConfigurationProperties(prefix="mesosphere.elevator.emulator")
 public class EmulatorRegistrationConfigurationProperties
 {

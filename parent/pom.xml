@@ -324,4 +324,17 @@
             <url>https://repository.jboss.org/nexus/content/repositories/thirdparty-releases</url>
         </repository>
     </repositories>
+    <dependencies>
+        <dependency>
+            <groupId>cz.cvut.fit.jcop</groupId>
+            <artifactId>jcop</artifactId>
+            <version>1.0.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
 </project>

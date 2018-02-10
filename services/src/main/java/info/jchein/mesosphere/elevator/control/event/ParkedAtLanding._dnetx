@@ -1,0 +1,29 @@
+package info.jchein.mesosphere.elevator.control.event;
+
+import de.oehme.xtend.contrib.Buildable;
+import org.eclipse.xtend.lib.annotations.Data;
+
+@Buildable(toBuilder=true)
+@Data
+class ParkedAtLanding implements ElevatorCarEvent {
+	val long clockTime;
+	val long carSequence;
+	val int carIndex;
+	val int floorIndex;
+	
+   public static ParkedAtLanding build(Consumer<ParkedAtLandingBuilder> director)
+   {
+      final ParkedAtLandingBuilder bldr = ParkedAtLanding.builder();
+      director.accept(bldr);
+      return bldr.build();
+   }
+
+
+   public ParkedAtLanding copy(Consumer<ParkedAtLandingBuilder> director)
+   {
+      final ParkedAtLandingBuilder bldr = this.toBuilder();
+      director.accept(bldr);
+      return bldr.build();
+   }
+
+}

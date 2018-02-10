@@ -13,13 +13,13 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.statefulj.framework.core.StatefulFactory;
 
-import info.jchein.mesosphere.elevator.common.bootstrap.ElevatorGroupBootstrap;
+import info.jchein.mesosphere.elevator.common.bootstrap.EmulatorProperties;
 import info.jchein.mesosphere.elevator.control.sdk.ExtensionDescriptor;
 import info.jchein.mesosphere.elevator.control.sdk.ExtensionType;
 
 @Configuration
 @ComponentScan
-@EnableConfigurationProperties(ElevatorGroupBootstrap.class)
+@EnableConfigurationProperties(EmulatorProperties.class)
 public class ElevatorControllerConfiguration {
    @Bean
    public StatefulFactory statefulJFactory() {

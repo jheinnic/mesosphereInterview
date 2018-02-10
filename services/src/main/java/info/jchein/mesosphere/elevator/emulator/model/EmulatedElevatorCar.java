@@ -1,74 +1,44 @@
 package info.jchein.mesosphere.elevator.emulator.model;
 
-import java.util.Iterator;
-
 import org.springframework.stereotype.Component;
 
 import com.google.common.base.Preconditions;
 
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
-import info.jchein.mesosphere.elevator.common.InitialElevatorCarState;
+import info.jchein.mesosphere.elevator.common.bootstrap.InitialCarState;
+import info.jchein.mesosphere.elevator.common.physics.IElevatorPhysicsService;
+import info.jchein.mesosphere.elevator.common.physics.JourneyArc;
+import info.jchein.mesosphere.elevator.common.physics.JourneyArcMomentSeries;
+import info.jchein.mesosphere.elevator.common.physics.PathMoment;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarDriver;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarPort;
 import info.jchein.mesosphere.elevator.control.sdk.StopItineraryUpdated;
-import info.jchein.mesosphere.elevator.emulator.physics.IElevatorPhysicsService;
-import info.jchein.mesosphere.elevator.emulator.physics.JourneyArc;
-import info.jchein.mesosphere.elevator.emulator.physics.PathMoment;
-import rx.Observer;
 
 @Component
-public class EmulatedElevatorCar implements IElevatorCarDriver, Observer<StopItineraryUpdated> {
-	private final IElevatorCarPort port;
+public class EmulatedElevatorCar implements IElevatorCarDriver {
    private final IElevatorPhysicsService physics;
+   private final IElevatorCarPort port;
+   private final IEmulatorRoot parent;
+   private final InitialCarState initialState;
 
-	private StopItineraryUpdated latestItinerary;
-	private PathMoment physicsState;
-	private Iterator<PathMoment> arcIterator;
-	private JourneyArc trajectory;
+	private JourneyArcMomentSeries iterableTrajectory;
 	private DirectionOfTravel currentDirection;
-	private int destination;
-   private double metersPerFloor;
-   private double tickDuration;
-   private InitialElevatorCarState initialState;
+	private JourneyArc pathToDestination;
+	private PathMoment physicsState;
+	private int currentDestination;
 	
-	public EmulatedElevatorCar(IElevatorCarPort port, IElevatorPhysicsService physics, InitialElevatorCarState initialState)
+	public EmulatedElevatorCar(IEmulatorRoot parent, IElevatorCarPort port, IElevatorPhysicsService physics, InitialCarState initialState)
 	{
-		this.port = port;
+	   this.parent = parent;
+      this.port = port;
       this.physics = physics;
       this.initialState = initialState;
-      this.metersPerFloor = physics.getMetersPerFloor();
 	}
 
    @Override
-   public InitialElevatorCarState initialize()
+   public InitialCarState initialize()
    {
       return this.initialState;
-   }
-
-   @Override
-   public void travelTo(int floorIndex)
-   {
-      // TODO Auto-generated method stub
-      
-   }
-
-   @Override
-   public void openDoors()
-   {
-      // TODO Auto-generated method stub
-      
-   }
-
-   @Override
-   public void onCompleted()
-   {
-      System.out.println("Simulation shutdown?");
-   }
-
-   @Override
-   public void onError(Throwable arg0)
-   {
-      System.out.println(String.format("Unexpected error: %s", arg0));
    }
 
    @Override
@@ -126,5 +96,19 @@ public class EmulatedElevatorCar implements IElevatorCarDriver, Observer<StopIti
         this.trajectory = this.physics.getTraversalPath(currentFloor, this.destination);
         this.arcIterator = this.trajectory.asMomentIterable(this.tickDuration).iterator();
       }
+   }
+
+   @Override
+   public void dispatchCar(int carIndex, int floorIndex, DirectionOfTravel direction)
+   {
+      // TODO Auto-generated method stub
+      
+   }
+
+   @Override
+   public void openDoors(int carIndex)
+   {
+      // TODO Auto-generated method stub
+      
    }
 }

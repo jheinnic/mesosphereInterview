@@ -7,4 +7,8 @@ public interface ITravelCostGraph<V, E>
    public double getTraversalCost(V from, V to);
    
    public double getPathTraversalCost(List<V> firstToLast);
+   
+   public interface ICostFunction {
+      double apply(int fromIndex, int toIndex);
+   }
 }

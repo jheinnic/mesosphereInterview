@@ -15,3 +15,5 @@
 JET2Project
 *._dnetx
 *._avaj
+services/junk
+**/.DS_Store

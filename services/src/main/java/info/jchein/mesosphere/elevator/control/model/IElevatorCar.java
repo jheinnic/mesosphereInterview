@@ -11,7 +11,7 @@ import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
  */
 interface IElevatorCar {
 	// void onFloorSensorTriggered(int floorIndex, DirectionOfTravel direction);
-   void dispatchToNextStop();
+   void confirmNextDispatch(int floorIndex);
 	void acceptPickupRequest(int floorIndex, DirectionOfTravel direction);
 	void cancelPickupRequest(int floorIndex, DirectionOfTravel direction);
 }

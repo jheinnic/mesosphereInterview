@@ -7,7 +7,9 @@ import java.util.Set;
 import com.google.common.collect.ImmutableSet;
 
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
-import info.jchein.mesosphere.elevator.common.bootstrap.ElevatorGroupBootstrap;
+import info.jchein.mesosphere.elevator.common.bootstrap.EmulatorProperties;
+import info.jchein.mesosphere.elevator.common.physics.IElevatorPhysicsService;
+import info.jchein.mesosphere.elevator.common.physics.JourneyArc;
 import info.jchein.mesosphere.elevator.control.event.DropOffRequested;
 import info.jchein.mesosphere.elevator.control.event.ParkedAtLanding;
 import info.jchein.mesosphere.elevator.control.event.PickupCallAdded;
@@ -15,18 +17,16 @@ import info.jchein.mesosphere.elevator.control.event.PickupCallRemoved;
 import info.jchein.mesosphere.elevator.control.event.TravelledThroughFloor;
 import info.jchein.mesosphere.elevator.control.sdk.AbstractElevatorSchedulingStrategy;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorDispatcherPort;
-import info.jchein.mesosphere.elevator.emulator.physics.IElevatorPhysicsService;
-import info.jchein.mesosphere.elevator.emulator.physics.JourneyArc;
 
 public class HeuristicElevatorSchedulingStrategy extends AbstractElevatorSchedulingStrategy {
 
 	// private ElevatorGroupBootstrap rootProps;
 	private final IElevatorPhysicsService physicsService;
-   private final ElevatorGroupBootstrap bootstrapData;
+   private final EmulatorProperties bootstrapData;
 	
 
 	public HeuristicElevatorSchedulingStrategy(
-		final IElevatorDispatcherPort port, final ElevatorGroupBootstrap bootstrapData, final IElevatorPhysicsService physicsService
+		final IElevatorDispatcherPort port, final EmulatorProperties bootstrapData, final IElevatorPhysicsService physicsService
 	) {
 		super(port);
       this.bootstrapData = bootstrapData;

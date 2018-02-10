@@ -1,0 +1,30 @@
+package info.jchein.mesosphere.elevator.control.event;
+
+import lombok.Builder;
+import lombok.Value;
+import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
+
+@Value
+@Builder(toBuilder=true)
+public class PickupCallAdded implements LandingEvent {
+	long clockTime;
+	int floorIndex;
+	long floorSequence;
+	DirectionOfTravel direction;
+	
+   public static PickupCallAdded build(Consumer<PickupCallAddedBuilder> director)
+   {
+      final PickupCallAddedBuilder bldr = PickupCallAdded.builder();
+      director.accept(bldr);
+      return bldr.build();
+   }
+
+
+   public PickupCallAdded copy(Consumer<PickupCallAddedBuilder> director)
+   {
+      final PickupCallAddedBuilder bldr = this.toBuilder();
+      director.accept(bldr);
+      return bldr.build();
+   }
+
+}
