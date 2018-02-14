@@ -10,10 +10,10 @@ import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 @Value
 @Builder(toBuilder=true)
 public class AvailableCarSignalOff implements LandingEvent {
-	long clockTime;
-	long floorSequence;
-	DirectionOfTravel direction;
+   final EventType eventType = EventType.CAR_AVAILABLE_SIGNAL_OFF;
+   
 	int floorIndex;
+	DirectionOfTravel direction;
 	
 	  
    public static AvailableCarSignalOff build(Consumer<AvailableCarSignalOffBuilder> director)

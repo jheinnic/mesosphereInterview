@@ -8,8 +8,8 @@ import lombok.Value;
 @Value
 @Builder(toBuilder=true)
 public class ParkedAtLanding implements ElevatorCarEvent {
-	long clockTime;
-	long carSequence;
+   final EventType eventType = EventType.PARKED_AT_LANDING;
+   
 	int carIndex;
 	int floorIndex;
    

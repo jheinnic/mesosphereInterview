@@ -14,7 +14,7 @@ import info.jchein.mesosphere.elevator.control.event.DropOffRequested;
 import info.jchein.mesosphere.elevator.control.event.ParkedAtLanding;
 import info.jchein.mesosphere.elevator.control.event.PickupCallAdded;
 import info.jchein.mesosphere.elevator.control.event.PickupCallRemoved;
-import info.jchein.mesosphere.elevator.control.event.TravelledThroughFloor;
+import info.jchein.mesosphere.elevator.control.event.TravelledPastFloor;
 import info.jchein.mesosphere.elevator.control.sdk.AbstractElevatorSchedulingStrategy;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorDispatcherPort;
 
@@ -62,7 +62,7 @@ public class HeuristicElevatorSchedulingStrategy extends AbstractElevatorSchedul
 
 
 	@Override
-	public void onTravelledThroughFloor(TravelledThroughFloor event) {
+	public void onTravelledThroughFloor(TravelledPastFloor event) {
 	}
 	
 	static class PassengerManifest {

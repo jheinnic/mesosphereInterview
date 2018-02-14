@@ -9,24 +9,24 @@ import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 
 @Value
 @Builder(toBuilder=true)
-public class TravelledThroughFloor implements ElevatorCarEvent {
-	long clockTime;
-	long carSequence;
+public class TravelledPastFloor implements ElevatorCarEvent {
+   final EventType eventType = EventType.TRAVELLED_PAST_FLOOR;
+   
 	int carIndex;
 	int floorIndex;
 	DirectionOfTravel direction;
 	
-   public static TravelledThroughFloor build(Consumer<TravelledThroughFloorBuilder> director)
+   public static TravelledPastFloor build(Consumer<TravelledPastFloorBuilder> director)
    {
-      final TravelledThroughFloorBuilder bldr = TravelledThroughFloor.builder();
+      final TravelledPastFloorBuilder bldr = TravelledPastFloor.builder();
       director.accept(bldr);
       return bldr.build();
    }
 
 
-   public TravelledThroughFloor copy(Consumer<TravelledThroughFloorBuilder> director)
+   public TravelledPastFloor copy(Consumer<TravelledPastFloorBuilder> director)
    {
-      final TravelledThroughFloorBuilder bldr = this.toBuilder();
+      final TravelledPastFloorBuilder bldr = this.toBuilder();
       director.accept(bldr);
       return bldr.build();
    }

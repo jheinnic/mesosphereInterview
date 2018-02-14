@@ -2,10 +2,10 @@ package info.jchein.mesosphere.test_support.fixtures.runtime;
 
 import org.apache.commons.math3.distribution.RealDistribution;
 
-import info.jchein.mesosphere.elevator.runtime.AbstractDistributionBasedIntervalFunction;
+import info.jchein.mesosphere.elevator.runtime.PoissonProcessFunction;
 
 public class FixtureDistributionIntervalHandler
-extends AbstractDistributionBasedIntervalFunction
+extends PoissonProcessFunction
 {
    public FixtureDistributionIntervalHandler( RealDistribution distribution )
    {

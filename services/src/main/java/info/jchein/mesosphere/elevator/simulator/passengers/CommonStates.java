@@ -7,7 +7,7 @@ package info.jchein.mesosphere.elevator.simulator.passengers;
  * 
  * @author jheinnic
  */
-public enum NamedDestination
+public enum CommonStates
 {
    BEFORE_ARRIVAL(CommonStateNames.BEFORE_ARRIVAL),
    IN_LOBBY(CommonStateNames.IN_LOBBY),
@@ -19,7 +19,7 @@ public enum NamedDestination
    
    public final String stateName;
 
-   NamedDestination( String stateName )
+   CommonStates( String stateName )
    {
       this.stateName = stateName;
    }

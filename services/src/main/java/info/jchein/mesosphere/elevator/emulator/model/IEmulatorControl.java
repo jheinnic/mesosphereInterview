@@ -19,8 +19,8 @@ import rx.Observable;
  */
 public interface IEmulatorControl
 {
-   public int getNumFloors();
-   public int getNumElevators();
+//   public int getNumFloors();
+//   public int getNumElevators();
 
 	public void callForPickup(int floorIndex, DirectionOfTravel direction);
 	public void updateManifest(int carIndex, int floorIndex, DirectionOfTravel direction, Consumer<IManifestUpdate> director);

@@ -17,15 +17,11 @@ import com.google.common.eventbus.Subscribe;
 
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 import info.jchein.mesosphere.elevator.control.event.DepartedLanding;
-import info.jchein.mesosphere.elevator.control.event.DropOffRequested;
 import info.jchein.mesosphere.elevator.control.event.ElevatorCarEvent;
 import info.jchein.mesosphere.elevator.control.event.ParkedAtLanding;
 import info.jchein.mesosphere.elevator.control.event.PassengerDoorsClosed;
 import info.jchein.mesosphere.elevator.control.event.PassengerDoorsOpened;
-import info.jchein.mesosphere.elevator.control.event.PickupCallAdded;
-import info.jchein.mesosphere.elevator.control.event.PickupCallRemoved;
-import info.jchein.mesosphere.elevator.control.event.TravelledThroughFloor;
-import info.jchein.mesosphere.elevator.control.event.WeightLoadUpdated;
+import info.jchein.mesosphere.elevator.control.event.TravelledPastFloor;
 import info.jchein.mesosphere.elevator.control.model.IElevatorGroupControl;
 import info.jchein.mesosphere.elevator.emulator.model.IEmulatorControl;
 import rx.Observable;
@@ -53,8 +49,8 @@ implements ITravellerQueueService
 	@Autowired
 	public ElevatorSimulation(IEmulatorControl emulatedControl, IElevatorGroupControl groupControl) {
 		this.emulatedControl = emulatedControl;
-		this.floorCount = emulatedControl.getNumFloors();
-		this.carCount = emulatedControl.getNumElevators();
+		this.floorCount = groupControl.getNumFloors();
+		this.carCount = groupControl.getNumElevators();
 
 		final ImmutableList.Builder<Queue<ISimulatedTraveller>> upBuilder =
 		   ImmutableList.<Queue<ISimulatedTraveller>>builder();
@@ -194,7 +190,7 @@ implements ITravellerQueueService
 
 
       @Subscribe
-      public Object onTravelledThroughFloor(final TravelledThroughFloor event)
+      public Object onTravelledThroughFloor(final TravelledPastFloor event)
       {
          return null;
       }

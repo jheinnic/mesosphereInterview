@@ -10,8 +10,9 @@ import java.util.function.Consumer;
 @Value
 @Builder(toBuilder=true)
 public class DriverBootstrapped implements ElevatorCarEvent {
+   final EventType eventType = EventType.BOOTSTRAPPED_DRIVER;
+
 	long clockTime;
-	long carSequence;
 	int carIndex;
 	int floorIndex;
 	double weightLoad;

@@ -10,8 +10,8 @@ import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 @Value
 @Builder(toBuilder=true)
 public class DepartedLanding implements ElevatorCarEvent {
-	long clockTime;
-	long carSequence;
+   final EventType eventType = EventType.DEPARTED_LANDING;
+   
 	int carIndex;
 	int origin;
 	int destination;

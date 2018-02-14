@@ -5,6 +5,8 @@ import rx.Observable;
 
 public interface IElevatorGroupControl
 {
+   int getNumElevators();
+   int getNumFloors();
    Observable<ElevatorCarEvent> getChangeStream();
 //   S getScheduler();
 //   IRuntimeEventBus getEventBus();

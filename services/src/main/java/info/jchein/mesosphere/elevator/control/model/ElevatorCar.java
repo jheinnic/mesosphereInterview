@@ -36,7 +36,7 @@ import info.jchein.mesosphere.elevator.control.event.ParkedAtLanding;
 import info.jchein.mesosphere.elevator.control.event.PassengerDoorsClosed;
 import info.jchein.mesosphere.elevator.control.event.PassengerDoorsOpened;
 import info.jchein.mesosphere.elevator.control.event.SlowedForArrival;
-import info.jchein.mesosphere.elevator.control.event.TravelledThroughFloor;
+import info.jchein.mesosphere.elevator.control.event.TravelledPastFloor;
 import info.jchein.mesosphere.elevator.control.event.WeightLoadUpdated;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarDriver;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarPort;
@@ -280,7 +280,7 @@ implements IElevatorCar, IElevatorCarPort
       final int initialFloor = data.getInitialFloor();
       final double initialWeight = data.passengers.stream().collect(Collectors.summingDouble((p) -> p.weight));
       final BitSet initialDropRequests = data.passengers.stream().<BitSet>collect(
-         BitSet::new, (BitSet bitSet, PendingDropOff p) -> { bitSet.set(p.dropoffFloor); }, BitSet::or
+         BitSet::new, (BitSet bitSet, PendingDropOff p) -> { bitSet.set(p.dropOffFloor); }, BitSet::or
       );
 
       this.currentDestination = -1;
@@ -312,9 +312,8 @@ implements IElevatorCar, IElevatorCarPort
          this.nextDirection = DirectionOfTravel.STOPPED;
          this.reversePathFloorIndex = (-1);
       }
-      this.eventBus.post(DriverBootstrapped.build((DriverBootstrapped.Builder bldr) -> {
+      this.eventBus.post(DriverBootstrapped.build(bldr -> {
          bldr.clockTime(this.clock.now())
-            .carSequence(this.nextEventIndex++)
             .carIndex(this.carIndex)
             .floorIndex(this.currentFloorIndex)
             .weightLoad(this.currentWeightLoad)
@@ -325,16 +324,11 @@ implements IElevatorCar, IElevatorCarPort
 
 
    @Transitions({
-      @Transition(from=AVAILABLE, event=DROPOFF_REQUESTED,
-         to=AVAILABLE),
-      @Transition(from=TRAVELLING, event=DROPOFF_REQUESTED,
-         to=TRAVELLING),
-      @Transition(from=SLOWING, event=DROPOFF_REQUESTED,
-         to=SLOWING),
-      @Transition(from=ARRIVING, event=DROPOFF_REQUESTED,
-         to=ARRIVING),
-      @Transition(from=BOARDING, event=DROPOFF_REQUESTED,
-         to=BOARDING)
+      @Transition(from=AVAILABLE, event=DROPOFF_REQUESTED, to=AVAILABLE),
+      @Transition(from=TRAVELLING, event=DROPOFF_REQUESTED, to=TRAVELLING),
+      @Transition(from=SLOWING, event=DROPOFF_REQUESTED, to=SLOWING),
+      @Transition(from=ARRIVING, event=DROPOFF_REQUESTED, to=ARRIVING),
+      @Transition(from=BOARDING, event=DROPOFF_REQUESTED, to=BOARDING)
    })
    public void onDropOffRequested(final int floorIndex)
    {
@@ -350,10 +344,8 @@ implements IElevatorCar, IElevatorCarPort
 
 
    @Transitions({
-      @Transition(from=AVAILABLE, event=DISPATCHED,
-         to=TRAVELLING),
-      @Transition(from=BOARDING, event=DISPATCHED,
-         to=TRAVELLING)
+      @Transition(from=AVAILABLE, event=DISPATCHED, to=TRAVELLING),
+      @Transition(from=BOARDING, event=DISPATCHED, to=TRAVELLING)
    })
    public void onDispatch(final String event)
    {
@@ -513,7 +505,7 @@ implements IElevatorCar, IElevatorCarPort
          (((this.currentDestination > floorIndex) && (direction == DirectionOfTravel.GOING_UP)) ||
             ((this.currentDestination < floorIndex) && (direction == DirectionOfTravel.GOING_DOWN))))
       {
-         this.eventBus.post(TravelledThroughFloor.build((TravelledThroughFloor.Builder bldr) -> {
+         this.eventBus.post(TravelledPastFloor.build((TravelledPastFloor.Builder bldr) -> {
             bldr.clockTime(this.clock.now())
                .carSequence(this.nextEventIndex++)
                .carIndex(this.carIndex)

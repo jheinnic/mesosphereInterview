@@ -10,8 +10,8 @@ import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 @Value
 @Builder(toBuilder=true)
 public class PassengerDoorsOpened implements ElevatorCarEvent {
-	long clockTime;
-	long carSequence;
+   final EventType eventType = EventType.PASSENGER_DOORS_OPENED;
+   
 	int carIndex;
 	int floorIndex;
 	DirectionOfTravel direction;

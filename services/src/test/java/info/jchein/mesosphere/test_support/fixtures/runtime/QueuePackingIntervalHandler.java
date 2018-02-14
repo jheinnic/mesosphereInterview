@@ -4,7 +4,7 @@ import java.util.Queue;
 
 import org.apache.commons.math3.distribution.RealDistribution;
 
-import info.jchein.mesosphere.elevator.runtime.AbstractDistributionBasedIntervalFunction;
+import info.jchein.mesosphere.elevator.runtime.PoissonProcessFunction;
 import info.jchein.mesosphere.elevator.runtime.IIntervalHandler;
 
 public class QueuePackingIntervalHandler

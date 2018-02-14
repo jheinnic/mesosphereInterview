@@ -8,8 +8,8 @@ import lombok.Value;
 @Value
 @Builder(toBuilder=true)
 public class PassengerDoorsClosed implements ElevatorCarEvent {
-	long clockTime;
-	long carSequence;
+   final EventType eventType = EventType.PASSENGER_DOORS_CLOSED;
+   
 	int carIndex;
 	
    public static PassengerDoorsClosed build(Consumer<PassengerDoorsClosedBuilder> director)

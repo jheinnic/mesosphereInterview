@@ -2,16 +2,18 @@ package info.jchein.mesosphere.elevator.control.event;
 
 import java.util.function.Consumer;
 
+import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder(toBuilder=true)
 public class SlowedForArrival implements ElevatorCarEvent {
-	long clockTime;
-	long carSequence;
+   final EventType eventType = EventType.SLOWED_FOR_ARRIVAL;
+   
 	int carIndex;
 	int floorIndex;
+	DirectionOfTravel direction;
 	
    public static SlowedForArrival build(Consumer<SlowedForArrivalBuilder> director)
    {

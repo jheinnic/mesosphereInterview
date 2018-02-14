@@ -1,7 +1,5 @@
 package info.jchein.mesosphere.elevator.control.model;
 
-package info.jchein.mesosphere.elevator.control.model;
-
 
 import com.google.common.base.Preconditions;
 import com.google.common.eventbus.Subscribe;
@@ -18,7 +16,7 @@ import info.jchein.mesosphere.elevator.control.event.PassengerDoorsClosed;
 import info.jchein.mesosphere.elevator.control.event.PassengerDoorsOpened;
 import info.jchein.mesosphere.elevator.control.event.PickupCallAdded;
 import info.jchein.mesosphere.elevator.control.event.PickupCallRemoved;
-import info.jchein.mesosphere.elevator.control.event.TravelledThroughFloor;
+import info.jchein.mesosphere.elevator.control.event.TravelledPastFloor;
 import info.jchein.mesosphere.elevator.control.event.WeightLoadUpdated;
 import info.jchein.mesosphere.elevator.control.model.ICallDispatcher;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorDispatcherPort;
@@ -114,7 +112,7 @@ implements ICallDispatcher, IElevatorDispatcherPort
 
 
    @Subscribe
-   public Object onTravelledThroughFloor(final TravelledThroughFloor event)
+   public Object onTravelledThroughFloor(final TravelledPastFloor event)
    {
       return null;
    }

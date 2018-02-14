@@ -9,8 +9,8 @@ import lombok.Value;
 @Value
 @Builder(toBuilder=true)
 public class LocationUpdated implements ElevatorCarEvent {
-	long clockTime;
-	long carSequence;
+   final EventType eventType = EventType.UPDATED_ESTIMATED_LOCATION;
+   
 	int carIndex;
 	int floorIndex;
    

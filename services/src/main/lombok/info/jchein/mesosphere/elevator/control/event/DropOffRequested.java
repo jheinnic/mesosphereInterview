@@ -8,8 +8,8 @@ import lombok.Value;
 @Value
 @Builder(toBuilder=true)
 public class DropOffRequested implements ElevatorCarEvent {
-	long clockTime;
-	long carSequence;
+   final EventType eventType = EventType.DROP_OFF_REQUESTED;
+
 	int carIndex;
 	int dropOffFloorIndex;
    

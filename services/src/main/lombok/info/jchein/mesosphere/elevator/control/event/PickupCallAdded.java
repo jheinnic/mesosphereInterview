@@ -10,9 +10,9 @@ import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 @Value
 @Builder(toBuilder=true)
 public class PickupCallAdded implements LandingEvent {
-	long clockTime;
+   final EventType eventType = EventType.PICKUP_CALL_ADDED;
+   
 	int floorIndex;
-	long floorSequence;
 	DirectionOfTravel direction;
 	
    public static PickupCallAdded build(Consumer<PickupCallAddedBuilder> director)

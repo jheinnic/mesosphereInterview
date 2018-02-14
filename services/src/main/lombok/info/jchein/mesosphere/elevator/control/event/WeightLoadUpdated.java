@@ -8,9 +8,12 @@ import lombok.Value;
 @Value
 @Builder(toBuilder=true)
 public class WeightLoadUpdated implements ElevatorCarEvent {
-	long clockTime;
-	long carSequence;
+   final EventType eventType = EventType.UPDATED_WEIGHT_LOAD;
+   
 	int carIndex;
+	double hi;
+	double lo;
+	double current;
 	double weightLoad;
 	
    public static WeightLoadUpdated build(Consumer<WeightLoadUpdatedBuilder> director)

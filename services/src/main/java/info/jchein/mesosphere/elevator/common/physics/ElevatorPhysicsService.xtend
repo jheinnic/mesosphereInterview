@@ -1,26 +1,25 @@
 package info.jchein.mesosphere.elevator.common.physics
 
-import com.google.common.base.Preconditions
-import com.google.common.collect.ImmutableList
 import de.oehme.xtend.contrib.Cached
 import org.eclipse.xtend.lib.annotations.ToString
-import org.springframework.util.Assert
-import org.springframework.stereotype.Component
 
-import info.jchein.mesosphere.elevator.runtime.IRuntimeClock
+import com.google.common.base.Preconditions
+import com.google.common.collect.ImmutableList
+import info.jchein.mesosphere.elevator.common.DirectionOfTravel
+import info.jchein.mesosphere.elevator.common.bootstrap.BuildingDescription
 import info.jchein.mesosphere.elevator.common.bootstrap.DeploymentConfiguration
 import info.jchein.mesosphere.elevator.common.bootstrap.DoorTimeDescription
-import info.jchein.mesosphere.elevator.common.bootstrap.BuildingDescription
 import info.jchein.mesosphere.elevator.common.bootstrap.StartStopDescription
 import info.jchein.mesosphere.elevator.common.bootstrap.TravelSpeedDescription
 import info.jchein.mesosphere.elevator.common.bootstrap.WeightDescription
+import org.springframework.stereotype.Component
+import org.springframework.util.Assert
 
-import static extension java.lang.Math.floor 
+import static extension java.lang.Math.floor
 
 @ToString
 @Component
 class ElevatorPhysicsService implements IElevatorPhysicsService {
-	val IRuntimeClock clock
 	val BuildingDescription buildingProps
 	val StartStopDescription motorProps
 	val TravelSpeedDescription speedProps
@@ -53,7 +52,7 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 	val JourneyArc fastAscent
 	val JourneyArc fastDescent
 
-	public new(DeploymentConfiguration deploymentConfiguration, IRuntimeClock clock) {
+	public new(DeploymentConfiguration deploymentConfiguration) {
 		this.buildingProps = deploymentConfiguration.building
 		this.motorProps = deploymentConfiguration.motor
 		this.speedProps = deploymentConfiguration.topSpeed
@@ -69,8 +68,6 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		this.maxSpeedBrk = this.motorProps.brakeSpeed
 		this.minSpeedBrk = -1 * this.maxSpeedBrk
 		this.distBrk = this.motorProps.brakeDistance
-
-		this.clock = clock
 
 		// Compute the time required to reach maximum acceleration, given maximum jerk, the resulting velocity, and the
 		// distance traveled in that time.
@@ -295,21 +292,7 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
             // Run at constant velocity for an instant.  This segment is extensible to run longer arcs at the same velocity.
 			val IPathLeg toJerkUpTwo = new ConstantVelocityPathLeg(atConstV, 0)
 			atJerkUpTwo = toJerkUpTwo.nextMoment(listBuilder, this.maxJerk)
-
-			// Reverse the paired jerk maneuvers to brake down towards braking speed.
-//	   		val IPathLeg toMaxUpAcc = new ConstantJerkPathLeg(atJerkUpTwo, tJerkDownOne)
-//			atMaxUpAcc = toMaxUpAcc.nextMoment(listBuilder, 0)
 		} else {
-		// if (toMaxDownAcc.finalVelocity < minSpeed) {
-			// 0 = (v0-vf) + a0t + 0.5 * j*t^2
-			// If a(0) == 0 m/s/s, then t = sqrt(2*v(f)/j) is technically calculatable, but let's defer supporting this result and just insist that the motor must
-			// be able to reach maximum acceleration before maximum velocity or we won't support it.
-			// throw new IllegalArgumentException(
-				// "Motors must be able to reach maximum acceleration before reaching maximum velocity to be supported here");
-		// }
-		// Assert.isTrue((atMaxDownAcc.acceleration == this.minAccel) && (atMaxDownAcc.velocity < 0) && (atMaxDownAcc.velocity > minSpeed),
-		// 	"Acceleration must maximize magnitude of acceleration before speed going down");
-
 			val double tJerkUpOne = (0 - atMaxDownAcc.acceleration) / this.maxJerk
 			val double vJerkUpOne = minSpeed - (tJerkUpOne * atMaxDownAcc.acceleration) -
 				(this.maxJerk * tJerkUpOne * tJerkUpOne / 2.0)
@@ -323,10 +306,9 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 	
 			val IPathLeg toJerkUpTwo = new ConstantVelocityPathLeg(atConstV, 0)
 			atJerkUpTwo = toJerkUpTwo.nextMoment(listBuilder, this.maxJerk)
-	
-//			val IPathLeg toMaxUpAcc = new ConstantJerkPathLeg(atJerkUpTwo, tJerkUpOne) // this.tMaxA)
-//			atMaxUpAcc = toMaxUpAcc.nextMoment(listBuilder, 0)
 		}
+
+		// Reverse the paired jerk maneuvers to brake down towards braking speed.
 
 		// Working backwards from
 		// a(sb) = a(0) + j*t(toBrk)
@@ -337,15 +319,8 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		// t = ((v(sb) - v(0)) * 2.0) / ( a(0) + a(sb) )
 		// ... yields ...
 		// t(toBrk) = 2(v(brk) - v(0)) / (a(0) + a(brk))
-		// val double tJerkDownTwo = (this.minSpeedBrk - atJerkUpTwo.velocity) * 2 / (atJerkUpTwo.acceleration + this.minAccelBrake + this.minAccelBrake)
 		val double tJerkUpTwo = (this.minSpeedBrk - atJerkUpTwo.velocity) * 2 / (atJerkUpTwo.acceleration + this.minAccelBrake)
 		val double jerkUpTwo  = (this.minAccelBrake - atJerkUpTwo.acceleration) / tJerkUpTwo
-
-		// Unlike the global maxAccel value, which stores an unsigned magnitude, the value we get from a PathMoment is a signed quantity!
-		// val tMaxUpAcc = (vJerkDownTwo - atMaxUpAcc.velocity) / atMaxUpAcc.acceleration
-
-//		val toJerkDownTwo = new ConstantAccelerationPathLeg(atMaxUpAcc, tMaxUpAcc);
-//		val atJerkDownTwo = toJerkDownTwo.nextMoment(listBuilder, this.minJerk)
 
 		// Placeholders for two errand legs, removed for correctness!
 		val IPathLeg toOldMaxUpAcc = new ConstantJerkPathLeg(atJerkUpTwo, 0)
@@ -490,4 +465,9 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 	override getMetersPerFloor() {
 		return this.metersPerFloor
 	}
+	
+	override getSensorHeight(int floorIndex, DirectionOfTravel direction) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
 }

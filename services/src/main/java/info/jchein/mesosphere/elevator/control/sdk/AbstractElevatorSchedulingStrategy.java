@@ -7,7 +7,7 @@ import info.jchein.mesosphere.elevator.control.event.DropOffRequested;
 import info.jchein.mesosphere.elevator.control.event.ParkedAtLanding;
 import info.jchein.mesosphere.elevator.control.event.PassengerDoorsClosed;
 import info.jchein.mesosphere.elevator.control.event.PassengerDoorsOpened;
-import info.jchein.mesosphere.elevator.control.event.TravelledThroughFloor;
+import info.jchein.mesosphere.elevator.control.event.TravelledPastFloor;
 import info.jchein.mesosphere.elevator.control.event.WeightLoadUpdated;
 import info.jchein.mesosphere.elevator.control.event.PickupCallAdded;
 import info.jchein.mesosphere.elevator.control.event.PickupCallRemoved;
@@ -60,5 +60,5 @@ public abstract class AbstractElevatorSchedulingStrategy {
 //	public void onSlowedForArrival(SlowedForArrival event) { }
 	
    @Subscribe
-	public void onTravelledThroughFloor(TravelledThroughFloor event) { }
+	public void onTravelledThroughFloor(TravelledPastFloor event) { }
 }

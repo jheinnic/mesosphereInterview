@@ -10,8 +10,8 @@ import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 @Value
 @Builder(toBuilder=true)
 public class FloorSensorTriggered implements LandingEvent {
-	long clockTime;
-	long floorSequence;
+   final EventType eventType = EventType.FLOOR_SENSOR_TRIGGERED;
+   
 	int floorIndex;
 	int carIndex;
 	DirectionOfTravel direction;

@@ -1,11 +1,8 @@
 package info.jchein.mesosphere.elevator.simulator.model;
 
-import info.jchein.mesosphere.elevator.common.CompletedTrip;
 import info.jchein.mesosphere.elevator.common.PassengerId;
-import info.jchein.mesosphere.elevator.common.PendingDropOff;
-import info.jchein.mesosphere.elevator.common.PendingPickup;
 
-public interface ISimulatedTraveller {
+public interface ISimulatedTraveller  {
    public PassengerId getId();
 
    public double getWeight();
@@ -14,7 +11,7 @@ public interface ISimulatedTraveller {
 
    public int getDestinationFloor();
 
-   public int getBoardedCarIndex();
+   public int getPickupCarIndex();
 
    public long getLatestCallTime();
 

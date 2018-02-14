@@ -100,7 +100,7 @@ public class ElevatorGroupControl implements IElevatorGroupControl {
 
 
    @Override
-   public Observable<ElevatorEventEvent> getChangeStream()
+   public Observable<ElevatorCarEvent> getChangeStream()
    {
       return this.changeStream;
    }
