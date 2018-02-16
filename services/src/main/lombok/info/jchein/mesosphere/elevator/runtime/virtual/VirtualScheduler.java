@@ -12,15 +12,20 @@ import javax.validation.executable.ValidateOnExecution;
 
 import org.jgrapht.util.FibonacciHeap;
 import org.jgrapht.util.FibonacciHeapNode;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import com.google.common.base.Preconditions;
 
+import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeProperties;
 import info.jchein.mesosphere.elevator.runtime.IIntervalHandler;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
 import info.jchein.mesosphere.elevator.runtime.IVariableIntervalFunction;
+
 import lombok.extern.slf4j.Slf4j;
 import rx.Scheduler.Worker;
 import rx.Subscription;
@@ -29,6 +34,7 @@ import rx.functions.Action0;
 
 @Slf4j
 @Component
+@Scope(BeanDefinition.SCOPE_SINGLETON)
 @ValidateOnExecution(type= {ExecutableType.ALL})
 public class VirtualScheduler implements IRuntimeScheduler
 {
@@ -42,7 +48,7 @@ public class VirtualScheduler implements IRuntimeScheduler
    {
       PERIODIC_FIXED,
       PERIODIC_VARIABLE,
-      ONE_TIME
+      ONE_TIME;
    }
 
    abstract class ScheduledCallback<T>

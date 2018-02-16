@@ -2,11 +2,12 @@ package info.jchein.mesosphere.elevator.common;
 
 
 import java.util.function.Consumer;
+
 import lombok.Builder;
-import lombok.Data;
+import lombok.Value;
 
 
-@Data
+@Value
 @Builder(toBuilder = true)
 class DropOffRequest
 {

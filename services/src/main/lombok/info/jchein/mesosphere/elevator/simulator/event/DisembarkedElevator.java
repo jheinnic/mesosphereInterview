@@ -2,7 +2,7 @@ package info.jchein.mesosphere.elevator.simulator.event;
 
 import java.util.function.Consumer;
 
-import info.jchein.mesosphere.elevator.common.PassengerId;
+import info.jchein.mesosphere.elevator.simulator.model.ISimulatedTraveller;
 import lombok.Builder;
 import lombok.Value;
 
@@ -13,10 +13,9 @@ public class DisembarkedElevator implements TravellerEvent
    final SimulationEventType eventType = SimulationEventType.DISEMBARKED_ELEVATOR;
 
    long clockTime;
-   PassengerId travellerId;
-   String populationName;
-   int floorIndex;
+   ISimulatedTraveller traveller;
    int carIndex;
+   int floorIndex;
    
    public static DisembarkedElevator build(Consumer<DisembarkedElevatorBuilder> director)
    {

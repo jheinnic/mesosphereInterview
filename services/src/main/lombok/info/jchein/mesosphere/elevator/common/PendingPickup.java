@@ -62,6 +62,7 @@ public class PendingPickup
          bldr.id(this.id)
             .callTime(this.callTime)
             .pickupTime(pickupTime)
+            .carIndex(pickupCarIndex)
             .pickupFloor(this.pickupFloor)
             .dropOffFloor(this.dropOffFloor)
             .weight(this.weight);

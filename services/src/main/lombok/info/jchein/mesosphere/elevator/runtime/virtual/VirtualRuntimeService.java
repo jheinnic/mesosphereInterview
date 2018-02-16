@@ -5,39 +5,30 @@ import javax.annotation.PostConstruct;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.google.common.base.Preconditions;
 
-import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeEventBus;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
-import lombok.Getter;
-import lombok.experimental.Delegate;
 import lombok.extern.slf4j.Slf4j;
 
 
 @Slf4j
 @Component
+@Scope(BeanDefinition.SCOPE_SINGLETON)
 public class VirtualRuntimeService implements IVirtualRuntimeService
 {
-   @Getter
-   @Delegate
-   private final IRuntimeClock clock;
-   
-   @Getter
-   @Delegate
    private final IRuntimeEventBus eventBus;
    
-   @Getter
-   @Delegate
    private final IRuntimeScheduler scheduler;
 
    boolean hasBegun = false;
    
    @Autowired
-   VirtualRuntimeService(@NotNull IRuntimeClock clock, @NotNull IRuntimeEventBus eventBus, @NotNull VirtualScheduler scheduler) {
-      this.clock = clock;
+   VirtualRuntimeService(@NotNull IRuntimeEventBus eventBus, @NotNull VirtualScheduler scheduler) {
       this.eventBus = eventBus;
       this.scheduler = scheduler;
    }

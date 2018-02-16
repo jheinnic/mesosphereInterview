@@ -2,7 +2,7 @@ package info.jchein.mesosphere.elevator.simulator.event;
 
 import java.util.function.Consumer;
 
-import info.jchein.mesosphere.elevator.common.PassengerId;
+import info.jchein.mesosphere.elevator.simulator.model.ISimulatedTraveller;
 import lombok.Builder;
 import lombok.Value;
 
@@ -13,8 +13,7 @@ public class TravellerArrived implements TravellerEvent
    final SimulationEventType eventType = SimulationEventType.TRAVELLER_ARRIVED;
 
    long clockTime;
-   PassengerId travellerId;
-   String populationName;
+   ISimulatedTraveller traveller;
    
    public static TravellerArrived build(Consumer<TravellerArrivedBuilder> director)
    {

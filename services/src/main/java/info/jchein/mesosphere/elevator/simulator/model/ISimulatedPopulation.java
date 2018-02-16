@@ -1,9 +1,9 @@
 package info.jchein.mesosphere.elevator.simulator.model;
 
-import info.jchein.mesosphere.elevator.simulator.passengers.AbstractTraveller;
-import info.jchein.mesosphere.elevator.simulator.passengers.IRandomVariables;
+import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
 
 public interface ISimulatedPopulation
 {
-   void initPoissonProcess();
+   String getPopulationName();
+   void initPoissonProcess(IRuntimeScheduler scheduler);
 }

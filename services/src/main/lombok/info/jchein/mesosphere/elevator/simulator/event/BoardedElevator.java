@@ -3,7 +3,7 @@ package info.jchein.mesosphere.elevator.simulator.event;
 import java.util.function.Consumer;
 
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
-import info.jchein.mesosphere.elevator.common.PassengerId;
+import info.jchein.mesosphere.elevator.simulator.model.ISimulatedTraveller;
 import lombok.Builder;
 import lombok.Value;
 
@@ -14,11 +14,10 @@ public class BoardedElevator implements TravellerEvent
    final SimulationEventType eventType = SimulationEventType.BOARDED_ELEVATOR;
 
    long clockTime;
-   PassengerId travellerId;
-   String populationName;
-   int floorIndex;
-   DirectionOfTravel direction;
+   ISimulatedTraveller traveller;
    int carIndex;
+   int originFloorIndex;
+   int destinationFloorIndex;
    
    
    public static BoardedElevator build(Consumer<BoardedElevatorBuilder> director)

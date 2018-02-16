@@ -5,4 +5,8 @@ public interface IConfigurationFactory
    EmulatorConfiguration hardenEmulatorConfig( EmulatorProperties mutableProps );
 
    DeploymentConfiguration hardenDeploymentConfig( DeploymentProperties mutableProps );
+   
+   VirtualRuntimeConfiguration hardenVirtualRuntimeConfig( VirtualRuntimeProperties mutableProps );
+
+   DemographicConfiguration hardenDemographicConfiguration(DemographicProperties mutableProps);
 }

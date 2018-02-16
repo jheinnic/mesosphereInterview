@@ -13,15 +13,15 @@ import org.springframework.context.annotation.Scope;
 
 import com.google.common.eventbus.EventBus;
 
+import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeProperties;
 import info.jchein.mesosphere.elevator.runtime.IRuntime;
-import info.jchein.mesosphere.elevator.runtime.virtual.VirtualRuntimeProperties;
 import rx.Scheduler;
 import rx.Scheduler.Worker;
 import rx.schedulers.Schedulers;
 import rx.schedulers.TestScheduler;
 
 @Configuration
-@ComponentScan()
+@ComponentScan("info.jchein.mesosphere.elevator.runtime.virtual")
 @EnableConfigurationProperties(VirtualRuntimeProperties.class)
 public class VirtualRuntimeConfiguration {
    @Bean

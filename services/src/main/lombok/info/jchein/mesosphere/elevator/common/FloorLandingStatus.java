@@ -1,5 +1,6 @@
 package info.jchein.mesosphere.elevator.common;
 
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
@@ -13,6 +14,9 @@ import lombok.Value;
 @Builder(toBuilder=true)
 public class FloorLandingStatus
 {
+   @Min(0)
+   private int floorIndex;
+   
    @NotNull
    @Size(min=0)
    @Singular

@@ -11,9 +11,9 @@ import info.jchein.mesosphere.elevator.simulator.model.ISimulatedPopulation;
  */
 public interface IRandomVariables
 {
-   long getMillisecondsToNextArrival();
-
    int getInitialFloor();
+   
+//   long getInitialPickupDelay();
 
    double getWeight();
 }

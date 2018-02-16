@@ -8,6 +8,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.ScriptAssert;
 import org.springframework.validation.annotation.Validated;
 
@@ -26,7 +27,7 @@ import lombok.Value;
    @ScriptAssert(lang = "javascript", alias = "_this",
       script = "_this.pendingPickups.every( (p) => p.pickupFloor < _this.numFloors && p.pickupFloor >= 0 )"),
    @ScriptAssert(lang = "javascript", alias = "_this",
-      script = "_this.pendingPickups.every( (p) => p.dropoffFloor < _this.numFloors && p.dropoffFloor >= 0 )"),
+      script = "_this.pendingPickups.every( (p) => p.dropOffFloor < _this.numFloors && p.dropOffFloor >= 0 )"),
    @ScriptAssert(lang = "javascript", alias = "_this",
       script = "_this.pendingPickups.every( (p) => p.callTime <= p.pickupTime )"),
    @ScriptAssert(lang = "javascript", alias = "_this",
@@ -34,14 +35,18 @@ import lombok.Value;
    @ScriptAssert(lang = "javascript", alias = "_this",
       script = "_this.cars.every( (c) => c.passengers.every( (p) => p.pickupFloor < this._numFloors && p.pickupFloor >= 0 ) )"),
    @ScriptAssert(lang = "javascript", alias = "_this",
-      script = "_this.cars.every( (c) => c.passengers.every( (p) => p.dropoffFloor < this._numFloors && p.dropoffFloor >= 0 ) )"),
+      script = "_this.cars.every( (c) => c.passengers.every( (p) => p.dropOffFloor < this._numFloors && p.dropOffFloor >= 0 ) )"),
    @ScriptAssert(lang = "javascript", alias = "_this",
-      script = "_this.cars.every( (c) => c.passengers.every( (p) => p.callTIme <= p.pickupTime ) )")
+      script = "_this.cars.every( (c) => c.passengers.every( (p) => p.callTime <= p.pickupTime ) )")
 })
 public class EmulatorConfiguration
 {
    @Min(0)
    public final int numFloors;
+   
+   @NotNull
+   @NotBlank
+   public final String driverAlias;
 
    @Valid
    @NotNull

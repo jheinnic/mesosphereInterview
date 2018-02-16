@@ -11,14 +11,20 @@ import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeProperties;
 import info.jchein.mesosphere.elevator.runtime.IRuntime;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
+import lombok.SneakyThrows;
+import rx.Scheduler;
 import rx.schedulers.TestScheduler;
 
 
 @Component
+@Scope(BeanDefinition.SCOPE_SINGLETON)
 public class RuntimeClock
 extends Clock
 implements IRuntimeClock
@@ -27,13 +33,13 @@ implements IRuntimeClock
    private final ZoneId zoneId;
 
    @NotNull
-   private final TestScheduler authority;
+   private final Scheduler authority;
 
    @NotNull
    private final long millisPerTick;
 
 
-   RuntimeClock( @NotNull ZoneId zoneId, @NotNull TestScheduler authority, @Min(10) long millisPerTick )
+   RuntimeClock( @NotNull ZoneId zoneId, @NotNull Scheduler authority, @Min(10) long millisPerTick )
    {
       this.zoneId = zoneId;
       this.authority = authority;
@@ -41,15 +47,8 @@ implements IRuntimeClock
    }
 
 
-   RuntimeClock( @NotNull ZoneId zoneId, @NotNull TestScheduler authority,
-      @NotNull VirtualRuntimeProperties runtimeProps )
-   {
-      this(zoneId, authority, runtimeProps.getTickDurationMillis());
-   }
-
-
    @Autowired
-   public RuntimeClock( @NotNull @Qualifier(IRuntime.ELEVATOR_RUNTIME_QUALIFIER) TestScheduler authority,
+   public RuntimeClock( @NotNull @Qualifier(IRuntime.ELEVATOR_RUNTIME_QUALIFIER) Scheduler authority,
       @NotNull VirtualRuntimeProperties runtimeProps )
    {
       this(ZoneId.systemDefault(), authority, runtimeProps.getTickDurationMillis());
@@ -107,8 +106,13 @@ implements IRuntimeClock
 
 
    @Override
+   @SneakyThrows
    public void advanceBy(long delta, TimeUnit timeUnit)
    {
-      this.authority.advanceTimeBy(delta, timeUnit);
+      if (this.authority instanceof TestScheduler) {
+          ((TestScheduler) this.authority).advanceTimeBy(delta, timeUnit);
+      } else {
+         Thread.sleep(timeUnit.toMillis(delta));
+      }
    }
 }

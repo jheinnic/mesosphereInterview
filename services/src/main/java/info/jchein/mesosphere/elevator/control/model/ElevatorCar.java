@@ -8,8 +8,6 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.validation.constraints.NotNull;
 
-import org.eclipse.xtext.xbase.lib.Exceptions;
-import org.eclipse.xtext.xbase.lib.Pure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +24,8 @@ import com.google.common.eventbus.Subscribe;
 
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 import info.jchein.mesosphere.elevator.common.PendingDropOff;
+import info.jchein.mesosphere.elevator.common.bootstrap.BuildingDescription;
+import info.jchein.mesosphere.elevator.common.bootstrap.DeploymentConfiguration;
 import info.jchein.mesosphere.elevator.common.bootstrap.DeploymentProperties;
 import info.jchein.mesosphere.elevator.common.bootstrap.InitialCarState;
 import info.jchein.mesosphere.elevator.control.event.DepartedLanding;
@@ -42,6 +42,7 @@ import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarDriver;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarPort;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeEventBus;
+import lombok.SneakyThrows;
 
 
 @StatefulController(
@@ -103,7 +104,7 @@ implements IElevatorCar, IElevatorCarPort
    private StatefulFSM<ElevatorCar> fsm;
 
    private final int carIndex;
-   private final int numFloors;
+   private final BuildingDescription bldgDesc;
    private final IRuntimeClock clock;
    private final IRuntimeEventBus eventBus;
 
@@ -123,18 +124,14 @@ implements IElevatorCar, IElevatorCarPort
    private DirectionOfTravel nextDirection;
    private int nextDestination;
 
-   private long nextEventIndex = 1;
-
 
    @Autowired
-   public ElevatorCar( @NotNull final IRuntimeClock clock, @NotNull final IRuntimeEventBus eventBus, @NotNull final DeploymentProperties bootstrapData )
+   public ElevatorCar( @NotNull final IRuntimeClock clock, @NotNull final IRuntimeEventBus eventBus, @NotNull final DeploymentConfiguration bootstrapData )
    {
       this.carIndex = ElevatorCar.ID_SEQUENCE.incrementAndGet();
-      this.numFloors =
-         bootstrapData.getBuilding()
-            .getNumFloors();
       this.clock = clock;
       this.eventBus = eventBus;
+      this.bldgDesc = bootstrapData.getBuilding();
    }
 
 
@@ -145,105 +142,69 @@ implements IElevatorCar, IElevatorCarPort
    }
 
 
+   @SneakyThrows
    public void attachDriver(final IElevatorCarDriver driver)
    {
-      try {
-         if ((this.driver != null)) { throw new RuntimeException("Driver has already been attached"); }
-         final InitialCarState data = driver.initialize();
-         this.fsm.onEvent(this, ElevatorCar.DRIVER_ATTACHED, driver, data);
-      }
-      catch (Throwable _e) {
-         throw Exceptions.sneakyThrow(_e);
-      }
+      if (this.driver != null) { throw new RuntimeException("Driver has already been attached"); }
+      final InitialCarState data = driver.initialize();
+      this.fsm.onEvent(this, ElevatorCar.DRIVER_ATTACHED, driver, data);
    }
 
 
    @Override
    public void dropOffRequested(final int floorIndex)
    {
-      try {
-         this.fsm.onEvent(this, ElevatorCar.DROPOFF_REQUESTED, Integer.valueOf(floorIndex));
-      }
-      catch (Throwable _e) {
-         throw Exceptions.sneakyThrow(_e);
-      }
+      this.fsm.onEvent(this, ElevatorCar.DROPOFF_REQUESTED, Integer.valueOf(floorIndex));
    }
 
 
    @Override
    public void slowedForArrival()
    {
-      try {
-         this.fsm.onEvent(this, ElevatorCar.LANDING_BRAKE_APPLIED);
-      }
-      catch (Throwable _e) {
-         throw Exceptions.sneakyThrow(_e);
-      }
+      this.fsm.onEvent(this, ElevatorCar.LANDING_BRAKE_APPLIED);
    }
 
 
    @Override
    public void parkedAtLanding()
    {
-      try {
-         this.fsm.onEvent(this, ElevatorCar.STOPPED_AT_LANDING);
-      }
-      catch (Throwable _e) {
-         throw Exceptions.sneakyThrow(_e);
-      }
+      this.fsm.onEvent(this, ElevatorCar.STOPPED_AT_LANDING);
    }
 
 
    @Override
    public void passengerDoorsClosed()
    {
-      try {
-         this.fsm.onEvent(this, ElevatorCar.DOOR_CALL_COMPLETED);
-      }
-      catch (Throwable _e) {
-         throw Exceptions.sneakyThrow(_e);
-      }
+      this.fsm.onEvent(this, ElevatorCar.DOOR_CALL_COMPLETED);
    }
 
 
    @Override
    public void updateWeightLoad(final double weightLoad)
    {
-      try {
-         this.fsm.onEvent(this, ElevatorCar.WEIGHT_UPDATED, Double.valueOf(weightLoad));
-      }
-      catch (Throwable _e) {
-         throw Exceptions.sneakyThrow(_e);
-      }
+      this.fsm.onEvent(this, ElevatorCar.WEIGHT_UPDATED, weightLoad);
    }
 
 
    @Override
    public void confirmNextDispatch(int floorIndex)
    {
-      try {
-         this.fsm.onEvent(this, ElevatorCar.DISPATCHED);
-      }
-      catch (Throwable _e) {
-         throw Exceptions.sneakyThrow(_e);
-      }
+      // TODO: Add floorIndex argument or not??
+      this.fsm.onEvent(this, ElevatorCar.DISPATCHED);
    }
 
 
    @Override
    public void cancelPickupRequest(final int floorIndex, final DirectionOfTravel direction)
-   {}
+   {
+      throw new UnsupportedOperationException();
+   }
 
 
    @Override
    public void acceptPickupRequest(final int floorIndex, final DirectionOfTravel direction)
    {
-      try {
-         this.fsm.onEvent(this, ElevatorCar.ACCEPTED_PICKUP_REQUEST, floorIndex, direction);
-      }
-      catch (Throwable _e) {
-         throw Exceptions.sneakyThrow(_e);
-      }
+      this.fsm.onEvent(this, ElevatorCar.ACCEPTED_PICKUP_REQUEST, floorIndex, direction);
    }
 
 
@@ -258,17 +219,12 @@ implements IElevatorCar, IElevatorCarPort
    @Subscribe
    public void onFloorSensorTriggered(final FloorSensorTriggered event)
    {
-      try {
-         if (event.getCarIndex() == this.carIndex) {
-            this.fsm.onEvent(
-               this,
-               ElevatorCar.TRIGGERED_FLOOR_SENSOR,
-               event.getFloorIndex(),
-               event.getDirection());
-         }
-      }
-      catch (Throwable e) {
-         throw Exceptions.sneakyThrow(e);
+      if (event.getCarIndex() == this.carIndex) {
+         this.fsm.onEvent(
+            this,
+            ElevatorCar.TRIGGERED_FLOOR_SENSOR,
+            event.getFloorIndex(),
+            event.getDirection());
       }
    }
 
@@ -302,7 +258,7 @@ implements IElevatorCar, IElevatorCarPort
       if ((firstStopAbove > 0)) {
          this.nextDestination = firstStopAbove;
          this.nextDirection = DirectionOfTravel.GOING_UP;
-         this.reversePathFloorIndex = this.currentDropRequests.previousSetBit((this.numFloors - 1));
+         this.reversePathFloorIndex = this.currentDropRequests.previousSetBit((this.bldgDesc.getNumFloors() - 1));
       } else if ((firstStopBelow > 0)) {
          this.nextDestination = firstStopBelow;
          this.nextDirection = DirectionOfTravel.GOING_DOWN;
@@ -334,7 +290,7 @@ implements IElevatorCar, IElevatorCarPort
    {
       this.currentDropRequests.set(floorIndex);
 
-      this.eventBus.post(DropOffRequested.build((DropOffRequested.Builder bldr) -> {
+      this.eventBus.post(DropOffRequested.build(bldr -> {
          bldr.clockTime(this.clock.now())
             .carSequence(this.nextEventIndex++)
             .carIndex(this.carIndex)
@@ -548,7 +504,6 @@ implements IElevatorCar, IElevatorCarPort
    }
 
 
-   @Pure
    String getState()
    {
       return this.state;

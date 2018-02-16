@@ -5,6 +5,8 @@ import info.jchein.mesosphere.elevator.common.PassengerId;
 public interface ISimulatedTraveller  {
    public PassengerId getId();
 
+   public String getPopulationName();
+   
    public double getWeight();
 
    public int getCurrentFloor();
@@ -13,15 +15,17 @@ public interface ISimulatedTraveller  {
 
    public int getPickupCarIndex();
 
+   /*
    public long getLatestCallTime();
 
    public long getLatestPickupTime();
 
    public long getLatestDropOffTime();
+   */
 
-   void onQueuedForPickup();
+   void queueForPickup();
    
-   void onSuccessfulPickup(int boardedCarIndex);
+   void boardElevator(int boardedCarIndex);
    
-   void onSuccessfulDropOff();
+   void disembarkElevator();
 }

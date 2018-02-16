@@ -1,37 +1,57 @@
 package info.jchein.mesosphere.elevator.runtime.virtual;
 
+
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 
-import info.jchein.mesosphere.elevator.runtime.IIntervalHandler;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+
+import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeProperties;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeEventBus;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
 
-public class EventBusInterrupt implements IIntervalHandler {
-	public class EventBusClockEvent {
-		EventBusClockEvent() { }
+@Component
+@Scope(BeanDefinition.SCOPE_SINGLETON)
+public class EventBusInterrupt // implements IIntervalHandler {
+{
+	public static class ClockTickLeadingEvent {
+		ClockTickLeadingEvent() { }
 	}
 
-	public final EventBusClockEvent CLOCK_EVENT = new EventBusClockEvent();
+	public static class ClockTickTrailingEvent {
+		ClockTickTrailingEvent() { }
+	}
+
+	public static final ClockTickLeadingEvent LEADING_CLOCK_EVENT = new ClockTickLeadingEvent();
+	public static final ClockTickTrailingEvent TRAILING_CLOCK_EVENT = new ClockTickTrailingEvent();
 
 	private final IRuntimeEventBus eventBus;
-	private final IRuntimeScheduler systemClock;
+	private final IRuntimeScheduler scheduler;
    private final VirtualRuntimeProperties runtimeProps;
 	
+   @Autowired
 	public EventBusInterrupt(VirtualRuntimeProperties runtimeProps, IRuntimeScheduler scheduler, IRuntimeEventBus eventBus) {
 		this.runtimeProps = runtimeProps;
       this.eventBus = eventBus;
-		this.systemClock = scheduler;
+		this.scheduler = scheduler;
 	}
 	
 	@PostConstruct
 	public void init() {
-		this.systemClock.scheduleInterrupt(this.runtimeProps.getTickDurationMillis(), TimeUnit.MILLISECONDS, IRuntimeScheduler.HI_PRIORITY, this);
+	   final long tickDurationMillis = this.runtimeProps.getTickDurationMillis();
+      this.scheduler.scheduleInterrupt(tickDurationMillis, TimeUnit.MILLISECONDS, IRuntimeScheduler.HI_PRIORITY, this::leadingCall);
+		this.scheduler.scheduleInterrupt(tickDurationMillis, TimeUnit.MILLISECONDS, IRuntimeScheduler.LO_PRIORITY, this::trailingCall);
 	}
 
-	@Override
-	public void call(long arg0) {
-		this.eventBus.post(CLOCK_EVENT);
+	void leadingCall(long arg0) {
+		this.eventBus.post(LEADING_CLOCK_EVENT);
+	}
+
+	void trailingCall(long arg0) {
+		this.eventBus.post(TRAILING_CLOCK_EVENT);
 	}
 }

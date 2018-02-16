@@ -34,18 +34,21 @@ public class GroupStatus
    @Singular
    private ImmutableList<FloorLandingStatus> floors;
 
+   @Size(min=1)
+   @Singular
    private ImmutableList<ElevatorCarStatus> cars;
    
+   @Singular
    private ImmutableList<CompletedTrip> completedTrips;
    
-   private ImmutableList<FutureCall> arrivalForecast;
+   @Singular
+   private ImmutableList<FutureCall> futureCalls;
    
    public static GroupStatus build(Consumer<GroupStatusBuilder> director)
    {
       final GroupStatusBuilder bldr = GroupStatus.builder();
       director.accept(bldr);
-      final GroupStatus retVal = bldr.build();
-      return INTERN_CACHE.intern(retVal);
+      return INTERN_CACHE.intern(bldr.build());
    }
 
 
@@ -53,7 +56,6 @@ public class GroupStatus
    {
       final GroupStatusBuilder bldr = this.toBuilder();
       director.accept(bldr);
-      final GroupStatus retVal = bldr.build();
-      return INTERN_CACHE.intern(retVal);
+      return INTERN_CACHE.intern(bldr.build());
    }
 }

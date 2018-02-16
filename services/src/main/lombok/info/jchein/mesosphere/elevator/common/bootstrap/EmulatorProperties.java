@@ -8,6 +8,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.ScriptAssert;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -30,14 +31,26 @@ import lombok.Data;
    @ScriptAssert(lang="javascript", alias="_this", script="_this.cars.every( (c) => c.initialFloor < _this.numFloors && c.initialFloor >= 0 )"),
    @ScriptAssert(lang="javascript", alias="_this", script="_this.cars.every( (c) => c.passengers.every( (p) => p.pickupFloor < this._numFloors && p.pickupFloor >= 0 ) )"),
    @ScriptAssert(lang="javascript", alias="_this", script="_this.cars.every( (c) => c.passengers.every( (p) => p.dropOffFloor < this._numFloors && p.dropOffFloor >= 0 ) )"),
-   @ScriptAssert(lang="javascript", alias="_this", script="_this.cars.every( (c) => c.passengers.every( (p) => p.callTIme <= p.pickupTime ) )")
+   @ScriptAssert(lang="javascript", alias="_this", script="_this.cars.every( (c) => c.passengers.every( (p) => p.callTime <= p.pickupTime ) )")
 })
-@ConfigurationProperties("mesosphere.elevator.emulator")
+@ConfigurationProperties("mesosphere.emulator")
 public class EmulatorProperties
 {
    @Min(0)
    public int numFloors;
    
+   /**
+    * The emulator registers its driver factory with a lookup key of "emulator" by default, but since shorthand names can potentially yield
+    * conflicts with other extensions that want to use the same name, this configuration property is available to override the default lookup
+    * key.
+    * 
+    * If setting this property, make sure to use the same string in <code>mesosphere.elevator.control.carDriver</cod> to request the Emulator driver
+    * by lookup key.
+    */
+   @NotNull
+   @NotBlank
+   String driverAlias = "emulator";
+
    @Valid
    @NotNull
    @Size(min = 0)

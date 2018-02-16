@@ -30,6 +30,9 @@ public class PendingDropOff
 
    @Min(0)
    public final long pickupTime;
+   
+   @Min(0)
+   public final int carIndex;
 
    @Min(0)
    public final int pickupFloor;
@@ -61,7 +64,7 @@ public class PendingDropOff
    }
 
 
-   public CompletedTrip completeAt(long dropOffTime, int carIndex) {
+   public CompletedTrip completeAt(long dropOffTime) {
        return CompletedTrip.build(bldr -> {
           bldr.id(this.id)
           .callTime(this.callTime)
@@ -69,7 +72,7 @@ public class PendingDropOff
           .dropOffTime(dropOffTime)
           .pickupFloor(this.pickupFloor)
           .dropOffFloor(this.dropOffFloor)
-          .carIndex(carIndex);
+          .carIndex(this.carIndex);
        });
    }
 }

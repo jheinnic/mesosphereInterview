@@ -1,9 +1,8 @@
 package info.jchein.mesosphere.elevator.simulator.event;
 
-import info.jchein.mesosphere.elevator.common.PassengerId;
+import info.jchein.mesosphere.elevator.simulator.model.ISimulatedTraveller;
 
 public interface TravellerEvent extends SimulationEvent
 {
-   PassengerId getTravellerId();
-   String getPopulationName();
+   ISimulatedTraveller getTraveller();
 }

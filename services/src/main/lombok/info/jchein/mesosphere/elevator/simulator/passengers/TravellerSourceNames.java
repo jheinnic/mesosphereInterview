@@ -2,12 +2,8 @@ package info.jchein.mesosphere.elevator.simulator.passengers;
 
 import java.util.function.Consumer;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
 import com.google.common.collect.ImmutableList;
 
-import info.jchein.mesosphere.elevator.control.event.TravellerSourceNames;
-import info.jchein.mesosphere.elevator.control.event.TravellerSourceNames.TravellerSourceNamesBuilder;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;

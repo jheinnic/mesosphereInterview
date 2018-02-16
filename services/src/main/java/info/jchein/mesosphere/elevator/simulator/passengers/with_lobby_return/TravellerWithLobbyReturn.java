@@ -1,93 +1,124 @@
 package info.jchein.mesosphere.elevator.simulator.passengers.with_lobby_return;
 
+
+import java.util.concurrent.TimeUnit;
+
+import javax.validation.constraints.NotNull;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.statefulj.framework.core.annotations.Transition;
-import org.statefulj.persistence.annotations.State;
+import org.statefulj.fsm.FSM;
+import org.statefulj.fsm.model.State;
 import org.statefulj.persistence.annotations.State.AccessorType;
 
-import info.jchein.mesosphere.elevator.common.CompletedTrip;
-import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 import info.jchein.mesosphere.elevator.common.PassengerId;
+import info.jchein.mesosphere.elevator.control.sdk.Priorities;
+import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
+import info.jchein.mesosphere.elevator.runtime.IRuntimeEventBus;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
-import info.jchein.mesosphere.elevator.simulator.event.PickupRequested;
-import info.jchein.mesosphere.elevator.simulator.model.ITravellerQueueService;
 import info.jchein.mesosphere.elevator.simulator.passengers.AbstractTraveller;
-import info.jchein.mesosphere.elevator.simulator.passengers.CommonEvents;
 import info.jchein.mesosphere.elevator.simulator.passengers.CommonEvents.CommonEventNames;
-import info.jchein.mesosphere.elevator.simulator.passengers.CommonStates.CommonStateNames;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
-public class TravellerWithLobbyReturn extends AbstractTraveller<IWithLobbyReturnRandomVariables>
+
+@Slf4j
+public class TravellerWithLobbyReturn
+extends AbstractTraveller<WithLobbyReturnRandomVariables, TravellerWithLobbyReturn>
 {
    public static final String ENTERED_SIMULATION = CommonEventNames.ENTERED_SIMULATION;
    public static final String REQUESTED_PICKUP = CommonEventNames.REQUESTED_PICKUP;
-//   public static final String OBSERVED_CAR_STOP = CommonEventNames.OBSERVED_CAR_STOP;
    public static final String BOARDED_ELEVATOR = CommonEventNames.BOARDED_ELEVATOR;
-   public static final String FAILED_TO_BOARD = CommonEventNames.FAILED_TO_BOARD;
-   public static final String LEFT_ELEVATOR = CommonEventNames.LEFT_ELEVATOR;
+   public static final String LEFT_ELEVATOR = CommonEventNames.DISEMBARKED_ELEVATOR;
    public static final String EXITED_SIMULATION = CommonEventNames.EXITED_SIMULATION;
-   
+
+   public static final String FINISHED_ACTIVITY = "EventFinishedActivity";
+
    @Getter
    @Setter
-   @State(accessorType=AccessorType.METHOD, setMethodName="setState", getMethodName="getState")
+   @org.statefulj.persistence.annotations.State(accessorType = AccessorType.METHOD,
+      setMethodName = "setState", getMethodName = "getState")
    private String state;
-   
-   private int activityFloor;
-   private double activityDuration;
+
+   private final State<TravellerWithLobbyReturn> activityState;
+   private final int activityFloor;
+   private final double activityDuration;
    private int elevatorTripCount = 0;
 
-   
-   @Autowired
-   TravellerWithLobbyReturn(IRuntimeScheduler scheduler, ITravellerQueueService queueService) {
-      super(scheduler, queueService);
-      this.activityFloor = -1;
-      this.activityDuration = -1;
-      this.elevatorTripCount = 0;
-   }
 
-   public void initRandomVariables(IWithLobbyReturnRandomVariables randomVariables)
+   @Autowired
+   TravellerWithLobbyReturn( @NotNull PassengerId id,
+      @NotNull WithLobbyReturnRandomVariables randomVariables,
+      FSM<TravellerWithLobbyReturn> stateMachine, State<TravellerWithLobbyReturn> activityState,
+      IRuntimeClock clock, IRuntimeScheduler scheduler, IRuntimeEventBus eventBus )
    {
+      super(id, randomVariables, stateMachine, clock, scheduler, eventBus);
+
+      this.activityState = activityState;
       this.activityFloor = randomVariables.getActivityFloor();
       this.activityDuration = randomVariables.getActivityDuration();
-      
-      // Call the inheritted method we augmented because we want it to extract values from the base interface, IRandomValues,
-      // and we want it to emit to the event bus as well.
-      super.initRandomVariables(randomVariables);
+
+      this.elevatorTripCount = 0;
+      this.setCurrentFloor(0);
    }
 
+
    @Override
-   public void onQueuedForPickup()
+   protected State<TravellerWithLobbyReturn> getInitialState()
    {
-      final DirectionOfTravel dir;                                                                             
-      if (this.getCurrentFloor() < this.getDestinationFloor()) {
-         dir = DirectionOfTravel.GOING_UP;
-      } else if (this.getCurrentFloor() > this.getDestinationFloor()) {
-         dir = DirectionOfTravel.GOING_DOWN;
-      } else {
-         throw new IllegalStateException();
+      return null;
+   }
+
+
+   @Override
+   protected void afterEnteredSimulation()
+   {
+      this.setDestinationFloor(this.activityFloor, this.activityState);
+   }
+
+
+   @Override
+   protected void afterQueuedForPickup()
+   {}
+
+
+   @Override
+   protected void afterBoardedElevator(int boardedCarIndex)
+   {}
+
+
+   @Override
+   protected void afterDisembarkedElevator()
+   {
+      if (this.elevatorTripCount == 0) {
+         this.elevatorTripCount += 1;
+         this.scheduler.scheduleOnce(
+            Math.round(this.activityDuration),
+            TimeUnit.SECONDS,
+            Priorities.TRANSFER_PASSENGERS.getValue(),
+            this::returnFromActivity);
+      } else if (this.elevatorTripCount == 1) {
+         log.info("Completed second elevator trip with lobby return.");
       }
-
-      TravellerWithLobbyReturn.this.eventBus.post(
-         PickupRequested.build( bldr dmv -> {
-            bldr.clockTime(this.clock.now())
-            .travellerId(this.getId())
-            .populationName(this.stateMachine.getName())
-            .floorIndex(this.currentFloorIndex())
-            .direction(dir);
-         })
-      );
    }
 
-   @Override
-   public void onSuccessfulPickup(int boardedCarIndex)
+
+   @SneakyThrows
+   void returnFromActivity(long interval)
    {
+      this.setDestinationFloor(0, null);
+      this.stateMachine.onEvent(this, TravellerWithLobbyReturn.FINISHED_ACTIVITY);
    }
 
-   @Override
-   public void onSuccessfulDropOff()
+
+   protected void afterExitedSimulation()
    {
-      
+
    }
 
+   // void queueForReturn()
+   // {
+   // this.queueForPickup();
+   // }
 }

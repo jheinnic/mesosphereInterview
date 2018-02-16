@@ -2,8 +2,6 @@ package info.jchein.mesosphere.elevator.runtime;
 
 import org.apache.commons.math3.distribution.ExponentialDistribution;
 
-import rx.functions.Action0;
-
 public final class PoissonProcessFunction implements IVariableIntervalFunction {
    private final ExponentialDistribution distribution;
    private final IIntervalHandler handler;
@@ -14,10 +12,14 @@ public final class PoissonProcessFunction implements IVariableIntervalFunction {
    }
 
    @Override
-   public final long apply(long interval)
+   public long apply(long interval)
    {
       this.handler.call(interval);
+      return this.sample();
+   }
+   
+   public long sample() {
       return Math.round(
-         this.distribution.sample());
+         this.distribution.sample() * 1000);
    }
 }
