@@ -1,4 +1,4 @@
-package info.jchein.mesosphere.elevator.runtime.virtual;
+package info.jchein.mesosphere.elevator.runtime;
 
 
 import java.util.concurrent.TimeUnit;
@@ -11,8 +11,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeProperties;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeEventBus;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
+import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
 
 @Component
 @Scope(BeanDefinition.SCOPE_SINGLETON)

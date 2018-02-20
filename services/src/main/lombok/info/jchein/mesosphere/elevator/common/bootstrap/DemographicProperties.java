@@ -11,6 +11,7 @@ import javax.validation.constraints.Size;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.validation.annotation.Validated;
 
 import info.jchein.mesosphere.validator.annotation.Positive;
 import lombok.Data;
@@ -24,6 +25,7 @@ import lombok.Data;
  * @author jheinnic
  */
 @Data
+@Validated
 @ConfigurationProperties("mesosphere.demographic")
 public class DemographicProperties
 {
@@ -39,7 +41,7 @@ public class DemographicProperties
 
    
    @Data
-   public class AgeRange {
+   public static class AgeRange {
       @Min(18)
       public int min;
       
@@ -48,7 +50,7 @@ public class DemographicProperties
    }
    
    @Data
-   public class NormalDistribution {
+   public static class NormalDistribution {
       @Positive
       public double mean;
       
@@ -57,7 +59,7 @@ public class DemographicProperties
    }
 
    @Data
-   public class AgeGroupWeightSample
+   public static class AgeGroupWeightSample
    {
       @Valid
       public AgeRange age = new AgeRange();

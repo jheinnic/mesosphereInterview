@@ -1,4 +1,4 @@
-package info.jchein.mesosphere.elevator.common.physics;
+package info.jchein.mesosphere.elevator.common.probability;
 
 /**
  * Represents a value sampled from a distribution model that involves N subgroups, each with it own

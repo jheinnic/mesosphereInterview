@@ -1,4 +1,4 @@
-package info.jchein.mesosphere.elevator.runtime.virtual;
+package info.jchein.mesosphere.elevator.runtime.temporal;
 
 
 import java.time.Clock;
@@ -15,7 +15,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeProperties;
+import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeDescription;
 import info.jchein.mesosphere.elevator.runtime.IRuntime;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
 import lombok.SneakyThrows;
@@ -25,7 +25,7 @@ import rx.schedulers.TestScheduler;
 
 @Component
 @Scope(BeanDefinition.SCOPE_SINGLETON)
-public class RuntimeClock
+public class VirtualClock
 extends Clock
 implements IRuntimeClock
 {
@@ -39,7 +39,7 @@ implements IRuntimeClock
    private final long millisPerTick;
 
 
-   RuntimeClock( @NotNull ZoneId zoneId, @NotNull Scheduler authority, @Min(10) long millisPerTick )
+   VirtualClock( @NotNull ZoneId zoneId, @NotNull Scheduler authority, @Min(10) long millisPerTick )
    {
       this.zoneId = zoneId;
       this.authority = authority;
@@ -48,8 +48,8 @@ implements IRuntimeClock
 
 
    @Autowired
-   public RuntimeClock( @NotNull @Qualifier(IRuntime.ELEVATOR_RUNTIME_QUALIFIER) Scheduler authority,
-      @NotNull VirtualRuntimeProperties runtimeProps )
+   public VirtualClock( @NotNull @Qualifier(IRuntime.ELEVATOR_RUNTIME_QUALIFIER) Scheduler authority,
+      @NotNull VirtualRuntimeDescription runtimeProps )
    {
       this(ZoneId.systemDefault(), authority, runtimeProps.getTickDurationMillis());
    }
@@ -63,9 +63,9 @@ implements IRuntimeClock
 
 
    @Override
-   public RuntimeClock withZone(ZoneId zone)
+   public VirtualClock withZone(ZoneId zone)
    {
-      return new RuntimeClock(zone, this.authority, this.millisPerTick);
+      return new VirtualClock(zone, this.authority, this.millisPerTick);
    }
 
 
@@ -87,12 +87,12 @@ implements IRuntimeClock
    @Override
    public long now()
    {
-      return this.millis();
+      return this.authority.now();
    }
 
 
    @Override
-   public long tickNow()
+   public long ticks()
    {
       return Math.floorDiv(this.authority.now(), this.millisPerTick);
    }

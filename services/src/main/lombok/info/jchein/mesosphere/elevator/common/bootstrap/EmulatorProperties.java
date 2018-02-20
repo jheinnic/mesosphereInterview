@@ -9,8 +9,9 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 import org.hibernate.validator.constraints.NotBlank;
-import org.hibernate.validator.constraints.ScriptAssert;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.validation.annotation.Validated;
 
 import info.jchein.mesosphere.validator.annotation.Positive;
 import lombok.Data;
@@ -23,16 +24,18 @@ import lombok.Data;
  * 
  * @author jheinnic
  */
-@Data
+/*
 @ScriptAssert.List({
    @ScriptAssert(lang="javascript", alias="_this", script="_this.pendingPickups.every( (p) => p.pickupFloor < _this.numFloors && p.pickupFloor >= 0 )"),
    @ScriptAssert(lang="javascript", alias="_this", script="_this.pendingPickups.every( (p) => p.dropOffFloor < _this.numFloors && p.dropOffFloor >= 0 )"),
-   @ScriptAssert(lang="javascript", alias="_this", script="_this.pendingPickups.every( (p) => p.callTime <= p.pickupTime )"),
    @ScriptAssert(lang="javascript", alias="_this", script="_this.cars.every( (c) => c.initialFloor < _this.numFloors && c.initialFloor >= 0 )"),
    @ScriptAssert(lang="javascript", alias="_this", script="_this.cars.every( (c) => c.passengers.every( (p) => p.pickupFloor < this._numFloors && p.pickupFloor >= 0 ) )"),
    @ScriptAssert(lang="javascript", alias="_this", script="_this.cars.every( (c) => c.passengers.every( (p) => p.dropOffFloor < this._numFloors && p.dropOffFloor >= 0 ) )"),
    @ScriptAssert(lang="javascript", alias="_this", script="_this.cars.every( (c) => c.passengers.every( (p) => p.callTime <= p.pickupTime ) )")
 })
+*/
+@Data
+@Validated
 @ConfigurationProperties("mesosphere.emulator")
 public class EmulatorProperties
 {
@@ -63,7 +66,7 @@ public class EmulatorProperties
 
 
    @Data
-   public class InitialCarState
+   public static class InitialCarState
    {
       @Min(0)
       public int initialFloor;
@@ -76,7 +79,7 @@ public class EmulatorProperties
 
 
    @Data
-   public class PendingDropOff
+   public static class PendingDropOff
    {
       @Min(0)
       public long callTime;
@@ -92,7 +95,7 @@ public class EmulatorProperties
 
 
    @Data
-   public class PendingPickup
+   public static class PendingPickup
    {
       @Min(0)
       public long callTime;

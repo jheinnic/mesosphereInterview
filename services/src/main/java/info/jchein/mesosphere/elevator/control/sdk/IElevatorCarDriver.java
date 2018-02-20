@@ -1,7 +1,5 @@
 package info.jchein.mesosphere.elevator.control.sdk;
 
-import com.google.common.collect.ImmutableList;
-
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 import info.jchein.mesosphere.elevator.common.bootstrap.InitialCarState;
 

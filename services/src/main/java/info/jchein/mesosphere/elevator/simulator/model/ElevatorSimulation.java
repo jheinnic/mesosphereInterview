@@ -25,7 +25,7 @@ import info.jchein.mesosphere.elevator.control.event.PassengerDoorsOpened;
 import info.jchein.mesosphere.elevator.control.event.TravelledPastFloor;
 import info.jchein.mesosphere.elevator.control.model.IElevatorGroupControl;
 import info.jchein.mesosphere.elevator.emulator.model.IEmulatorControl;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeEventBus;
+import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
 import info.jchein.mesosphere.elevator.simulator.event.PickupRequested;
 import rx.Observable;
 import rx.Subscription;
@@ -87,20 +87,20 @@ public class ElevatorSimulation
 
       // There has to be a simpler way to do this and there has to be a way to be able to defer receiving
       // events until this next clock pulse! TODO!
-      this.changeHandler = new ElevatorChangeHandler();
       this.localDispatch = new EventBus();
-      this.localDispatch.register(this.changeHandler);
+      this.localDispatch.register(this);
       this.changeSubscription =
          groupControl.getChangeStream()
             .subscribe(this.localDispatch::post);
    }
 
 
-   public void onPickupRequested(PickupRequested pickupRequest)
+   @Subscribe
+   public void onPickupRequested(final PickupRequested event)
    {
-      final int pickupFloor = pickupRequest.getOriginIndex();
-      final int dropOffFloor = pickupRequest.getDestinationIndex();
-      final DirectionOfTravel direction = pickupRequest.getDirection();;
+      final int pickupFloor = event.getOriginIndex();
+      final int dropOffFloor = event.getDestinationIndex();
+      final DirectionOfTravel direction = event.getDirection();
 
       Preconditions
          .checkArgument(pickupFloor != dropOffFloor, "Origin and destination must be different");
@@ -112,7 +112,7 @@ public class ElevatorSimulation
          "Destination floor must be non-negative and within building");
       Preconditions.checkArgument(
          ((direction == DirectionOfTravel.GOING_UP) && (pickupFloor < dropOffFloor)) ||
-         ((direction == DirectionOfTravel.GOING_DOWN) && (dropOffFloor < pickupFloor)),
+            ((direction == DirectionOfTravel.GOING_DOWN) && (dropOffFloor < pickupFloor)),
          "Direction and floor indices must be consistent");
 
       final Queue<ISimulatedTraveller> pickupQueue;
@@ -122,93 +122,85 @@ public class ElevatorSimulation
          pickupQueue = this.downwardBoundPickups.get(pickupFloor - 1);
       }
 
-      ISimulatedTraveller traveller = pickupRequest.getTraveller();
+      final ISimulatedTraveller traveller = event.getTraveller();
       pickupQueue.offer(traveller);
       this.emulatedControl.callForPickup(pickupFloor, direction);
       traveller.queueForPickup();
    }
 
 
-   private class ElevatorChangeHandler
+   @Subscribe
+   public void onParkedAtLanding(final ParkedAtLanding event)
+   {}
+
+
+   @Subscribe
+   public void onDepartedLanding(final DepartedLanding event)
+   {}
+
+
+   @Subscribe
+   public void onPassengerDoorsOpened(final PassengerDoorsOpened event)
    {
-      @Subscribe
-      public void onPickupRequested(final PickupRequested event) { }
+      final Queue<ISimulatedTraveller> pickupQueue;
+      final Queue<ISimulatedTraveller> dropOffQueue;
+      final DirectionOfTravel direction;
 
-
-      @Subscribe
-      public void onParkedAtLanding(final ParkedAtLanding event)
-      {}
-
-
-      @Subscribe
-      public void onDepartedLanding(final DepartedLanding event)
-      {}
-
-
-      @Subscribe
-      public void onPassengerDoorsOpened(final PassengerDoorsOpened event)
-      {
-         final Queue<ISimulatedTraveller> pickupQueue;
-         final Queue<ISimulatedTraveller> dropOffQueue;
-         final DirectionOfTravel direction;
-
-         if (event.getDirection() == DirectionOfTravel.GOING_UP) {
-            pickupQueue = ElevatorSimulation.this.upwardBoundPickups.get(event.getFloorIndex());
-            direction = DirectionOfTravel.GOING_UP;
-         } else {
-            pickupQueue = ElevatorSimulation.this.downwardBoundPickups.get(event.getFloorIndex() - 1);
-            direction = DirectionOfTravel.GOING_DOWN;
-         }
-         dropOffQueue =
-            ElevatorSimulation.this.passengerDropOffs.get(event.getCarIndex())
-               .get(event.getFloorIndex());
-
-         ElevatorSimulation.this.emulatedControl
-            .updateManifest(event.getCarIndex(), event.getFloorIndex(), direction, mbldr -> {
-               Iterator<ISimulatedTraveller> nextIter = dropOffQueue.iterator();
-               while (nextIter.hasNext()) {
-                  ISimulatedTraveller nextTraveller = nextIter.next();
-                  if (mbldr.disembark(nextTraveller.getWeight())) {
-                     nextIter.remove();
-                     nextTraveller.disembarkElevator();
-                  } else {
-                     log.error("Could not remove passengers??");
-                     break;
-                  }
-               }
-
-               nextIter = pickupQueue.iterator();
-               while (nextIter.hasNext()) {
-                  ISimulatedTraveller nextTraveller = nextIter.next();
-                  if (mbldr.board(nextTraveller.getWeight())) {
-                     mbldr.requestStop(nextTraveller.getDestinationFloor());
-                     nextIter.remove();
-                     nextTraveller.boardElevator(event.getCarIndex());
-                  } else {
-                     log.warn("Over capacity while loading elevator car");
-                     break;
-                  }
-               }
-
-               if (pickupQueue.isEmpty() == false) {
-                  ElevatorSimulation.this.emulatedControl
-                     .callForPickup(event.getFloorIndex(), direction);
-               }
-            });
+      if (event.getDirection() == DirectionOfTravel.GOING_UP) {
+         pickupQueue = ElevatorSimulation.this.upwardBoundPickups.get(event.getFloorIndex());
+         direction = DirectionOfTravel.GOING_UP;
+      } else {
+         pickupQueue = ElevatorSimulation.this.downwardBoundPickups.get(event.getFloorIndex() - 1);
+         direction = DirectionOfTravel.GOING_DOWN;
       }
+      dropOffQueue =
+         ElevatorSimulation.this.passengerDropOffs.get(event.getCarIndex())
+            .get(event.getFloorIndex());
+
+      ElevatorSimulation.this.emulatedControl
+         .updateManifest(event.getCarIndex(), event.getFloorIndex(), direction, mbldr -> {
+            Iterator<ISimulatedTraveller> nextIter = dropOffQueue.iterator();
+            while (nextIter.hasNext()) {
+               ISimulatedTraveller nextTraveller = nextIter.next();
+               if (mbldr.disembark(nextTraveller.getWeight())) {
+                  nextIter.remove();
+                  nextTraveller.disembarkElevator();
+               } else {
+                  log.error("Could not remove passengers??");
+                  break;
+               }
+            }
+
+            nextIter = pickupQueue.iterator();
+            while (nextIter.hasNext()) {
+               ISimulatedTraveller nextTraveller = nextIter.next();
+               if (mbldr.board(nextTraveller.getWeight())) {
+                  mbldr.requestStop(nextTraveller.getDestinationFloor());
+                  nextIter.remove();
+                  nextTraveller.boardElevator(event.getCarIndex());
+               } else {
+                  log.warn("Over capacity while loading elevator car");
+                  break;
+               }
+            }
+
+            if (pickupQueue.isEmpty() == false) {
+               ElevatorSimulation.this.emulatedControl.callForPickup(event.getFloorIndex(), direction);
+            }
+         });
+   }
 
 
-      @Subscribe
-      public Object onPassengerDoorsClosed(final PassengerDoorsClosed event)
-      {
-         return null;
-      }
+   @Subscribe
+   public Object onPassengerDoorsClosed(final PassengerDoorsClosed event)
+   {
+      return null;
+   }
 
 
-      @Subscribe
-      public Object onTravelledThroughFloor(final TravelledPastFloor event)
-      {
-         return null;
-      }
+   @Subscribe
+   public Object onTravelledThroughFloor(final TravelledPastFloor event)
+   {
+      return null;
    }
 }

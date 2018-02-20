@@ -1,5 +1,6 @@
 package info.jchein.mesosphere.elevator.common.bootstrap;
 
+
 import java.util.function.Consumer;
 
 import javax.validation.Valid;
@@ -10,11 +11,21 @@ import javax.validation.constraints.Size;
 import com.google.common.collect.ImmutableList;
 
 import info.jchein.mesosphere.elevator.common.PendingDropOff;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.Singular;
-import lombok.Value;
+import lombok.ToString;
+import lombok.experimental.FieldDefaults;
 
-@Value
+
+@Getter
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
+@AllArgsConstructor
+@ToString
+@EqualsAndHashCode
 @Builder(toBuilder = true)
 public class InitialCarState
 {

@@ -1,4 +1,4 @@
-package info.jchein.mesosphere.elevator.runtime;
+package info.jchein.mesosphere.elevator.runtime.event;
 
 import rx.Observable;
 

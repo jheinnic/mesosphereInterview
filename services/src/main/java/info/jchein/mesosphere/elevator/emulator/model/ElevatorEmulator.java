@@ -8,15 +8,21 @@ import info.jchein.mesosphere.elevator.emulator.model.IEmulatorControl;
 import info.jchein.mesosphere.elevator.emulator.model.IEmulatorRoot;
 import info.jchein.mesosphere.elevator.emulator.model.IManifestUpdate;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeEventBus;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
+import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
+
 import java.util.BitSet;
 import java.util.function.Consumer;
 import javax.validation.constraints.NotNull;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 
 @Component
+@Scope(BeanDefinition.SCOPE_SINGLETON)
 @SuppressWarnings("all")
 public class ElevatorEmulator
 implements IEmulatorRoot, IEmulatorControl
@@ -38,9 +44,9 @@ implements IEmulatorRoot, IEmulatorControl
 
    private EmulatorConfiguration emulatorConfiguration;
 
-
+   @Autowired
    public ElevatorEmulator( @NotNull final IRuntimeClock clock,
-      @NotNull final IRuntimeEventBus eventBus, @NotNull final IRuntimeScheduler scheduler,
+      @NotNull final IRuntimeScheduler scheduler, @NotNull final IRuntimeEventBus eventBus,
       @NotNull final EmulatorConfiguration emulatorProps )
    {
       this.clock = clock;
@@ -83,21 +89,6 @@ implements IEmulatorRoot, IEmulatorControl
    public void blockUntil(final long clockTime)
    {
       throw new UnsupportedOperationException("TODO: auto-generated method stub");
-   }
-
-
-   @Override
-   public int getNumElevators()
-   {
-      return this.emulatorConfiguration.getCars()
-         .size();
-   }
-
-
-   @Override
-   public int getNumFloors()
-   {
-      return this.emulatorConfiguration.getNumFloors();
    }
 
 

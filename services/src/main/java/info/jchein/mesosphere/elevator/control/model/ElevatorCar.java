@@ -11,6 +11,8 @@ import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Scope;
 import org.statefulj.framework.core.annotations.FSM;
 import org.statefulj.framework.core.annotations.StatefulController;
 import org.statefulj.framework.core.annotations.Transition;
@@ -26,7 +28,6 @@ import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 import info.jchein.mesosphere.elevator.common.PendingDropOff;
 import info.jchein.mesosphere.elevator.common.bootstrap.BuildingDescription;
 import info.jchein.mesosphere.elevator.common.bootstrap.DeploymentConfiguration;
-import info.jchein.mesosphere.elevator.common.bootstrap.DeploymentProperties;
 import info.jchein.mesosphere.elevator.common.bootstrap.InitialCarState;
 import info.jchein.mesosphere.elevator.control.event.DepartedLanding;
 import info.jchein.mesosphere.elevator.control.event.DriverBootstrapped;
@@ -41,17 +42,18 @@ import info.jchein.mesosphere.elevator.control.event.WeightLoadUpdated;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarDriver;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarPort;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeEventBus;
+import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
 import lombok.SneakyThrows;
 
 
+@Scope(BeanDefinition.SCOPE_PROTOTYPE)
 @StatefulController(
    value=ElevatorCar.BEAN_NAME,
    clazz = ElevatorCar.class,
+   factoryId = IElevatorCar.FACTORY_BEAN_NAME,
    startState = ElevatorCar.BEFORE_ALLOCATION, 
    blockingStates = { ElevatorCar.BOARDING, ElevatorCar.HANDLING_CLOCK },
    noops = {
-      @Transition(from=ElevatorCar.BEFORE_ALLOCATION, event=ElevatorCar.ALLOCATED, to=ElevatorCar.WAITING_FOR_DRIVER),
       @Transition(from=ElevatorCar.TRAVELLING, event=ElevatorCar.LANDING_BRAKE_APPLIED, to=ElevatorCar.SLOWING),
       @Transition(from=ElevatorCar.TRAVELLING, event=ElevatorCar.TRAVELLED_THROUGH_FLOOR, to=ElevatorCar.TRAVELLING),
       @Transition(from=ElevatorCar.SLOWING, event=ElevatorCar.ARRIVED_AT_FLOOR, to=ElevatorCar.ARRIVING)
@@ -152,6 +154,7 @@ implements IElevatorCar, IElevatorCarPort
 
 
    @Override
+   @SneakyThrows
    public void dropOffRequested(final int floorIndex)
    {
       this.fsm.onEvent(this, ElevatorCar.DROPOFF_REQUESTED, Integer.valueOf(floorIndex));
@@ -159,6 +162,7 @@ implements IElevatorCar, IElevatorCarPort
 
 
    @Override
+   @SneakyThrows
    public void slowedForArrival()
    {
       this.fsm.onEvent(this, ElevatorCar.LANDING_BRAKE_APPLIED);
@@ -166,6 +170,7 @@ implements IElevatorCar, IElevatorCarPort
 
 
    @Override
+   @SneakyThrows
    public void parkedAtLanding()
    {
       this.fsm.onEvent(this, ElevatorCar.STOPPED_AT_LANDING);
@@ -173,6 +178,7 @@ implements IElevatorCar, IElevatorCarPort
 
 
    @Override
+   @SneakyThrows
    public void passengerDoorsClosed()
    {
       this.fsm.onEvent(this, ElevatorCar.DOOR_CALL_COMPLETED);
@@ -180,6 +186,7 @@ implements IElevatorCar, IElevatorCarPort
 
 
    @Override
+   @SneakyThrows
    public void updateWeightLoad(final double weightLoad)
    {
       this.fsm.onEvent(this, ElevatorCar.WEIGHT_UPDATED, weightLoad);
@@ -187,6 +194,7 @@ implements IElevatorCar, IElevatorCarPort
 
 
    @Override
+   @SneakyThrows
    public void confirmNextDispatch(int floorIndex)
    {
       // TODO: Add floorIndex argument or not??
@@ -195,6 +203,7 @@ implements IElevatorCar, IElevatorCarPort
 
 
    @Override
+   @SneakyThrows
    public void cancelPickupRequest(final int floorIndex, final DirectionOfTravel direction)
    {
       throw new UnsupportedOperationException();
@@ -202,6 +211,7 @@ implements IElevatorCar, IElevatorCarPort
 
 
    @Override
+   @SneakyThrows
    public void acceptPickupRequest(final int floorIndex, final DirectionOfTravel direction)
    {
       this.fsm.onEvent(this, ElevatorCar.ACCEPTED_PICKUP_REQUEST, floorIndex, direction);
@@ -217,6 +227,7 @@ implements IElevatorCar, IElevatorCarPort
 
 
    @Subscribe
+   @SneakyThrows
    public void onFloorSensorTriggered(final FloorSensorTriggered event)
    {
       if (event.getCarIndex() == this.carIndex) {
@@ -228,6 +239,10 @@ implements IElevatorCar, IElevatorCarPort
       }
    }
 
+   @Transition(from=ElevatorCar.BEFORE_ALLOCATION, event=ElevatorCar.ALLOCATED, to=ElevatorCar.WAITING_FOR_DRIVER)
+   public ElevatorCar onAllocation(final String event) {
+      return this;
+   }
 
    @Transition(from=WAITING_FOR_DRIVER, event=DRIVER_ATTACHED, to=AVAILABLE)
    public void
@@ -291,9 +306,7 @@ implements IElevatorCar, IElevatorCarPort
       this.currentDropRequests.set(floorIndex);
 
       this.eventBus.post(DropOffRequested.build(bldr -> {
-         bldr.clockTime(this.clock.now())
-            .carSequence(this.nextEventIndex++)
-            .carIndex(this.carIndex)
+         bldr.carIndex(this.carIndex)
             .dropOffFloorIndex(floorIndex);
       }));
    }
@@ -367,10 +380,8 @@ implements IElevatorCar, IElevatorCarPort
          this.nextDestination = Math.max(nextDrop, nextPickup);
       }
 
-      this.eventBus.post(DepartedLanding.build((DepartedLanding.Builder bldr) -> {
-         bldr.clockTime(this.clock.now())
-            .carSequence(this.nextEventIndex++)
-            .carIndex(this.carIndex)
+      this.eventBus.post(DepartedLanding.build(bldr -> {
+         bldr.carIndex(this.carIndex)
             .origin(this.currentFloorIndex)
             .destination(this.currentDestination)
             .direction(this.currentDirection);
@@ -398,10 +409,8 @@ implements IElevatorCar, IElevatorCarPort
    })
    public void onParkedPendingDispatch(final String event)
    {
-      this.eventBus.post(ParkedAtLanding.build((ParkedAtLanding.Builder bldr) -> {
-         bldr.clockTime(this.clock.now())
-            .carSequence(this.nextEventIndex++)
-            .carIndex(this.carIndex)
+      this.eventBus.post(ParkedAtLanding.build(bldr -> {
+         bldr.carIndex(this.carIndex)
             .floorIndex(this.currentFloorIndex);
       }));
    }
@@ -423,10 +432,8 @@ implements IElevatorCar, IElevatorCarPort
          throw new IllegalStateException("Cannot answer next all when there is no next call");
       }
 
-      this.eventBus.post(PassengerDoorsOpened.build((PassengerDoorsOpened.Builder bldr) -> {
-         bldr.clockTime(this.clock.now())
-            .carSequence(this.nextEventIndex++)
-            .carIndex(this.carIndex)
+      this.eventBus.post(PassengerDoorsOpened.build(bldr -> {
+         bldr.carIndex(this.carIndex)
             .floorIndex(this.currentFloorIndex)
             .direction(this.nextDirection);
       }));
@@ -436,10 +443,8 @@ implements IElevatorCar, IElevatorCarPort
    @Transition(from=BOARDING, event=DOOR_CALL_COMPLETED)
    public String onBoardingCompleted(final String event)
    {
-      this.eventBus.post(PassengerDoorsClosed.build((PassengerDoorsClosed.Builder bldr) -> {
-         bldr.clockTime(this.clock.now())
-            .carSequence(this.nextEventIndex++)
-            .carIndex(this.carIndex);
+      this.eventBus.post(PassengerDoorsClosed.build(bldr -> {
+         bldr.carIndex(this.carIndex);
       }));
 
       if ((this.nextDestination < 0)) { return ElevatorCar.PARKED; }
@@ -461,10 +466,8 @@ implements IElevatorCar, IElevatorCarPort
          (((this.currentDestination > floorIndex) && (direction == DirectionOfTravel.GOING_UP)) ||
             ((this.currentDestination < floorIndex) && (direction == DirectionOfTravel.GOING_DOWN))))
       {
-         this.eventBus.post(TravelledPastFloor.build((TravelledPastFloor.Builder bldr) -> {
-            bldr.clockTime(this.clock.now())
-               .carSequence(this.nextEventIndex++)
-               .carIndex(this.carIndex)
+         this.eventBus.post(TravelledPastFloor.build(bldr -> {
+            bldr.carIndex(this.carIndex)
                .floorIndex(floorIndex)
                .direction(direction);
          }));
@@ -472,10 +475,8 @@ implements IElevatorCar, IElevatorCarPort
       } else if ((this.state == ElevatorCar.SLOWING) &&
          (this.currentDestination == floorIndex) && (this.currentDirection == direction))
       {
-         this.eventBus.post(SlowedForArrival.build((SlowedForArrival.Builder bldr) -> {
-            bldr.clockTime(this.clock.now())
-               .carSequence(this.nextEventIndex++)
-               .carIndex(this.carIndex);
+         this.eventBus.post(SlowedForArrival.build(bldr -> {
+            bldr.carIndex(this.carIndex);
          }));
          return ARRIVED_AT_FLOOR;
       }
@@ -488,10 +489,8 @@ implements IElevatorCar, IElevatorCarPort
    @Transition(from = "*", event=WEIGHT_UPDATED, to = "*")
    public void onWeightUpdated(final double weightLoad)
    {
-      this.eventBus.post(WeightLoadUpdated.build((WeightLoadUpdated.Builder bldr) -> {
-         bldr.clockTime(this.clock.now())
-            .carSequence(this.nextEventIndex++)
-            .carIndex(this.carIndex)
+      this.eventBus.post(WeightLoadUpdated.build(bldr -> {
+         bldr.carIndex(this.carIndex)
             .weightLoad(weightLoad);
       }));
    }
@@ -504,13 +503,13 @@ implements IElevatorCar, IElevatorCarPort
    }
 
 
-   String getState()
+   public String getState()
    {
       return this.state;
    }
 
 
-   void setState(final String state)
+   public void setState(final String state)
    {
       this.state = state;
    }

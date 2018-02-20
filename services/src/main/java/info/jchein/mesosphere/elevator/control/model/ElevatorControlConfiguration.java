@@ -21,21 +21,14 @@ import info.jchein.mesosphere.elevator.control.sdk.ExtensionDescriptor;
 import info.jchein.mesosphere.elevator.control.sdk.ExtensionType;
 
 @Configuration
-@ComponentScan({"info.jchein.mesosphere.elevator.control.model", "info.jchein.mesosphere.elevator.common.bootstrap"})
-@EnableConfigurationProperties(DeploymentProperties.class)
-public class ElevatorControllerConfiguration {
+@ComponentScan({"info.jchein.mesosphere.elevator.control.model"})
+public class ElevatorControlConfiguration {
    @Bean
-   public StatefulFactory statefulJFactory() {
+   @Scope(BeanDefinition.SCOPE_SINGLETON)
+   public static StatefulFactory statefulJFactory() {
       return new StatefulFactory();
    }
-   
-   @Bean
-   @Autowired
-   @Scope(BeanDefinition.SCOPE_SINGLETON)
-   public DeploymentConfiguration deploymentConfiguration(DeploymentProperties mutableProps, IConfigurationFactory configFactory) {
-      return configFactory.hardenDeploymentConfig(mutableProps);
-   }
-   
+    
    @Bean
    @Lazy
    @Scope(BeanDefinition.SCOPE_SINGLETON)

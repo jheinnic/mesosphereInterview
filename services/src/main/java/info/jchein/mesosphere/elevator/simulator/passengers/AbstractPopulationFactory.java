@@ -1,13 +1,12 @@
 package info.jchein.mesosphere.elevator.simulator.passengers;
 
 
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.math3.distribution.ExponentialDistribution;
+import org.springframework.beans.factory.config.AbstractFactoryBean;
 import org.statefulj.fsm.FSM;
 import org.statefulj.fsm.Persister;
 import org.statefulj.fsm.model.Action;
@@ -21,15 +20,14 @@ import org.statefulj.persistence.memory.MemoryPersisterImpl;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 
-import info.jchein.mesosphere.elevator.simulator.model.ISimulatedPopulation;
+import info.jchein.mesosphere.elevator.common.PassengerId;
 import info.jchein.mesosphere.elevator.simulator.passengers.CommonEvents.CommonEventNames;
 import info.jchein.mesosphere.elevator.simulator.passengers.CommonStates.CommonStateNames;
-import info.jchein.mesosphere.elevator.simulator.passengers.with_lobby_return.WithLobbyReturnRandomVariables;
-import info.jchein.mesosphere.elevator.simulator.passengers.with_lobby_return.TravellerWithLobbyReturn;
 
 
-public abstract class AbstractPopulationFactory<V extends IRandomVariables, T extends AbstractTraveller<V, T>>
-implements ISimulatedPopulationFactory<V>
+public abstract class AbstractPopulationFactory<V extends IRandomVariables, T extends AbstractTraveller<V, T>, P extends AbstractPopulation<V, T, P>>
+extends AbstractFactoryBean<P>
+//implements BeanFactoryAware
 {
    private final State<T> beforeArrival;
    private final State<T> ridingElevator;
@@ -54,13 +52,21 @@ implements ISimulatedPopulationFactory<V>
       stateful.onExitedSimulation();
    };
 
-   private final BiFunction<V, FSM<T>, T> factoryFunction;
+   private final String populationName;
+   private final Supplier<V> randomGenerator;
+   private final ExponentialDistribution arrivalRate;
    private Persister<T> persister = null;
+//   private BeanFactory beanFactory;
+   private final Supplier<PassengerId> idFactory;
 
 
-   protected AbstractPopulationFactory( BiFunction<V, FSM<T>, T> factoryFn )
+   protected AbstractPopulationFactory( String populationName, Supplier<PassengerId> idFactory, 
+      Supplier<V> randomGenerator, ExponentialDistribution arrivalRate )
    {
-      this.factoryFunction = factoryFn;
+      this.populationName = populationName;
+      this.idFactory = idFactory;
+      this.randomGenerator = randomGenerator;
+      this.arrivalRate = arrivalRate;
 
       this.beforeArrival = new StateImpl<T>(CommonStateNames.BEFORE_ARRIVAL);
       this.queuedForPickup = new StateImpl<T>(CommonStateNames.QUEUED_FOR_PICKUP);
@@ -90,8 +96,9 @@ implements ISimulatedPopulationFactory<V>
          this.ridingElevator,
          this.boardElevatorAction);
 
-      this.ridingElevator
-         .addTransition(CommonEventNames.DISEMBARKED_ELEVATOR, (T stateful, String event, Object... args) -> {
+      this.ridingElevator.addTransition(
+         CommonEventNames.DISEMBARKED_ELEVATOR,
+         (T stateful, String event, Object... args) -> {
             final State<T> nextState = stateful.getDestinationState();
             final StateActionPair<T> retVal;
             if ((nextState != null) && (nextState != this.afterDeparture)) {
@@ -120,23 +127,33 @@ implements ISimulatedPopulationFactory<V>
       if (this.persister != null) { throw new IllegalStateException(
          "The post-creation constructFsm() method may only be called one time."); }
       this.appendAdditionalStates();
-      this.persister = new MemoryPersisterImpl<>(listBuilder.build(), this.beforeArrival);
+      this.persister = new MemoryPersisterImpl<>(this.listBuilder.build(), this.beforeArrival);
    }
+
+
+//   public void setBeanFactory(BeanFactory beanFactory) throws BeansException
+//   {
+//      super.setBeanFactory(beanFactory);
+//      this.beanFactory = beanFactory;
+//   }
+
+
+   @Override
+   public P createInstance()
+   {
+      final FSM<T> stateMachine = new FSM<T>(this.populationName, this.persister);
+
+      return this.createPopulation(this.idFactory, stateMachine, this.randomGenerator, this.arrivalRate);
+   }
+
+
+   @Override
+   public abstract Class<P> getObjectType();
 
 
    protected abstract void appendAdditionalStates();
 
 
-   @Override
-   public ISimulatedPopulation
-   generate(String populationName, Supplier<V> randomGenerator, ExponentialDistribution arrivalRate)
-   {
-      final FSM<T> stateMachine = new FSM<T>(populationName, this.persister);
-
-      return new SimulatedPopulation<V, T>(
-         this.factoryFunction,
-         stateMachine,
-         randomGenerator,
-         arrivalRate);
-   }
+   protected abstract P createPopulation(Supplier<PassengerId> idFactory,
+      FSM<T> stateMachine, Supplier<V> variablesSupplier, ExponentialDistribution arrivalRate);
 }

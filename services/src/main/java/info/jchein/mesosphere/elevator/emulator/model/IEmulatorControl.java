@@ -3,10 +3,6 @@ package info.jchein.mesosphere.elevator.emulator.model;
 import java.util.function.Consumer;
 
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
-import info.jchein.mesosphere.elevator.common.RequestId;
-import info.jchein.mesosphere.elevator.emulator.event.EmulatorEvent;
-import info.jchein.mesosphere.elevator.emulator.event.EmulatorResponse;
-import rx.Observable;
 
 /**
  * IEmulated interfaces are software entities that play the role of physical control elements by providing methods that 

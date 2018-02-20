@@ -1,4 +1,4 @@
-package info.jchein.mesosphere.elevator.runtime.virtual;
+package info.jchein.mesosphere.elevator.runtime.temporal;
 
 
 import java.util.ArrayList;
@@ -12,7 +12,8 @@ import javax.validation.executable.ValidateOnExecution;
 
 import org.jgrapht.util.FibonacciHeap;
 import org.jgrapht.util.FibonacciHeapNode;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -25,19 +26,18 @@ import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeProperties
 import info.jchein.mesosphere.elevator.runtime.IIntervalHandler;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
 import info.jchein.mesosphere.elevator.runtime.IVariableIntervalFunction;
-
-import lombok.extern.slf4j.Slf4j;
 import rx.Scheduler.Worker;
 import rx.Subscription;
 import rx.functions.Action0;
 
 
-@Slf4j
 @Component
 @Scope(BeanDefinition.SCOPE_SINGLETON)
 @ValidateOnExecution(type= {ExecutableType.ALL})
 public class VirtualScheduler implements IRuntimeScheduler
 {
+   static final Logger log = LoggerFactory.getLogger(VirtualScheduler.class);
+
    private final long tickMillis;
    private final Worker worker;
    private final FibonacciHeap<ScheduledCallback<?>> interruptHeap;
@@ -246,9 +246,10 @@ public class VirtualScheduler implements IRuntimeScheduler
             clockSkew == (this.timeNext - timeNow),
             "iterationError computed unexpected result");
 
-         final ArrayList<ScheduledCallback<?>> callTargets = new ArrayList<>();
+         final ArrayList<ScheduledCallback<?>> callTargets = new ArrayList<>(
+            VirtualScheduler.this.interruptHeap.size());
          FibonacciHeapNode<ScheduledCallback<?>> closestEvent = VirtualScheduler.this.interruptHeap.min();
-         while (closestEvent.getKey() < this.timeNext) {
+         while ((closestEvent != null) && (closestEvent.getKey() < this.timeNext)) {
             // Remove the interruptHeap entry for min registration since we now know it is in range.
             closestEvent = VirtualScheduler.this.interruptHeap.removeMin();
 
@@ -277,7 +278,7 @@ public class VirtualScheduler implements IRuntimeScheduler
                firedInterrupt.fireCallback(timeNow);
             }
             catch (Exception exp) {
-               log.error("Unexpected exception thrown by registered interrupt handler discarded: %s", exp);
+               log.error("Unexpected exception thrown by registered interrupt handler discarded: {}", exp);
             }
          }
 
@@ -338,7 +339,7 @@ public class VirtualScheduler implements IRuntimeScheduler
 
       Preconditions.checkArgument(millis >= this.tickMillis, "Cannot repeat on an interval shorter than tick duration");
       if ((millis % this.tickMillis) > 0) {
-         log.warn("Interrupt cycle of %s is not an even multiple of the tick duration, %s", millis, this.tickMillis);
+         log.warn("Interrupt cycle of {} is not an even multiple of the tick duration, {}", millis, this.tickMillis);
       }
       
       return millis;

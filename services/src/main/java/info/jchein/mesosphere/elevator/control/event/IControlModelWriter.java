@@ -30,5 +30,5 @@ public interface IControlModelWriter
    
    void onWeightLoadUpdated(int carIndex, double increases, double decreases, double absolute);
    
-   void transformSchedulerOutput(Transform)
+//   void transformSchedulerOutput(Transform)
 }

@@ -1,31 +1,37 @@
 package info.jchein.mesosphere.elevator.simulator.passengers.with_lobby_return;
 
+
 import java.util.function.Supplier;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
+import org.apache.commons.math3.distribution.RealDistribution;
 
-import info.jchein.mesosphere.elevator.common.physics.IPopulationSampler;
+import info.jchein.mesosphere.elevator.common.probability.IPopulationSampler;
 
-//@Component
-//@Scope(BeanDefinition.SCOPE_SINGLETON)
-public class WithLobbyReturnRandomVariableSupplier implements Supplier<WithLobbyReturnRandomVariables>
+
+public class WithLobbyReturnRandomVariableSupplier
+implements Supplier<VariablesWithLobbyReturn>
 {
    private IPopulationSampler weightSampler;
+   private int activityFloorIndex;
+   private RealDistribution activityDurationDist;
 
-//   @Autowired
-   public WithLobbyReturnRandomVariableSupplier(IPopulationSampler weightSampler) {
+
+   public WithLobbyReturnRandomVariableSupplier( IPopulationSampler weightSampler,
+      int activityFloorIndex, RealDistribution activityDurationDist )
+   {
       this.weightSampler = weightSampler;
+      this.activityFloorIndex = activityFloorIndex;
+      this.activityDurationDist = activityDurationDist;
    }
+
 
    @Override
-   public WithLobbyReturnRandomVariables get()
+   public VariablesWithLobbyReturn get()
    {
-      return WithLobbyReturnRandomVariables.build(bldr -> {
-         return bldr.
+      return VariablesWithLobbyReturn.build(bldr -> {
+         bldr.activitySeconds(activityDurationDist.sample())
+         .activityFloor(this.activityFloorIndex)
+         .weight(this.weightSampler.sample());
       });
    }
-
 }

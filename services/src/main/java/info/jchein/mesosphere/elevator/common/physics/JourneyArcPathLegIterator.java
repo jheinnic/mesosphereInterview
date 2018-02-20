@@ -28,8 +28,8 @@ class JourneyArcPathLegIterator implements Iterator<IPathLeg> {
         case REVERSE_JERK_ONE: return this.source.getReverseJerkOne();
         case CONSTANT_VELOCITY: return this.source.getConstantVelocity();
         case REVERSE_JERK_TWO: return this.source.getReverseJerkTwo();
-        case REVERSE_ACCELERATION: return this.source.getReverseAcceleration();
-        case FORWARD_JERK_TWO: return this.source.getForwardJerkTwo();
+//        case REVERSE_ACCELERATION: return this.source.getReverseAcceleration();
+//        case FORWARD_JERK_TWO: return this.source.getForwardJerkTwo();
         case TERMINAL_SEGMENT: return this.source.getTerminalSegment();
         default: throw new NoSuchElementException();
       }

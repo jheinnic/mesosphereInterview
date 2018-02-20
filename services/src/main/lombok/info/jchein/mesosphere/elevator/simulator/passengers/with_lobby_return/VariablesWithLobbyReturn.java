@@ -8,24 +8,24 @@ import lombok.Value;
 
 @Value
 @Builder(toBuilder=true)
-public class WithLobbyReturnRandomVariables implements IRandomVariables
+public class VariablesWithLobbyReturn implements IRandomVariables
 {
    int initialFloor = 0;
    double weight;
    int activityFloor;
-   long activityDuration;
+   double activitySeconds;
 
-   public static WithLobbyReturnRandomVariables build(Consumer<WithLobbyReturnRandomVariablesBuilder> director)
+   public static VariablesWithLobbyReturn build(Consumer<VariablesWithLobbyReturnBuilder> director)
    {
-      final WithLobbyReturnRandomVariablesBuilder bldr = WithLobbyReturnRandomVariables.builder();
+      final VariablesWithLobbyReturnBuilder bldr = VariablesWithLobbyReturn.builder();
       director.accept(bldr);
       return bldr.build();
    }
 
 
-   public WithLobbyReturnRandomVariables copy(Consumer<WithLobbyReturnRandomVariablesBuilder> director)
+   public VariablesWithLobbyReturn copy(Consumer<VariablesWithLobbyReturnBuilder> director)
    {
-      final WithLobbyReturnRandomVariablesBuilder bldr = this.toBuilder();
+      final VariablesWithLobbyReturnBuilder bldr = this.toBuilder();
       director.accept(bldr);
       return bldr.build();
    }

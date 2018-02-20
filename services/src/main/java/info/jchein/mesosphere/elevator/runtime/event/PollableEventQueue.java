@@ -1,24 +1,13 @@
 package info.jchein.mesosphere.elevator.runtime.event;
 
 
-import java.util.Collection;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.stream.Collector;
-
-import javax.annotation.PostConstruct;
-
 import org.jctools.queues.MessagePassingQueue.Consumer;
-import org.jctools.queues.SpscLinkedQueue;
 import org.jctools.queues.atomic.SpscLinkedAtomicQueue;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-import info.jchein.mesosphere.elevator.control.event.ElevatorCarEvent;
 import rx.Observable;
-import rx.Observer;
-import rx.functions.Action3;
-import rx.observables.AsyncOnSubscribe;
 import rx.observables.SyncOnSubscribe;
 
 

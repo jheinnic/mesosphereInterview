@@ -10,8 +10,13 @@ import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.validation.annotation.Validated;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Value;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
+import lombok.experimental.FieldDefaults;
 
 
 /**
@@ -23,29 +28,29 @@ import lombok.Value;
  * @author jheinnic
  *
  */
-@Value
-@Builder(toBuilder = true)
 @Validated
+@Getter @FieldDefaults(makeFinal=true, level=AccessLevel.PRIVATE) @AllArgsConstructor @ToString @EqualsAndHashCode
+@Builder(toBuilder = true)
 public class DeploymentConfiguration
 {
    @Valid
-   public final BuildingDescription building;
+   final BuildingDescription building;
 
    @Valid
-   public final TravelSpeedDescription topSpeed;
+   final TravelSpeedDescription topSpeed;
 
    @Valid
-   public final StartStopDescription motor;
+   final StartStopDescription motor;
 
    @Valid
-   public final WeightDescription weight;
+   final WeightDescription weight;
 
    @Valid
-   public final DoorTimeDescription doors;
+   final DoorTimeDescription doors;
    
    @NotBlank
    @NotNull
-   public String carDriverKey;
+   String carDriverKey;
 
 
    public static DeploymentConfiguration build(Consumer<DeploymentConfigurationBuilder> director)

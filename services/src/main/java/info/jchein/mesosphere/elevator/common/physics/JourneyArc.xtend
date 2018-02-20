@@ -17,9 +17,9 @@ class JourneyArc implements Iterable<IPathLeg>
 	val ConstantJerkPathLeg reverseJerkOne
 	val ConstantVelocityPathLeg constantVelocity
 	val ConstantJerkPathLeg reverseJerkTwo
-	val ConstantAccelerationPathLeg reverseAcceleration
-	val ConstantJerkPathLeg forwardJerkTwo
-	val ConstantAccelerationPathLeg terminalSegment
+//	val ConstantAccelerationPathLeg reverseAcceleration
+//	val ConstantJerkPathLeg forwardJerkTwo
+	val ConstantJerkPathLeg terminalSegment
 
 	override iterator() {
 		return new JourneyArcPathLegIterator(this)
@@ -71,8 +71,8 @@ class JourneyArc implements Iterable<IPathLeg>
 		return this.copy [ 
 			constantVelocity = this.constantVelocity.withNewDuration(newConstantDuration)
 			reverseJerkTwo = this.reverseJerkTwo.withSpaceTimeShift(deltaHeight, deltaCVDuration)
-			reverseAcceleration = this.reverseAcceleration.withSpaceTimeShift(deltaHeight, deltaCVDuration)
-			forwardJerkTwo = this.forwardJerkTwo.withSpaceTimeShift(deltaHeight, deltaCVDuration)
+//			reverseAcceleration = this.reverseAcceleration.withSpaceTimeShift(deltaHeight, deltaCVDuration)
+//			forwardJerkTwo = this.forwardJerkTwo.withSpaceTimeShift(deltaHeight, deltaCVDuration)
 			terminalSegment = this.terminalSegment.withSpaceTimeShift(deltaHeight, deltaCVDuration)
 			terminalMoment(
 				this.terminalMoment.copy[
@@ -91,8 +91,8 @@ class JourneyArc implements Iterable<IPathLeg>
 			reverseJerkOne = this.reverseJerkOne.withHeightOffset(offset)
 			constantVelocity = this.constantVelocity.withHeightOffset(offset)
 			reverseJerkTwo = this.reverseJerkTwo.withHeightOffset(offset)
-			reverseAcceleration = this.reverseAcceleration.withHeightOffset(offset)
-			forwardJerkTwo = this.forwardJerkTwo.withHeightOffset(offset)
+//			reverseAcceleration = this.reverseAcceleration.withHeightOffset(offset)
+//			forwardJerkTwo = this.forwardJerkTwo.withHeightOffset(offset)
 			terminalSegment = this.terminalSegment.withHeightOffset(offset)
 			terminalMoment = this.terminalMoment.withHeightOffset(offset)
 		]
@@ -107,10 +107,10 @@ class JourneyArc implements Iterable<IPathLeg>
 			reverseJerkOne = list.get(2) as ConstantJerkPathLeg
 			constantVelocity = list.get(3) as ConstantVelocityPathLeg
 			reverseJerkTwo = list.get(4) as ConstantJerkPathLeg
-			reverseAcceleration = list.get(5) as ConstantAccelerationPathLeg
-			forwardJerkTwo = list.get(6) as ConstantJerkPathLeg
-			terminalSegment = list.get(7) as ConstantAccelerationPathLeg
-			terminalMoment = list.get(7).getFinalMoment(0)
+//			reverseAcceleration = list.get(5) as ConstantAccelerationPathLeg
+//			forwardJerkTwo = list.get(6) as ConstantJerkPathLeg
+			terminalSegment = list.get(5) as ConstantJerkPathLeg
+			terminalMoment = list.get(5).getFinalMoment(0)
 		]
 	}
 	
@@ -135,7 +135,7 @@ class JourneyArc implements Iterable<IPathLeg>
 	}
 	
 	public def getBrakeAppliedMoment() {
-		return this.forwardJerkTwo.getFinalMoment(0);
+		return this.constantVelocity.getFinalMoment(0);
 	}
 
 	def double getShortestPossibleArc() {

@@ -1,6 +1,4 @@
-package info.jchein.mesosphere.elevator.common.physics;
-
-import java.util.List;
+package info.jchein.mesosphere.elevator.common.probability;
 
 import org.apache.commons.math3.distribution.EnumeratedDistribution;
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;

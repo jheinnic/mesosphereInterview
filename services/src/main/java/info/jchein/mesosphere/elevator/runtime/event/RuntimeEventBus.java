@@ -5,19 +5,19 @@ import javax.validation.executable.ExecutableType;
 import javax.validation.executable.ValidateOnExecution;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Primary;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-import info.jchein.mesosphere.elevator.runtime.IRuntimeEventBus;
 import rx.Emitter;
 import rx.Emitter.BackpressureMode;
 import rx.Observable;
 
-@Primary
 @Component
+@Scope(BeanDefinition.SCOPE_SINGLETON)
 @ValidateOnExecution(type= {ExecutableType.ALL})
 public class RuntimeEventBus implements IRuntimeEventBus 
 {

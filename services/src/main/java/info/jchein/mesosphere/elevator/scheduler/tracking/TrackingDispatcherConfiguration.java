@@ -25,17 +25,6 @@ public class TrackingDispatcherConfiguration {
 		return new HeuristicElevatorSchedulingStrategy(port, rootProps, physicsService);
 	}
 
-	@Bean
-	@Scope(BeanDefinition.SCOPE_SINGLETON)
-	TestScheduler getScheduler() {
-		return Schedulers.test();
-	}
-
-	@Bean
-	@Scope(BeanDefinition.SCOPE_SINGLETON)
-	Worker getWorker(TestScheduler scheduler) {
-		return scheduler.createWorker();
-	}
 	
 //	@Bean
 //	@Scope(BeanDefinition.SCOPE_SINGLETON)

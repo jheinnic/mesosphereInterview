@@ -5,6 +5,10 @@ import java.util.Collection;
 
 import javax.validation.constraints.NotNull;
 
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Interner;
 import com.google.common.collect.Interners;
@@ -14,6 +18,8 @@ import info.jchein.mesosphere.elevator.common.ServiceLifecycleStage;
 import info.jchein.mesosphere.elevator.common.bootstrap.DeploymentProperties;
 import info.jchein.mesosphere.elevator.common.graph.TravelPathStageNodes.TravelPathStageNodesBuilder;
 
+@Component
+@Scope(BeanDefinition.SCOPE_SINGLETON)
 public class VertexFactory implements IVertexFactory
 {
    private final int numElevators;
@@ -81,10 +87,10 @@ public class VertexFactory implements IVertexFactory
 //      this.travelArcs = new TravelArc[numFloors][numFloors];
 //      this.travellerIntent = new TravellerIntent[numFloors][numFloors];
 
-      this.carLandings = new CarLanding[numElevators][numFloors];
+      this.carLandings = new CarLanding[numFloors][numElevators];
 
-      this.ascendingCarPickupHeadings = new CarPickupHeading[numElevators][numFloors];
-      this.descendingCarPickupHeadings = new CarPickupHeading[numElevators][numFloors];
+      this.ascendingCarPickupHeadings = new CarPickupHeading[numFloors][numElevators];
+      this.descendingCarPickupHeadings = new CarPickupHeading[numFloors][numElevators];
       
       this.travelingUpCarServiceStates = new CarServiceState[numFloors-1][numElevators];
       this.travelingDownCarServiceStates = new CarServiceState[numFloors-1][numElevators];
@@ -124,10 +130,10 @@ public class VertexFactory implements IVertexFactory
             this.parkedCarServiceStates[ii][jj] = new CarServiceState(ii, jj, ServiceLifecycleStage.PARKED, DirectionOfTravel.STOPPED);
 
             if (ii > 0) {
-               this.descendingCarPickupHeadings[ii][jj] = new CarPickupHeading(ii, jj, DirectionOfTravel.GOING_DOWN);
-               this.travelingDownCarServiceStates[ii][jj] = new CarServiceState(ii, jj, ServiceLifecycleStage.TRAVELLING, DirectionOfTravel.GOING_DOWN);
-               this.boardingDownCarServiceStates[ii][jj] = new CarServiceState(ii, jj, ServiceLifecycleStage.BOARDING, DirectionOfTravel.GOING_DOWN);
-               this.brakingDownCarServiceStates[ii][jj] = new CarServiceState(ii, jj, ServiceLifecycleStage.BRAKING, DirectionOfTravel.GOING_DOWN);
+               this.descendingCarPickupHeadings[ii-1][jj] = new CarPickupHeading(ii, jj, DirectionOfTravel.GOING_DOWN);
+               this.travelingDownCarServiceStates[ii-1][jj] = new CarServiceState(ii, jj, ServiceLifecycleStage.TRAVELLING, DirectionOfTravel.GOING_DOWN);
+               this.boardingDownCarServiceStates[ii-1][jj] = new CarServiceState(ii, jj, ServiceLifecycleStage.BOARDING, DirectionOfTravel.GOING_DOWN);
+               this.brakingDownCarServiceStates[ii-1][jj] = new CarServiceState(ii, jj, ServiceLifecycleStage.BRAKING, DirectionOfTravel.GOING_DOWN);
             }
             if (ii < numFloors - 1) {
                this.ascendingCarPickupHeadings[ii][jj] = new CarPickupHeading(ii, jj, DirectionOfTravel.GOING_UP);
@@ -148,9 +154,9 @@ public class VertexFactory implements IVertexFactory
             this.descendingCarPickupHeadings[0][jj]= null;
             this.travelingDownCarServiceStates[0][jj] = null;
             this.boardingDownCarServiceStates[0][jj] = null;
-            this.ascendingCarPickupHeadings[numFloors - 1][jj] = null;
-            this.travelingUpCarServiceStates[numFloors - 1][jj] = null;
-            this.boardingUpCarServiceStates[numFloors - 1][jj] = null;
+            this.ascendingCarPickupHeadings[numFloors - 2][jj] = null;
+            this.travelingUpCarServiceStates[numFloors - 2][jj] = null;
+            this.boardingUpCarServiceStates[numFloors - 2][jj] = null;
          }
       }
    }

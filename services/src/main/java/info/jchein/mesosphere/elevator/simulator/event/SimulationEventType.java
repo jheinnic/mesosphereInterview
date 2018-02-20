@@ -3,7 +3,7 @@ package info.jchein.mesosphere.elevator.simulator.event;
 public enum SimulationEventType
 {
 //   SIMULATION_CREATED,
-   POPULATION_DEFINED,
+//   POPULATION_DEFINED,
 //   SIMULATION_EPOCH_ADVANCED,
    TRAVELLER_ARRIVED,
    PICKUP_REQUESTED,

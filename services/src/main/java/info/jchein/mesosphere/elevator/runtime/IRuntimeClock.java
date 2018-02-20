@@ -8,7 +8,7 @@ public interface IRuntimeClock
 {
    long now();
 
-   long tickNow();
+   long ticks();
    
    long getMillisecondsPerTick();
    

@@ -1,11 +1,8 @@
 package info.jchein.mesosphere.elevator.runtime.event;
 
 
-import java.util.concurrent.Callable;
-
 import com.google.common.eventbus.Subscribe;
 
-import info.jchein.mesosphere.elevator.runtime.IRuntimeEventBus;
 import rx.Emitter;
 import rx.Emitter.BackpressureMode;
 import rx.Observable;

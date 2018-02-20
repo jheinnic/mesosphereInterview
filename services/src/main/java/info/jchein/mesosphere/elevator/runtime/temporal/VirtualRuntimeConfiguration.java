@@ -1,19 +1,14 @@
-package info.jchein.mesosphere.elevator.runtime.virtual;
+package info.jchein.mesosphere.elevator.runtime.temporal;
 
-import java.util.concurrent.Executors;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Scope;
 
-import com.google.common.eventbus.EventBus;
-
-import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeProperties;
+import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeDescription;
 import info.jchein.mesosphere.elevator.runtime.IRuntime;
 import rx.Scheduler;
 import rx.Scheduler.Worker;
@@ -21,26 +16,47 @@ import rx.schedulers.Schedulers;
 import rx.schedulers.TestScheduler;
 
 @Configuration
-@ComponentScan("info.jchein.mesosphere.elevator.runtime.virtual")
-@EnableConfigurationProperties(VirtualRuntimeProperties.class)
+@ComponentScan({"info.jchein.mesosphere.elevator.runtime.temporal"})
 public class VirtualRuntimeConfiguration {
    @Bean
+   @Autowired
    @Scope(BeanDefinition.SCOPE_SINGLETON)
    @Qualifier(IRuntime.ELEVATOR_RUNTIME_QUALIFIER)
-   Worker getRuntimeWorker(@Qualifier(IRuntime.ELEVATOR_RUNTIME_QUALIFIER) Scheduler scheduler) {
+   Worker runtimeWorker(@Qualifier(IRuntime.ELEVATOR_RUNTIME_QUALIFIER) Scheduler scheduler) {
       return scheduler.createWorker();
    }
    
    
    @Bean
-   @Profile("elevator.runtime.virtual")
    @Scope(BeanDefinition.SCOPE_SINGLETON)
    @Qualifier(IRuntime.ELEVATOR_RUNTIME_QUALIFIER)
-   TestScheduler getVirtualScheduler() {
+   TestScheduler runtimeScheduler() {
       return Schedulers.test();
    }
 
 
+   /*
+   @Bean
+   @Autowired
+   @Scope(BeanDefinition.SCOPE_SINGLETON)
+   public VirtualClock runtimeClock(@Qualifier(IRuntime.ELEVATOR_RUNTIME_QUALIFIER) Scheduler scheduler, VirtualRuntimeDescription runtimeDesc)
+   {
+      return new VirtualClock(scheduler, runtimeDesc);
+   }
+   */
+
+
+   /*
+   @Bean
+   @Autowired
+   @Scope(BeanDefinition.SCOPE_SINGLETON)
+   public VirtualRuntimeDescription virtualRuntimeDescription(VirtualRuntimeProperties mutableProperties, IConfigurationFactory configFactory)
+   {
+      return configFactory.hardenVirtualRuntimeConfig(mutableProperties);
+   }
+   */
+
+   /*
    @Bean
    @Profile("elevator.runtime.live")
    @Scope(BeanDefinition.SCOPE_SINGLETON)
@@ -49,4 +65,5 @@ public class VirtualRuntimeConfiguration {
       return Schedulers.from(
          Executors.newSingleThreadExecutor());
    }
+   */
 }

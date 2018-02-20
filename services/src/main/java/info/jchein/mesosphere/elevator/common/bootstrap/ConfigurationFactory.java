@@ -1,6 +1,7 @@
 package info.jchein.mesosphere.elevator.common.bootstrap;
 
 
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
@@ -10,7 +11,6 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 
 import info.jchein.mesosphere.elevator.common.PassengerId;
@@ -38,10 +38,9 @@ implements IConfigurationFactory
    public EmulatorConfiguration hardenEmulatorConfig(EmulatorProperties mutable)
    {
       return EmulatorConfiguration.build(bldr -> {
-         bldr.numFloors(mutable.numFloors)
-            .driverAlias(mutable.driverAlias)
-            .pendingPickups(mutable.pendingPickups.stream().<ImmutableList
-            .Builder<PendingPickup>> collect(
+         bldr.numFloors(mutable.getNumFloors())
+            .driverAlias(mutable.getDriverAlias())
+            .pendingPickups(mutable.getPendingPickups().stream().<ImmutableList.Builder<PendingPickup>> collect(
                ImmutableList::<PendingPickup> builder,
                (ImmutableList.Builder<PendingPickup> lBldr,
                   EmulatorProperties.PendingPickup pickup) -> {
@@ -55,8 +54,7 @@ implements IConfigurationFactory
                },
                (left, right) -> left.addAll(right.build()))
                .build())
-            .cars(mutable.cars.stream().<ImmutableList
-            .Builder<InitialCarState>> collect(
+            .cars(mutable.getCars().stream().<ImmutableList.Builder<InitialCarState>> collect(
                ImmutableList::<InitialCarState> builder,
                (ImmutableList.Builder<InitialCarState> lBldr,
                   EmulatorProperties.InitialCarState car) -> {
@@ -91,48 +89,48 @@ implements IConfigurationFactory
    {
       return DeploymentConfiguration.build(bldr -> {
          bldr.building(BuildingDescription.build(bbldr -> {
-            bbldr.numFloors(mutable.building.numFloors)
-               .numElevators(mutable.building.numElevators)
-               .metersPerFloor(mutable.building.metersPerFloor);
+            bbldr.numFloors(mutable.getBuilding().numFloors)
+               .numElevators(mutable.getBuilding().numElevators)
+               .metersPerFloor(mutable.getBuilding().metersPerFloor);
          }))
             .topSpeed(TravelSpeedDescription.build(tbldr -> {
-               tbldr.longAscent(mutable.topSpeed.longAscent)
-                  .longDescent(mutable.topSpeed.longDescent)
-                  .shortHop(mutable.topSpeed.shortHop);
+               tbldr.longAscent(mutable.getTopSpeed().longAscent)
+                  .longDescent(mutable.getTopSpeed().longDescent)
+                  .shortHop(mutable.getTopSpeed().shortHop);
             }))
             .motor(StartStopDescription.build(sbldr -> {
-               sbldr.brakeDistance(mutable.motor.brakeDistance)
-                  .brakeSpeed(mutable.motor.brakeSpeed)
-                  .maxAcceleration(mutable.motor.maxAcceleration)
-                  .maxJerk(mutable.motor.maxJerk);
+               sbldr.brakeDistance(mutable.getMotor().brakeDistance)
+                  .brakeSpeed(mutable.getMotor().brakeSpeed)
+                  .maxAcceleration(mutable.getMotor().maxAcceleration)
+                  .maxJerk(mutable.getMotor().maxJerk);
             }))
             .weight(WeightDescription.build(wbldr -> {
-               wbldr.maxForTravel(mutable.weight.maxForTravel)
-                  .avgPassenger(mutable.weight.avgPassenger)
-                  .pctMaxForIdeal(mutable.weight.pctMaxForIdeal)
-                  .pctMaxForPickup(mutable.weight.pctMaxForPickup);
+               wbldr.maxForTravel(mutable.getWeight().maxForTravel)
+                  .avgPassenger(mutable.getWeight().avgPassenger)
+                  .pctMaxForIdeal(mutable.getWeight().pctMaxForIdeal)
+                  .pctMaxForPickup(mutable.getWeight().pctMaxForPickup);
             }))
             .doors(DoorTimeDescription.build(dbldr -> {
-               dbldr.minHold(mutable.doors.minHold)
-                  .personHold(mutable.doors.personHold)
-                  .openCloseTime(mutable.doors.openCloseTime);
+               dbldr.minHold(mutable.getDoors().minHold)
+                  .personHold(mutable.getDoors().personHold)
+                  .openCloseTime(mutable.getDoors().openCloseTime);
             }))
-            .carDriverKey(mutable.carDriverKey);
+            .carDriverKey(mutable.getCarDriverKey());
       });
    }
 
 
    @Override
-   public VirtualRuntimeConfiguration hardenVirtualRuntimeConfig(VirtualRuntimeProperties mutableProps)
+   public VirtualRuntimeDescription hardenVirtualRuntimeConfig(VirtualRuntimeProperties mutableProps)
    {
-      return VirtualRuntimeConfiguration.build(bldr -> {
-         bldr.tickDurationMillis(mutableProps.tickDurationMillis);
+      return VirtualRuntimeDescription.build(bldr -> {
+         bldr.tickDurationMillis(mutableProps.getTickDurationMillis());
       });
    }
 
 
    @Override
-   public DemographicConfiguration hardenDemographicConfiguration(DemographicProperties mutableProps) {
+   public DemographicConfiguration hardenDemographicConfig(DemographicProperties mutableProps) {
       return DemographicConfiguration.build(bldr -> {
          bldr.femaleWeightSamples( mutableProps.getFemaleWeightSamples().stream().<AgeGroupWeightSample>map(sample -> {
             return AgeGroupWeightSample.build(abldr -> {

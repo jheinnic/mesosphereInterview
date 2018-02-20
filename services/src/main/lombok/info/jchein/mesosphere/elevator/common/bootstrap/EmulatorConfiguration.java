@@ -15,21 +15,29 @@ import org.springframework.validation.annotation.Validated;
 import com.google.common.collect.ImmutableList;
 
 import info.jchein.mesosphere.elevator.common.PendingPickup;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.Singular;
-import lombok.Value;
+import lombok.ToString;
+import lombok.experimental.FieldDefaults;
 
 
-@Value
 @Validated
+@Getter
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
+@AllArgsConstructor
+@ToString
+@EqualsAndHashCode
 @Builder(toBuilder = true)
+/*
 @ScriptAssert.List({
    @ScriptAssert(lang = "javascript", alias = "_this",
       script = "_this.pendingPickups.every( (p) => p.pickupFloor < _this.numFloors && p.pickupFloor >= 0 )"),
    @ScriptAssert(lang = "javascript", alias = "_this",
       script = "_this.pendingPickups.every( (p) => p.dropOffFloor < _this.numFloors && p.dropOffFloor >= 0 )"),
-   @ScriptAssert(lang = "javascript", alias = "_this",
-      script = "_this.pendingPickups.every( (p) => p.callTime <= p.pickupTime )"),
    @ScriptAssert(lang = "javascript", alias = "_this",
       script = "_this.cars.every( (c) => c.initialFloor < _this.numFloors && c.initialFloor >= 0 )"),
    @ScriptAssert(lang = "javascript", alias = "_this",
@@ -39,11 +47,12 @@ import lombok.Value;
    @ScriptAssert(lang = "javascript", alias = "_this",
       script = "_this.cars.every( (c) => c.passengers.every( (p) => p.callTime <= p.pickupTime ) )")
 })
+*/
 public class EmulatorConfiguration
 {
    @Min(0)
    public final int numFloors;
-   
+
    @NotNull
    @NotBlank
    public final String driverAlias;

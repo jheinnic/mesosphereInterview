@@ -4,17 +4,13 @@ package info.jchein.mesosphere.elevator.simulator.passengers.with_lobby_return;
 import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Scope;
-import org.statefulj.fsm.FSM;
 
 import info.jchein.mesosphere.elevator.common.PassengerId;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeEventBus;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
+import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
 
 
 @Configuration
@@ -25,25 +21,32 @@ public class WithLobbyReturnPathStyleConfiguration
    private IRuntimeClock clock;
    private IRuntimeScheduler scheduler;
    private IRuntimeEventBus eventBus;
-   private IWithLobbyReturnStateSupplier withLobbyReturnStateSupplier;
 
 
    @Autowired
    WithLobbyReturnPathStyleConfiguration( Supplier<PassengerId> idFactory, IRuntimeClock clock,
-      IRuntimeScheduler scheduler, IRuntimeEventBus eventBus,
-      IWithLobbyReturnStateSupplier withLobbyReturnStateSupplier )
+      IRuntimeScheduler scheduler, IRuntimeEventBus eventBus )
    {
       this.idFactory = idFactory;
       this.clock = clock;
       this.scheduler = scheduler;
       this.eventBus = eventBus;
-      this.withLobbyReturnStateSupplier = withLobbyReturnStateSupplier;
    }
 
 
+   /**
+    * SimulatedTravelllers for the "WithLobbyReturn" bundle are created with the help of a Java configuration
+    * class by injecting a handle to this bean prototype method into the Population Factory that creates the
+    * Populations that create Travellers.
+    * 
+    * The Population objects are not subtyped, so they have no way of specializing their construction behavior
+    * sufficiently to understand how to inject unique arguments into the Traveller allocation requests.  
+    * @param randomVariables
+    * @param stateMachine
+    * @return
    @Bean
    @Scope(BeanDefinition.SCOPE_PROTOTYPE)
-   TravellerWithLobbyReturn travellerWithLobbyReturn(WithLobbyReturnRandomVariables randomVariables, FSM<TravellerWithLobbyReturn> stateMachine) {
+   TravellerWithLobbyReturn travellerWithLobbyReturn(VariablesWithLobbyReturn randomVariables, FSM<TravellerWithLobbyReturn> stateMachine) {
       return new TravellerWithLobbyReturn(this.idFactory.get(), randomVariables,
          stateMachine, this.withLobbyReturnStateSupplier.getInActivityState(), this.clock, this.scheduler, this.eventBus);
    }
@@ -53,4 +56,5 @@ public class WithLobbyReturnPathStyleConfiguration
    PopulationFactoryWithLobbyReturn populationFactoryWithLobbyReturn() {
       return new PopulationFactoryWithLobbyReturn(this::travellerWithLobbyReturn, this.withLobbyReturnStateSupplier.getInActivityState());
    }
+    */
 }

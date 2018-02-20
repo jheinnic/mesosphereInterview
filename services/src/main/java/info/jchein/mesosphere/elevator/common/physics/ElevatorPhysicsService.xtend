@@ -1,10 +1,8 @@
 package info.jchein.mesosphere.elevator.common.physics
 
-import de.oehme.xtend.contrib.Cached
-import org.eclipse.xtend.lib.annotations.ToString
-
 import com.google.common.base.Preconditions
 import com.google.common.collect.ImmutableList
+import de.oehme.xtend.contrib.Cached
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel
 import info.jchein.mesosphere.elevator.common.bootstrap.BuildingDescription
 import info.jchein.mesosphere.elevator.common.bootstrap.DeploymentConfiguration
@@ -12,13 +10,17 @@ import info.jchein.mesosphere.elevator.common.bootstrap.DoorTimeDescription
 import info.jchein.mesosphere.elevator.common.bootstrap.StartStopDescription
 import info.jchein.mesosphere.elevator.common.bootstrap.TravelSpeedDescription
 import info.jchein.mesosphere.elevator.common.bootstrap.WeightDescription
+import org.eclipse.xtend.lib.annotations.ToString
 import org.springframework.stereotype.Component
 import org.springframework.util.Assert
 
 import static extension java.lang.Math.floor
+import org.springframework.context.annotation.Scope
+import org.springframework.beans.factory.config.BeanDefinition
 
 @ToString
 @Component
+@Scope(BeanDefinition.SCOPE_SINGLETON)
 class ElevatorPhysicsService implements IElevatorPhysicsService {
 	val BuildingDescription buildingProps
 	val StartStopDescription motorProps
@@ -34,8 +36,8 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 	val double minAccel
 
 	val double distBrk
-	val double maxSpeedBrk
-	val double minSpeedBrk
+	val double upSpeedBrk
+	val double downSpeedBrk
 
 	val double tMaxA
 	val double vMaxA
@@ -65,8 +67,8 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		this.minJerk = -1 * this.maxJerk
 		this.maxAccel = this.motorProps.maxAcceleration
 		this.minAccel = -1 * this.maxAccel
-		this.maxSpeedBrk = this.motorProps.brakeSpeed
-		this.minSpeedBrk = -1 * this.maxSpeedBrk
+		this.upSpeedBrk = this.motorProps.brakeSpeed
+		this.downSpeedBrk = -1 * this.upSpeedBrk
 		this.distBrk = this.motorProps.brakeDistance
 
 		// Compute the time required to reach maximum acceleration, given maximum jerk, the resulting velocity, and the
@@ -83,8 +85,8 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		// s = s0 + v0*t + (0.5)*a*t^2
 		// v = v0 + a*t
 		// v^2 = v0^2 + 2a(s - s0)
-		this.maxAccelBrake = this.maxSpeedBrk * this.maxSpeedBrk / (2 * this.distBrk)
-		this.tStopBrk = this.maxSpeedBrk / this.maxAccelBrake
+		this.maxAccelBrake = this.upSpeedBrk * this.upSpeedBrk / (2 * this.distBrk)
+		this.tStopBrk = this.upSpeedBrk / this.maxAccelBrake
 		this.minAccelBrake = -1 * this.maxAccelBrake
 
 		Preconditions.checkArgument(
@@ -100,7 +102,7 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 //		this.downwardArcs = newArrayOfSize(this.numFloors - 1);
 		val double floorHeight = this.metersPerFloor
 		val int lastFloorPair = this.numFloors - 1;
-		val double buildingHeight = floorHeight * this.numFloors;
+		val double buildingHeight = floorHeight * lastFloorPair;
 
 		// Construct the shortest unit paths for each combniation of direction and speed.
 		this.slowAscent = this.computeUpwardArch(PathMoment.build [
@@ -116,6 +118,8 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 			it.time(0).height(buildingHeight).velocity(0).acceleration(0).jerk(0)
 		], this.speedProps.longDescent)
 
+		for (nextLeg : this.slowAscent) { System.out.println(nextLeg.toString()); }
+            
 		Assert.isTrue(slowDescent.shortestPossibleArc <= floorHeight,
 			"Must be able to traverse one floor within slow speed arc's path")
 
@@ -198,77 +202,20 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 	 */
 	private def JourneyArc computeUpwardArch(PathMoment moment, double _maxSpeed) {
 		val listBuilder = ImmutableList.<IPathLeg>builder()
-		val maxSpeed = if (_maxSpeed > 0) {
-				_maxSpeed
-			} else {
-				-1 * _maxSpeed
-			}
+		val maxSpeed = if (_maxSpeed > 0) { _maxSpeed } else { -1 * _maxSpeed }
 
-		val tJerkUpOne = (this.maxAccel - moment.acceleration) / this.maxJerk;
-		val toMaxUpAcc = new ConstantJerkPathLeg( moment.copy[jerk(this.maxJerk)], tJerkUpOne)
-		if (toMaxUpAcc.finalVelocity > maxSpeed) {
-			// 0 = (v0-v) + a0t + 0.5 * j*t^2 is technically a factor-able polynomial, but let's defer supporting this result and just insist that the motor must be able
-			// to reach maximum acceleration before maximum velocity or we won't support it.
-			throw new IllegalArgumentException(
-				"Motors must be able to reach maximum acceleration before maximum velocity to be supported here");
-		}
-		val atMaxUpAcc = toMaxUpAcc.nextMoment(listBuilder, 0);
-		Assert.isTrue(atMaxUpAcc.acceleration == this.maxAccel && atMaxUpAcc.velocity > 0,
-			"Acceleration must reach maximum");
-
-		val tJerkDownOne = atMaxUpAcc.acceleration / this.maxJerk
-		val vJerkDownOne = maxSpeed - (tJerkDownOne * atMaxUpAcc.acceleration) +
-			(this.maxJerk * tJerkDownOne * tJerkDownOne / 2.0)
-		val tMaxUpAcc = (vJerkDownOne - atMaxUpAcc.velocity) / atMaxUpAcc.acceleration
-
-		val toJerkDownOne = new ConstantAccelerationPathLeg(atMaxUpAcc, tMaxUpAcc)
-		val atJerkDownOne = toJerkDownOne.nextMoment(listBuilder, -1 * this.maxJerk)
-
-		val toConstV = new ConstantJerkPathLeg(atJerkDownOne, tJerkDownOne)
-		val atConstV = toConstV.nextMoment(listBuilder, 0)
-
-		val toJerkDownTwo = new ConstantVelocityPathLeg(atConstV, 0)
-		val atJerkDownTwo = toJerkDownTwo.nextMoment(listBuilder, -1 * this.maxJerk)
-
-		val toMaxDownAcc = new ConstantJerkPathLeg(atJerkDownTwo, this.tMaxA)
-		val atMaxDownAcc = toMaxDownAcc.nextMoment(listBuilder, 0)
-
-		val tJerkUpTwo = (0 - this.maxAccelBrake - atMaxDownAcc.acceleration) / this.maxJerk
-		val vJerkUpTwo = this.maxSpeedBrk - (tJerkUpTwo * atMaxDownAcc.acceleration) -
-			(this.maxJerk * tJerkUpTwo * tJerkUpTwo / 2.0)
-
-		// Unlike the global maxAccel value, which stores an unsigned magnitude, the value we get from a PathMoment is a signed quantity!
-		val tMaxDownAcc = (vJerkUpTwo - atMaxDownAcc.velocity) / atMaxDownAcc.acceleration
-
-		val toJerkUpTwo = new ConstantAccelerationPathLeg(atMaxDownAcc, tMaxDownAcc);
-		val atJerkUpTwo = toJerkUpTwo.nextMoment(listBuilder, this.maxJerk)
-
-		val toBrakes = new ConstantJerkPathLeg(atJerkUpTwo, tJerkUpTwo)
-		val atBrakes = toBrakes.nextMoment(listBuilder, 0)
-
-		return JourneyArc.fromList(
-			new ConstantAccelerationPathLeg(atBrakes, this.tStopBrk).endPath(listBuilder)
-		)
-	}
-
-	private def JourneyArc computeDownwardArch(PathMoment moment, double _minSpeed) {
-		var ImmutableList.Builder<IPathLeg> listBuilder = ImmutableList.<IPathLeg>builder()
-		val double minSpeed = if (_minSpeed < 0) { _minSpeed } else { -1 * _minSpeed }
-
-		var double tJerkDownOne = (this.minAccel - moment.acceleration) / this.minJerk;
-		var IPathLeg toMaxDownAcc = new ConstantJerkPathLeg( moment.copy[jerk(this.minJerk)], tJerkDownOne)
-		var PathMoment atMaxDownAcc = toMaxDownAcc.nextMoment(listBuilder, 0);
-		
+		var tJerkUpOne = (this.maxAccel - moment.acceleration) / this.maxJerk;
+		var toMaxUpAcc = new ConstantJerkPathLeg( moment.copy[jerk(this.maxJerk)], tJerkUpOne)
 	
 	    // Determine if this is a curve that will go from positive jerk directly to negative jerk, or whether it will rise, plateau, and then revert to
 	    // negative jerk.  If the former is the case, then inverting the jerk until we return to zero acceleration will yield a velocity that exceeds our
 	    // maximum.
-		val double vAtZeroAcc = atMaxDownAcc.velocity + (this.minAccel * this.tMaxA) + (this.maxJerk * this.tMaxA * this.tMaxA / 2.0)
+		val double vAtZeroAcc = toMaxUpAcc.finalVelocity + (this.maxAccel * this.tMaxA) + (this.minJerk * this.tMaxA * this.tMaxA / 2.0)
 
 		// The next block picks one of two arc shapes.  Both arcs terminate at a PathMoment named "atJerkUpTwo", so the braking region that both variants
 		// share can be appended with common code.
-		var PathMoment atJerkUpTwo;
-		if (vAtZeroAcc < minSpeed) {
+		var ConstantVelocityPathLeg toJerkDownTwo;
+		if (vAtZeroAcc > maxSpeed) {
 			// Proceed by calculating the time reach an equilibrium point of constant velocity at our maximum velocity.  In this case all but one of the 
 			// exponential terms involing jerk cancel each other out, and we are left with tmid = Math.sqrt(v(max) / j).  In thie case, t(mid) gives us
 			// the duration of both the negative and positive jerk regions that we need to be left with the elevator travelling at constant velocity equal
@@ -276,39 +223,63 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 			//
 			// The next jerk is set here to zero, not maxJerk, because the constraints of the required zero-length constant acceleration region require
 			// it.  We set maxJerk at the end of that region, which works fine since it is and always will be zero-duration in length.
-			listBuilder = ImmutableList.<IPathLeg>builder()
-			tJerkDownOne = Math.sqrt(minSpeed / this.minJerk)
-			toMaxDownAcc = new ConstantJerkPathLeg(moment.copy[jerk(this.minJerk)], tJerkDownOne)
-			atMaxDownAcc = toMaxDownAcc.nextMoment(listBuilder, 0);
+			tJerkUpOne = Math.sqrt(maxSpeed / this.maxJerk)
+			toMaxUpAcc = new ConstantJerkPathLeg(moment.copy[jerk(this.maxJerk)], tJerkUpOne)
+			val PathMoment atMaxUpAcc = toMaxUpAcc.nextMoment(listBuilder, 0);
 
 			// Inject a blank placeholder for first unreached constant acceleration region
-			val IPathLeg toJerkUpOne = new ConstantAccelerationPathLeg(atMaxDownAcc, 0)
-			val PathMoment atJerkUpOne = toJerkUpOne.nextMoment(listBuilder, this.maxJerk)
+			val IPathLeg toJerkDownOne = new ConstantAccelerationPathLeg(atMaxUpAcc, 0)
+			val PathMoment atJerkDownOne = toJerkDownOne.nextMoment(listBuilder, this.minJerk)
 
 			// Reuse the duration of the first jerk down for a jerk up to cosntant velocity.
-			val IPathLeg toConstV = new ConstantJerkPathLeg(atJerkUpOne, tJerkDownOne)
+			val IPathLeg toConstV = new ConstantJerkPathLeg(atJerkDownOne, tJerkUpOne)
 			val PathMoment atConstV = toConstV.nextMoment(listBuilder, 0)
 
             // Run at constant velocity for an instant.  This segment is extensible to run longer arcs at the same velocity.
-			val IPathLeg toJerkUpTwo = new ConstantVelocityPathLeg(atConstV, 0)
-			atJerkUpTwo = toJerkUpTwo.nextMoment(listBuilder, this.maxJerk)
+			toJerkDownTwo = new ConstantVelocityPathLeg(atConstV, 0)
 		} else {
-			val double tJerkUpOne = (0 - atMaxDownAcc.acceleration) / this.maxJerk
-			val double vJerkUpOne = minSpeed - (tJerkUpOne * atMaxDownAcc.acceleration) -
-				(this.maxJerk * tJerkUpOne * tJerkUpOne / 2.0)
-			val tMaxDownAcc = (vJerkUpOne - atMaxDownAcc.velocity) / atMaxDownAcc.acceleration
-	
-			val IPathLeg toJerkUpOne = new ConstantAccelerationPathLeg(atMaxDownAcc, tMaxDownAcc)
-			val PathMoment atJerkUpOne = toJerkUpOne.nextMoment(listBuilder, this.maxJerk)
-	
-			val IPathLeg toConstV = new ConstantJerkPathLeg(atJerkUpOne, tJerkUpOne)
-			val PathMoment atConstV = toConstV.nextMoment(listBuilder, 0)
-	
-			val IPathLeg toJerkUpTwo = new ConstantVelocityPathLeg(atConstV, 0)
-			atJerkUpTwo = toJerkUpTwo.nextMoment(listBuilder, this.maxJerk)
+			val PathMoment atMaxUpAcc = toMaxUpAcc.nextMoment(listBuilder, 0);
+			Assert.isTrue(atMaxUpAcc.acceleration == this.maxAccel && atMaxUpAcc.velocity > 0,
+				"Acceleration must reach maximum");
+
+			val tJerkDownOne = atMaxUpAcc.acceleration / this.maxJerk
+			val vJerkDownOne = maxSpeed - (tJerkDownOne * atMaxUpAcc.acceleration) -
+				(this.minJerk * tJerkDownOne * tJerkDownOne / 2.0)
+			val tMaxUpAcc = (vJerkDownOne - atMaxUpAcc.velocity) / atMaxUpAcc.acceleration
+
+			val toJerkDownOne = new ConstantAccelerationPathLeg(atMaxUpAcc, tMaxUpAcc)
+			val atJerkDownOne = toJerkDownOne.nextMoment(listBuilder, this.minJerk)
+
+			val toConstV = new ConstantJerkPathLeg(atJerkDownOne, tJerkDownOne)
+			val atConstV = toConstV.nextMoment(listBuilder, 0)
+
+			toJerkDownTwo = new ConstantVelocityPathLeg(atConstV, 0)
 		}
 
-		// Reverse the paired jerk maneuvers to brake down towards braking speed.
+		// Reverse the paired jerk maneuvers to brake down towards braking speed, then from braking speed to rest.
+
+		// First, compute the initial acceleration required to be able to decelerate from the braking speed in the braking distance.  This will also
+		// require calculating the required jerk and the duration it needs to be applied.  Use this result as target acceleration in the next step, 
+		// working backwards to get to braking speed from travelling speed.
+		// sf = s0 + v0*t + (a0*t^2)/2 + (j*t^3)/6
+		// vf = v0 + a0*t + (j*t^2)/2
+		// af = a0 + j*t
+		// s0 = 0, sf = d(brk)
+		// v0 = v(brk), vf = 0
+		// a0 = a(min), af = 0
+		// a0 = -j*t
+		// v0 = 0 - a0*t - (j*t^2)/2
+		// v0 = (j*t^2) - (j*t^2)/2 = (j*t^2)/2
+		// d(brk) = 0 + ((j*t^2)/2)*t + (-j*t)*((t^2)/2) + (j*t^3)/6
+		// d(brk) = ((j*t^3)/2) - ((j*t^3)/2) + (j*t^3)/6 = (j*t^3)/6
+		// d(brk) = (v0*t)/3
+		// t = 3 * d(brk) / v0
+		// j = 6 * d(brk) / t^3
+		// a0 = -j * t
+
+		val double tJerkUpTwo = 3 * this.distBrk / this.upSpeedBrk;
+		val double jerkUpTwo = 6 * this.distBrk / tJerkUpTwo / tJerkUpTwo / tJerkUpTwo;
+		val double aJerkDownTwo = -1 * jerkUpTwo * tJerkUpTwo
 
 		// Working backwards from
 		// a(sb) = a(0) + j*t(toBrk)
@@ -319,22 +290,125 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		// t = ((v(sb) - v(0)) * 2.0) / ( a(0) + a(sb) )
 		// ... yields ...
 		// t(toBrk) = 2(v(brk) - v(0)) / (a(0) + a(brk))
-		val double tJerkUpTwo = (this.minSpeedBrk - atJerkUpTwo.velocity) * 2 / (atJerkUpTwo.acceleration + this.minAccelBrake)
-		val double jerkUpTwo  = (this.minAccelBrake - atJerkUpTwo.acceleration) / tJerkUpTwo
+		
+		// Next, given the current velocity, braking velocity, and target acceleration, compute the time required to make that transition, and then
+		// derive the required jerk.  Presume that we will not exceed maximum jerk since we accelerated to the current speed from rest without doing
+		// so and are now decelerating to a velocity that is greater than 0 and in the same direction.
+		val double tJerkDownTwo = (this.upSpeedBrk - toJerkDownTwo.finalVelocity) * 2 / aJerkDownTwo
+		val double jerkDownTwo  = aJerkDownTwo / tJerkDownTwo
 
-		// Placeholders for two errand legs, removed for correctness!
-		val IPathLeg toOldMaxUpAcc = new ConstantJerkPathLeg(atJerkUpTwo, 0)
-		val PathMoment atOldMaxUpAcc = toOldMaxUpAcc.nextMoment(listBuilder, 0)
+		val PathMoment atJerkDownTwo = toJerkDownTwo.nextMoment(listBuilder, jerkDownTwo)
+		val toBrakes = new ConstantJerkPathLeg(atJerkDownTwo, tJerkDownTwo)
+		val atBrakes = toBrakes.nextMoment(listBuilder, jerkUpTwo)
 
-		// Placeholders for two errand legs, removed for correctness!
-		val IPathLeg toOldJerkUpOne = new ConstantAccelerationPathLeg(atOldMaxUpAcc, 0)
-		val PathMoment atOldJerkUpOne = toOldJerkUpOne.nextMoment(listBuilder, jerkUpTwo)
-	
-		val toBrakes = new ConstantJerkPathLeg(atJerkUpTwo, tJerkUpTwo)
-		val atBrakes = toBrakes.nextMoment(listBuilder, 0)
-
+		System.out.println(String.format("%f %f", tJerkUpTwo, this.tStopBrk));
 		return JourneyArc.fromList(
-			new ConstantAccelerationPathLeg(atBrakes, this.tStopBrk).endPath(listBuilder)
+			new ConstantJerkPathLeg(atBrakes, tJerkUpTwo).endPath(listBuilder)
+		)
+	}
+
+	private def JourneyArc computeDownwardArch(PathMoment moment, double _minSpeed) {
+		val ImmutableList.Builder<IPathLeg> listBuilder = ImmutableList.<IPathLeg>builder()
+		val double minSpeed = if (_minSpeed < 0) { _minSpeed } else { -1 * _minSpeed }
+
+		var double tJerkDownOne = (this.minAccel - moment.acceleration) / this.minJerk;
+		var IPathLeg toMaxDownAcc = new ConstantJerkPathLeg( moment.copy[jerk(this.minJerk)], tJerkDownOne)
+	
+	    // Determine if this is a curve that will go from positive jerk directly to negative jerk, or whether it will rise, plateau, and then revert to
+	    // negative jerk.  If the former is the case, then inverting the jerk until we return to zero acceleration will yield a velocity that exceeds our
+	    // maximum.
+		val double vAtZeroAcc = toMaxDownAcc.finalVelocity + (this.minAccel * this.tMaxA) + (this.maxJerk * this.tMaxA * this.tMaxA / 2.0)
+
+		// The next block picks one of two arc shapes.  Both arcs terminate at a PathMoment named "atJerkUpTwo", so the braking region that both variants
+		// share can be appended with common code.
+		var ConstantVelocityPathLeg toJerkUpTwo;
+		if (vAtZeroAcc < minSpeed) {
+			// Proceed by calculating the time reach an equilibrium point of constant velocity at our maximum velocity.  In this case all but one of the 
+			// exponential terms involing jerk cancel each other out, and we are left with tmid = Math.sqrt(v(max) / j).  In thie case, t(mid) gives us
+			// the duration of both the negative and positive jerk regions that we need to be left with the elevator travelling at constant velocity equal
+			// in magnitude to its maximum speed value.
+			//
+			// The next jerk is set here to zero, not maxJerk, because the constraints of the required zero-length constant acceleration region require
+			// it.  We set maxJerk at the end of that region, which works fine since it is and always will be zero-duration in length.
+			tJerkDownOne = Math.sqrt(minSpeed / this.minJerk)
+			toMaxDownAcc = new ConstantJerkPathLeg(moment.copy[jerk(this.minJerk)], tJerkDownOne)
+			val PathMoment atMaxDownAcc = toMaxDownAcc.nextMoment(listBuilder, 0);
+
+			// Inject a blank placeholder for first unreached constant acceleration region
+			val IPathLeg toJerkUpOne = new ConstantAccelerationPathLeg(atMaxDownAcc, 0)
+			val PathMoment atJerkUpOne = toJerkUpOne.nextMoment(listBuilder, this.maxJerk)
+
+			// Reuse the duration of the first jerk down for a jerk up to cosntant velocity.
+			val IPathLeg toConstV = new ConstantJerkPathLeg(atJerkUpOne, tJerkDownOne)
+			val PathMoment atConstV = toConstV.nextMoment(listBuilder, 0)
+
+            // Run at constant velocity for an instant.  This segment is extensible to run longer arcs at the same velocity.
+			toJerkUpTwo = new ConstantVelocityPathLeg(atConstV, 0)
+		} else {
+			val PathMoment atMaxDownAcc = toMaxDownAcc.nextMoment(listBuilder, 0);
+
+			val double tJerkUpOne = atMaxDownAcc.acceleration / this.minJerk
+			val double vJerkUpOne = minSpeed - (tJerkUpOne * atMaxDownAcc.acceleration) -
+				(this.maxJerk * tJerkUpOne * tJerkUpOne / 2.0)
+			val tMaxDownAcc = (vJerkUpOne - atMaxDownAcc.velocity) / atMaxDownAcc.acceleration
+	
+			val IPathLeg toJerkUpOne = new ConstantAccelerationPathLeg(atMaxDownAcc, tMaxDownAcc)
+			val PathMoment atJerkUpOne = toJerkUpOne.nextMoment(listBuilder, this.maxJerk)
+	
+			val IPathLeg toConstV = new ConstantJerkPathLeg(atJerkUpOne, tJerkUpOne)
+			val PathMoment atConstV = toConstV.nextMoment(listBuilder, 0)
+	
+			toJerkUpTwo = new ConstantVelocityPathLeg(atConstV, 0)
+		}
+
+		// Reverse the paired jerk maneuvers to brake down towards braking speed, then from braking speed to rest.
+
+		// First, compute the initial acceleration required to be able to decelerate from the braking speed in the braking distance.  This will also
+		// require calculating the required jerk and the duration it needs to be applied.  Use this result as target acceleration in the next step, 
+		// working backwards to get to braking speed from travelling speed.
+		// sf = s0 + v0*t + (a0*t^2)/2 + (j*t^3)/6
+		// vf = v0 + a0*t + (j*t^2)/2
+		// af = a0 + j*t
+		// s0 = 0, sf = d(brk)
+		// v0 = v(brk), vf = 0
+		// a0 = a(min), af = 0
+		// a0 = -j*t
+		// v0 = 0 - a0*t - (j*t^2)/2
+		// v0 = (j*t^2) - (j*t^2)/2 = (j*t^2)/2
+		// d(brk) = 0 + ((j*t^2)/2)*t + (-j*t)*((t^2)/2) + (j*t^3)/6
+		// d(brk) = ((j*t^3)/2) - ((j*t^3)/2) + (j*t^3)/6 = (j*t^3)/6
+		// d(brk) = (v0*t)/3
+		// t = 3 * d(brk) / v0
+		// j = 6 * d(brk) / t^3
+		// a0 = -j * t
+
+		val double tJerkDownTwo = -3 * this.distBrk / this.downSpeedBrk;
+		val double jerkDownTwo = -6 * this.distBrk / tJerkDownTwo / tJerkDownTwo / tJerkDownTwo;
+		val double aJerkUpTwo = -1 * jerkDownTwo * tJerkDownTwo
+
+		// Working backwards from
+		// a(sb) = a(0) + j*t(toBrk)
+		// j*t = a(sb) - a(0)
+		// v(sb) = v(0) + a(0)*t + (j*t^2)/2.0
+		// v(sb) - v(0) = t*a(0) + (t*a(sb) - t*a(0))/2.0
+		// t = ((v(sb) - v(0)) / (2*a(0) + a(sb) - a(0))/2.0
+		// t = ((v(sb) - v(0)) * 2.0) / ( a(0) + a(sb) )
+		// ... yields ...
+		// t(toBrk) = 2(v(brk) - v(0)) / (a(0) + a(brk))
+		
+		// Next, given the current velocity, braking velocity, and target acceleration, compute the time required to make that transition, and then
+		// derive the required jerk.  Presume that we will not exceed maximum jerk since we accelerated to the current speed from rest without doing
+		// so and are now decelerating to a velocity that is greater than 0 and in the same direction.
+		val double tJerkUpTwo = (this.downSpeedBrk - toJerkUpTwo.finalVelocity) * 2 / aJerkUpTwo
+		val double jerkUpTwo  = aJerkUpTwo / tJerkUpTwo
+
+		val PathMoment atJerkUpTwo = toJerkUpTwo.nextMoment(listBuilder, jerkUpTwo)
+		val toBrakes = new ConstantJerkPathLeg(atJerkUpTwo, tJerkUpTwo)
+		val atBrakes = toBrakes.nextMoment(listBuilder, jerkDownTwo)
+
+		System.out.println(String.format("%f %f", tJerkDownTwo, this.tStopBrk));
+		return JourneyArc.fromList(
+			new ConstantJerkPathLeg(atBrakes, tJerkDownTwo).endPath(listBuilder)
 		)
 	}
 

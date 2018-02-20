@@ -23,8 +23,13 @@ import info.jchein.mesosphere.elevator.control.sdk.IElevatorDispatcherPort;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorDispatchingStrategy;
 import org.jgrapht.graph.DefaultDirectedWeightedGraph;
 import org.jgrapht.graph.builder.GraphBuilder;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 
+@Component
+@Scope(BeanDefinition.SCOPE_SINGLETON)
 @SuppressWarnings("all")
 public class CallDispatcher
 implements ICallDispatcher, IElevatorDispatcherPort
@@ -35,8 +40,8 @@ implements ICallDispatcher, IElevatorDispatcherPort
 
    public CallDispatcher( final DeploymentConfiguration deployConfig, final IElevatorPhysicsService physicsService )
    {
-      final int numFloors = deployConfig.building.numFloors;
-      final int numElevators = deployConfig.building.numElevators;
+      final int numFloors = deployConfig.getBuilding().numFloors;
+      final int numElevators = deployConfig.getBuilding().numElevators;
    }
 
 

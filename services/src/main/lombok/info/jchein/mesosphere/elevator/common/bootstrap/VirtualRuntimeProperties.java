@@ -15,5 +15,5 @@ import lombok.Data;
 public class VirtualRuntimeProperties
 {
    @Min(10)
-   long tickDurationMillis;
+   private long tickDurationMillis;
 }

@@ -10,15 +10,15 @@ import org.statefulj.fsm.model.State;
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 import info.jchein.mesosphere.elevator.common.PassengerId;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeEventBus;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
+import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
 import info.jchein.mesosphere.elevator.simulator.event.BoardedElevator;
 import info.jchein.mesosphere.elevator.simulator.event.DisembarkedElevator;
 import info.jchein.mesosphere.elevator.simulator.event.PickupRequested;
 import info.jchein.mesosphere.elevator.simulator.event.TravellerArrived;
 import info.jchein.mesosphere.elevator.simulator.event.TravellerDeparted;
 import info.jchein.mesosphere.elevator.simulator.model.ISimulatedTraveller;
-import info.jchein.mesosphere.elevator.simulator.passengers.with_lobby_return.WithLobbyReturnRandomVariables;
+import info.jchein.mesosphere.elevator.simulator.passengers.with_lobby_return.VariablesWithLobbyReturn;
 import info.jchein.mesosphere.validator.annotation.Positive;
 import lombok.SneakyThrows;
 
@@ -66,7 +66,7 @@ implements ISimulatedTraveller
    private State<T> destinationState = null;
 
 
-   protected AbstractTraveller( @NotNull PassengerId id, @NotNull WithLobbyReturnRandomVariables randomVariables,
+   protected AbstractTraveller( @NotNull PassengerId id, @NotNull VariablesWithLobbyReturn randomVariables,
       @NotNull FSM<T> stateMachine, @NotNull IRuntimeClock clock, @NotNull IRuntimeScheduler scheduler,
       @NotNull IRuntimeEventBus eventBus )
    {

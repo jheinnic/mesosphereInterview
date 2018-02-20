@@ -10,6 +10,8 @@ import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
  * @author jheinnic
  */
 interface IElevatorCar {
+   public static final String FACTORY_BEAN_NAME = "mesosphere.elevator.ElevatorCarFactory";
+
 	// void onFloorSensorTriggered(int floorIndex, DirectionOfTravel direction);
    void confirmNextDispatch(int floorIndex);
 	void acceptPickupRequest(int floorIndex, DirectionOfTravel direction);

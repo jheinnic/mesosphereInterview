@@ -10,12 +10,11 @@ import org.springframework.context.annotation.Scope;
 import com.google.common.eventbus.EventBus;
 
 import info.jchein.mesosphere.elevator.runtime.IRuntime;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeEventBus;
 import rx.Observable;
 
 @Configuration
 @ComponentScan()
-public class RuntimeEventBusConfiguration {
+public class EventBusConfiguration {
    @Bean
    @Scope(BeanDefinition.SCOPE_SINGLETON)
    @Qualifier(IRuntime.ELEVATOR_RUNTIME_QUALIFIER)

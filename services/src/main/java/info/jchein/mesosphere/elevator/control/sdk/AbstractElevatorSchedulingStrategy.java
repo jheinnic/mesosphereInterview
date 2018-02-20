@@ -25,7 +25,7 @@ import info.jchein.mesosphere.elevator.control.event.PickupCallRemoved;
  *  
  * @author jheinnic
  */
-public abstract class AbstractElevatorSchedulingStrategy {
+public abstract class AbstractElevatorSchedulingStrategy implements IElevatorDispatchingStrategy {
    protected final IElevatorDispatcherPort port;
 
    protected AbstractElevatorSchedulingStrategy(IElevatorDispatcherPort port) {

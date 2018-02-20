@@ -18,4 +18,5 @@ public interface IRuntimeScheduler
    
    void scheduleVariable(long firstInterval, TimeUnit intervalUnit, int priority, IVariableIntervalFunction handler);
 
+   void begin();
 }

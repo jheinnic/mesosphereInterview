@@ -7,22 +7,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.statefulj.framework.core.annotations.FSM;
 import org.statefulj.framework.core.model.StatefulFSM;
-import org.statefulj.fsm.TooBusyException;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.eventbus.Subscribe;
 
 import info.jchein.mesosphere.elevator.common.bootstrap.DeploymentProperties;
 import info.jchein.mesosphere.elevator.control.event.ElevatorCarEvent;
-import info.jchein.mesosphere.elevator.control.event.Event;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarDriver;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarDriverFactory;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorDispatchingStrategy;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeEventBus;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
+import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
 import lombok.SneakyThrows;
-import rx.Emitter.BackpressureMode;
 import rx.Observable;
 
 @Component
@@ -76,7 +72,7 @@ public class ElevatorGroupControl implements IElevatorGroupControl {
 	   for( int ii=0; ii<numElevators; ii++ ) {
 	      final ElevatorCar elevatorCar = (ElevatorCar) this.fsm.onEvent(ElevatorCar.ALLOCATED);
 	      final IElevatorCarDriver portDriver = adapterFactory.allocateDriver(elevatorCar);
-	       elevatorCar.attachDriver(portDriver);
+         elevatorCar.attachDriver(portDriver);
 	      listBuilder.add(elevatorCar);
 	   }
 	   

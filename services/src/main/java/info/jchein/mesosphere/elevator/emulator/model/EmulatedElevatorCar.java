@@ -1,8 +1,8 @@
 package info.jchein.mesosphere.elevator.emulator.model;
 
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-
-import com.google.common.base.Preconditions;
 
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 import info.jchein.mesosphere.elevator.common.bootstrap.InitialCarState;
@@ -12,9 +12,9 @@ import info.jchein.mesosphere.elevator.common.physics.JourneyArcMomentSeries;
 import info.jchein.mesosphere.elevator.common.physics.PathMoment;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarDriver;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarPort;
-import info.jchein.mesosphere.elevator.control.sdk.StopItineraryUpdated;
 
 @Component
+@Scope(BeanDefinition.SCOPE_PROTOTYPE)
 public class EmulatedElevatorCar implements IElevatorCarDriver {
    private final IElevatorPhysicsService physics;
    private final IElevatorCarPort port;
@@ -41,6 +41,7 @@ public class EmulatedElevatorCar implements IElevatorCarDriver {
       return this.initialState;
    }
 
+   /*
    @Override
    public void onNext(StopItineraryUpdated arg0)
    {
@@ -97,18 +98,19 @@ public class EmulatedElevatorCar implements IElevatorCarDriver {
         this.arcIterator = this.trajectory.asMomentIterable(this.tickDuration).iterator();
       }
    }
+   */
 
    @Override
    public void dispatchCar(int carIndex, int floorIndex, DirectionOfTravel direction)
    {
       // TODO Auto-generated method stub
-      
+      throw new UnsupportedOperationException();
    }
 
    @Override
    public void openDoors(int carIndex)
    {
       // TODO Auto-generated method stub
-      
+      throw new UnsupportedOperationException();
    }
 }

@@ -2,7 +2,6 @@ package info.jchein.mesosphere.elevator.simulator.event;
 
 import java.util.function.Consumer;
 
-import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 import info.jchein.mesosphere.elevator.simulator.model.ISimulatedTraveller;
 import lombok.Builder;
 import lombok.Value;

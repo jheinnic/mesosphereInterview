@@ -1,17 +1,24 @@
-package info.jchein.mesosphere.elevator.application;
+package info.jchein.mesosphere.elevator;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-import info.jchein.mesosphere.elevator.runtime.virtual.EnableVirtualRuntime;
+import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-@EnableVirtualRuntime
 @EnableAutoConfiguration
+@ComponentScan
 public class RideOn
 {
     public static void main(String[] args) {
-        SpringApplication.run(RideOn.class, args);
+        final SpringApplication app = new SpringApplication(RideOn.class);
+        app.setHeadless(true);
+        app.setLogStartupInfo(true);
+        app.setAdditionalProfiles("elevator.runtime.virtual", "workload.toy");
+        // app.setWebEnvironment(true);
+        // app.setBannerMode(Banner.Mode.OFF);
+
+        app.run(args);
+        
     }
 }
