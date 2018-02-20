@@ -12,8 +12,8 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import info.jchein.mesosphere.elevator.common.bootstrap.BuildingProperties;
-import info.jchein.mesosphere.elevator.runtime.virtual.VirtualRuntimeProperties;
+import info.jchein.mesosphere.elevator.common.bootstrap.BuildingDescription;
+import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeDescription;
 import rx.Observable;
 import rx.Scheduler;
 import rx.Scheduler.Worker;
@@ -41,8 +41,8 @@ public class TestSchedThred {
 	}
 
 	private Scheduler scheduler;
-	private VirtualRuntimeProperties runtimeProps;
-	private BuildingProperties bldgProps;
+	private VirtualRuntimeDescription runtimeProps;
+	private BuildingDescription bldgProps;
 	private long clockTickDuration;
 	private EventBus eventBus;
 
@@ -134,7 +134,7 @@ public class TestSchedThred {
 		private final int numElevators;
 		private final HashSet<Integer> elevatorsSeen = new HashSet<Integer>();
 
-		public ElevatorControl(EventBus eventBus, BuildingProperties bldgProps) {
+		public ElevatorControl(EventBus eventBus, BuildingDescription bldgProps) {
 			this.eventBus = eventBus;
 			this.numElevators = bldgProps.getNumElevators();
 		}
@@ -154,8 +154,8 @@ public class TestSchedThred {
 		}
 	}
 
-	public TestSchedThred(Scheduler scheduler, EventBus eventBus, VirtualRuntimeProperties runtimeProps,
-			BuildingProperties bldgProps) {
+	public TestSchedThred(Scheduler scheduler, EventBus eventBus, VirtualRuntimeDescription runtimeProps,
+			BuildingDescription bldgProps) {
 		this.scheduler = scheduler;
 		this.eventBus = eventBus;
 		this.runtimeProps = runtimeProps;
@@ -208,8 +208,8 @@ public class TestSchedThred {
 		ExecutorService busPool2 = Executors.newFixedThreadPool(1, foo);
 		Scheduler scheduler = Schedulers.from(rxPool2);
 		EventBus eventBus = new AsyncEventBus(busPool);
-		VirtualRuntimeProperties runtimeProps = VirtualRuntimeProperties.builder().tickDurationMillis(100).build();
-		BuildingProperties bldgProps = BuildingProperties.build(bldr -> {
+		VirtualRuntimeDescription runtimeProps = VirtualRuntimeDescription.builder().tickDurationMillis(100).build();
+		BuildingDescription bldgProps = BuildingDescription.build(bldr -> {
 			bldr.metersPerFloor(3.5).numElevators(4).numFloors(10);
 		});
 

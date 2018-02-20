@@ -75,22 +75,5 @@ public class Snippet {
 		*/
 //		Thread.sleep(20000);
 	}
-
-   
-   
-   @Override
-   public int getNumElevators()
-   {
-      return this.emulatorConfiguration.getCars()
-         .size();
-   }
-   
-   
-   @Override
-   public int getNumFloors()
-   {
-      return this.emulatorConfiguration.getNumFloors();
-   }
-   
 }
 

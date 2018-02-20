@@ -5,7 +5,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.math3.distribution.ExponentialDistribution;
 
@@ -13,9 +12,9 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import info.jchein.mesosphere.elevator.runtime.event.EventBusEmitter;
+import info.jchein.mesosphere.elevator.runtime.event.RuntimeEventBus;
 import lombok.Getter;
 import lombok.ToString;
-import rx.Observable;
 import rx.Scheduler;
 import rx.Scheduler.Worker;
 import rx.functions.Action0;
@@ -29,12 +28,12 @@ public class StagedMessagingToy
    implements Action0
    {
       private final String name;
-      private final EventBus bus;
+      private final RuntimeEventBus bus;
       private final ExponentialDistribution expoDist;
       private final Worker worker;
 
 
-      public Producer( String name, EventBus bus, ExponentialDistribution expoDist, Worker worker )
+      public Producer( String name, RuntimeEventBus bus, ExponentialDistribution expoDist, Worker worker )
       {
          this.name = name;
          this.bus = bus;
@@ -87,7 +86,8 @@ public class StagedMessagingToy
    public static void main(String[] args)
    {
       final TimeUnit unit = TimeUnit.MILLISECONDS;
-      final EventBus bus = new EventBus();
+      final EventBus eventBus = new EventBus();
+      final RuntimeEventBus bus = new RuntimeEventBus(eventBus);
       final ExponentialDistribution expoDist = new ExponentialDistribution(1000, 0.0001);
 
       final ThreadFactory tf =

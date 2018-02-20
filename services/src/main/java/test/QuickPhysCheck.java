@@ -1,20 +1,17 @@
 package test;
 
 
-import java.time.ZoneId;
-
 import info.jchein.mesosphere.elevator.common.bootstrap.BuildingDescription;
 import info.jchein.mesosphere.elevator.common.bootstrap.DeploymentConfiguration;
 import info.jchein.mesosphere.elevator.common.bootstrap.DoorTimeDescription;
 import info.jchein.mesosphere.elevator.common.bootstrap.StartStopDescription;
 import info.jchein.mesosphere.elevator.common.bootstrap.TravelSpeedDescription;
+import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeDescription;
 import info.jchein.mesosphere.elevator.common.bootstrap.WeightDescription;
 import info.jchein.mesosphere.elevator.common.physics.ElevatorPhysicsService;
 import info.jchein.mesosphere.elevator.common.physics.IPathLeg;
 import info.jchein.mesosphere.elevator.common.physics.JourneyArc;
-import info.jchein.mesosphere.elevator.common.physics.PathMoment;
-import info.jchein.mesosphere.elevator.runtime.virtual.RuntimeClock;
-import info.jchein.mesosphere.elevator.runtime.virtual.VirtualRuntimeProperties;
+import info.jchein.mesosphere.elevator.runtime.temporal.VirtualClock;
 import rx.schedulers.Schedulers;
 
 
@@ -23,7 +20,7 @@ public class QuickPhysCheck
    public static void main(String[] args)
    {
       StartStopDescription motorProps = StartStopDescription.build(bldr -> {
-         bldr.brakeDistance(0.3)
+         bldr.brakeDistance(0.125)
             .brakeSpeed(0.5)
             .maxAcceleration(1.73205080756887729352744635)
             .maxJerk(2.0);
@@ -61,12 +58,13 @@ public class QuickPhysCheck
             .doors(doorProps);
       });
       
-      VirtualRuntimeProperties runtimeProps = new VirtualRuntimeProperties();
-      runtimeProps.setTickDurationMillis(100);
+      VirtualRuntimeDescription runtimeProps = VirtualRuntimeDescription.build( bldr -> {
+         bldr.tickDurationMillis(100);
+      });
 
-      RuntimeClock clock = new RuntimeClock(ZoneId.systemDefault(), Schedulers.test(), runtimeProps);
+      VirtualClock clock = new VirtualClock(Schedulers.test(), runtimeProps);
       
-      ElevatorPhysicsService physicsService = new ElevatorPhysicsService(bootstrapData, clock);
+      ElevatorPhysicsService physicsService = new ElevatorPhysicsService(bootstrapData);
 
       for (int ii = 0; ii < 12; ii++) {
          for (int jj = ii + 1; jj < 12; jj++) {

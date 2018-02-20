@@ -11,7 +11,7 @@ import org.apache.commons.math3.distribution.ExponentialDistribution;
 import com.google.common.eventbus.EventBus;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import info.jchein.mesosphere.elevator.runtime.IRuntimeEventBus;
+import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
 import info.jchein.mesosphere.elevator.runtime.event.RuntimeEventBus;
 import lombok.Getter;
 import lombok.ToString;
