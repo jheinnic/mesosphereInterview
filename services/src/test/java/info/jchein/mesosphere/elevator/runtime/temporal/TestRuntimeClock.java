@@ -1,4 +1,4 @@
-package info.jchein.mesosphere.elevator.runtime;
+package info.jchein.mesosphere.elevator.runtime.temporal;
 
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -12,9 +12,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import info.jchein.mesosphere.configuartion.tests.EnableTestVirtualRuntime;
-import info.jchein.mesosphere.elevator.runtime.virtual.IVirtualRuntimeService;
-import info.jchein.mesosphere.elevator.runtime.virtual.RuntimeClock;
+import info.jchein.mesosphere.elevator.runtime.temporal.temporal.IVirtualRuntimeService;
+import info.jchein.mesosphere.elevator.runtime.temporal.temporal.RuntimeClock;
+import info.jchein.mesosphere.test.config.runtime.temporal.EnableTestVirtualRuntime;
 import rx.Scheduler;
 
 
@@ -45,7 +45,7 @@ public class TestRuntimeClock
    public void whenTickNow_thenModuloTickZero()
    {
       assertThat(
-         sut.tickNow() % TICK_MILLIS_IN_CFG
+         sut.ticks() % TICK_MILLIS_IN_CFG
       ).as("Milliseconds to nearest tick modulo tick")
          .isZero();
    }

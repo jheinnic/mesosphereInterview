@@ -1,7 +1,7 @@
-package info.jchein.mesosphere.configuartion.tests;
+package fixtures.elevator.runtime.temporal;
 
 /**
- * A handful of contents repeated for reuse in test code from values set in the FrameworkRunimeTestConfiguration.properties file that is imported for properties
+ * A handful of contents repeated for reuse in test code as derived from values set in the FrameworkRuntimeTestConfiguration.properties file that is imported for properties
  * when using the @EnableTestVirtualRuntime annotation to pre-configure sensible test-time defaults for the "info.mesosphere.elevator.runtime" module layer.
  * When writing tests for that layer, use the fixture annotation to bootstrap your Context Loaded, and de-refrence any constants you need to assert about 
  * correct configuration handling using values found here.

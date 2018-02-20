@@ -1,4 +1,4 @@
-package info.jchein.mesosphere.test_support.fixtures.runtime;
+package fixtures.elevator.runtime.temporal;
 
 import java.util.Queue;
 

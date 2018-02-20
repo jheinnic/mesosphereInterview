@@ -16,11 +16,11 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
 
-import info.jchein.mesosphere.configuartion.tests.EnableTestEmulatorInstance;
 import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeProperties;
 import info.jchein.mesosphere.elevator.control.event.ElevatorCarEvent;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeEventBus;
-import info.jchein.mesosphere.elevator.runtime.virtual.RuntimeClock;
+import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
+import info.jchein.mesosphere.elevator.runtime.temporal.temporal.RuntimeClock;
+import info.jchein.mesosphere.test.config.runtime.temporal.EnableTestEmulatorInstance;
 import rx.Observable;
 
 @EnableConfigurationProperties(VirtualRuntimeProperties.class)

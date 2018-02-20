@@ -11,13 +11,13 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import info.jchein.mesosphere.configuartion.tests.VirtualRuntimeTestConfiguration;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeEventBus;
 import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
-import info.jchein.mesosphere.elevator.runtime.virtual.EnableVirtualRuntime;
-import info.jchein.mesosphere.elevator.runtime.virtual.IVirtualRuntimeService;
-import info.jchein.mesosphere.elevator.runtime.virtual.VirtualRuntimeConfiguration;
+import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
+import info.jchein.mesosphere.elevator.runtime.temporal.VirtualRuntimeConfiguration;
+import info.jchein.mesosphere.elevator.runtime.temporal.temporal.EnableVirtualRuntime;
+import info.jchein.mesosphere.elevator.runtime.temporal.temporal.IVirtualRuntimeService;
+import info.jchein.mesosphere.test.config.runtime.temporal.VirtualRuntimeTestConfiguration;
 
 @TestPropertySource
 @ContextConfiguration(classes= {VirtualRuntimeTestConfiguration.class}, loader=AnnotationConfigContextLoader.class)

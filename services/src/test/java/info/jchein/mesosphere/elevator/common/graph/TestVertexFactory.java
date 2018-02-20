@@ -16,10 +16,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import info.jchein.mesosphere.configuartion.tests.EnableTestVirtualRuntime;
 import info.jchein.mesosphere.elevator.common.bootstrap.DeploymentProperties;
 import info.jchein.mesosphere.elevator.common.graph.ProtectedBitSet;
 import info.jchein.mesosphere.elevator.common.graph.VertexFactory;
+import info.jchein.mesosphere.test.config.runtime.temporal.EnableTestVirtualRuntime;
 
 @RunWith(SpringRunner.class)
 @EnableTestVirtualRuntime

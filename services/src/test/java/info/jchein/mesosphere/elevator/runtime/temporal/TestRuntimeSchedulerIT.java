@@ -1,4 +1,4 @@
-package info.jchein.mesosphere.elevator.runtime;
+package info.jchein.mesosphere.elevator.runtime.temporal;
 
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,11 +21,11 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import info.jchein.mesosphere.configuartion.tests.EnableTestVirtualRuntime;
-import info.jchein.mesosphere.configuartion.tests.VirtualRuntimeTestConfiguration;
-import info.jchein.mesosphere.elevator.runtime.virtual.IVirtualRuntimeService;
-import info.jchein.mesosphere.elevator.runtime.virtual.VirtualScheduler;
-import info.jchein.mesosphere.test_support.fixtures.runtime.QueuePackingIntervalHandler;
+import fixtures.elevator.runtime.temporal.QueuePackingIntervalHandler;
+import info.jchein.mesosphere.elevator.runtime.temporal.VirtualScheduler;
+import info.jchein.mesosphere.elevator.runtime.temporal.temporal.IVirtualRuntimeService;
+import info.jchein.mesosphere.test.config.runtime.temporal.EnableTestVirtualRuntime;
+import info.jchein.mesosphere.test.config.runtime.temporal.VirtualRuntimeTestConfiguration;
 import rx.Scheduler;
 import rx.schedulers.TestScheduler;
 

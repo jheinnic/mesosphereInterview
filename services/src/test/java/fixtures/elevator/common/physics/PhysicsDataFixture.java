@@ -1,4 +1,4 @@
-package info.jchein.mesosphere.test_support.fixtures.physics;
+package fixtures.elevator.common.physics;
 
 
 import info.jchein.mesosphere.elevator.common.physics.ConstantVelocityPathLeg;
