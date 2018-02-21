@@ -10,11 +10,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
-
-import rx.Emitter;
-import rx.Emitter.BackpressureMode;
-import rx.Observable;
 
 @Component
 @Scope(BeanDefinition.SCOPE_SINGLETON)
@@ -46,6 +41,7 @@ public class RuntimeEventBus implements IRuntimeEventBus
       this.eventBus.unregister(listener);
    }
 
+   /*
    @Override
    public <E> Observable<E> toObservable()
    {
@@ -82,4 +78,5 @@ public class RuntimeEventBus implements IRuntimeEventBus
          }
       }
    }
+   */
 }

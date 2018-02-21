@@ -10,10 +10,9 @@ import org.springframework.context.annotation.Scope;
 import com.google.common.eventbus.EventBus;
 
 import info.jchein.mesosphere.elevator.runtime.IRuntime;
-import rx.Observable;
 
 @Configuration
-@ComponentScan()
+@ComponentScan
 public class EventBusConfiguration {
    @Bean
    @Scope(BeanDefinition.SCOPE_SINGLETON)
@@ -22,9 +21,9 @@ public class EventBusConfiguration {
       return new EventBus();
    }
 
-   @Bean
-   @Scope(BeanDefinition.SCOPE_PROTOTYPE)
-   public <E> Observable<E> observableEventEmitter(IRuntimeEventBus eventBus) {
-      return eventBus.<E>toObservable();
-   }
+//   @Bean
+//   @Scope(BeanDefinition.SCOPE_PROTOTYPE)
+//   public <E> Observable<E> observableEventEmitter(IRuntimeEventBus eventBus) {
+//      return eventBus.<E>toObservable();
+//   }
 }

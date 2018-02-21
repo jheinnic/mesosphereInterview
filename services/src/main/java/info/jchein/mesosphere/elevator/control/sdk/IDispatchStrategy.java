@@ -1,6 +1,6 @@
 package info.jchein.mesosphere.elevator.control.sdk;
 
-public interface IElevatorDispatchingStrategy
+public interface IDispatchStrategy
 {
 
 }

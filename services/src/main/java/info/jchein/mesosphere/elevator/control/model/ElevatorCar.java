@@ -46,7 +46,7 @@ import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
 import lombok.SneakyThrows;
 
 
-@Scope(BeanDefinition.SCOPE_PROTOTYPE)
+@Scope(IElevatorCarScope.SCOPE_NAME)
 @StatefulController(
    value=ElevatorCar.BEAN_NAME,
    clazz = ElevatorCar.class,

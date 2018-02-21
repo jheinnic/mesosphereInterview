@@ -10,11 +10,12 @@ import info.jchein.mesosphere.elevator.common.physics.IElevatorPhysicsService;
 import info.jchein.mesosphere.elevator.common.physics.JourneyArc;
 import info.jchein.mesosphere.elevator.common.physics.JourneyArcMomentSeries;
 import info.jchein.mesosphere.elevator.common.physics.PathMoment;
+import info.jchein.mesosphere.elevator.control.model.IElevatorCarScope;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarDriver;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarPort;
 
 @Component
-@Scope(BeanDefinition.SCOPE_PROTOTYPE)
+@Scope(IElevatorCarScope.SCOPE_NAME)
 public class EmulatedElevatorCar implements IElevatorCarDriver {
    private final IElevatorPhysicsService physics;
    private final IElevatorCarPort port;
@@ -27,12 +28,12 @@ public class EmulatedElevatorCar implements IElevatorCarDriver {
 	private PathMoment physicsState;
 	private int currentDestination;
 	
-	public EmulatedElevatorCar(IEmulatorRoot parent, IElevatorCarPort port, IElevatorPhysicsService physics, InitialCarState initialState)
+	public EmulatedElevatorCar(IEmulatorRoot parent, IElevatorCarPort port, IElevatorPhysicsService physics) // , InitialCarState initialState)
 	{
 	   this.parent = parent;
       this.port = port;
       this.physics = physics;
-      this.initialState = initialState;
+      this.initialState = InitialCarState.builder().build();
 	}
 
    @Override
@@ -101,14 +102,14 @@ public class EmulatedElevatorCar implements IElevatorCarDriver {
    */
 
    @Override
-   public void dispatchCar(int carIndex, int floorIndex, DirectionOfTravel direction)
+   public void dispatchTo(int floorIndex)
    {
       // TODO Auto-generated method stub
       throw new UnsupportedOperationException();
    }
 
    @Override
-   public void openDoors(int carIndex)
+   public void openDoors(DirectionOfTravel direction)
    {
       // TODO Auto-generated method stub
       throw new UnsupportedOperationException();

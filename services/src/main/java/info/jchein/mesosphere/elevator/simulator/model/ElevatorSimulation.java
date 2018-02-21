@@ -8,6 +8,7 @@ import java.util.Queue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -27,24 +28,22 @@ import info.jchein.mesosphere.elevator.control.model.IElevatorGroupControl;
 import info.jchein.mesosphere.elevator.emulator.model.IEmulatorControl;
 import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
 import info.jchein.mesosphere.elevator.simulator.event.PickupRequested;
+import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 import rx.Subscription;
 
 
+@Slf4j
 @Component
-@Scope(scopeName = "prototype")
+@Scope(BeanDefinition.SCOPE_SINGLETON)
 public class ElevatorSimulation
 {
-   private static final Logger log = LoggerFactory.getLogger(ElevatorSimulation.class);
-
    private final IEmulatorControl emulatedControl;
    private final ImmutableList<Queue<ISimulatedTraveller>> upwardBoundPickups;
    private final ImmutableList<Queue<ISimulatedTraveller>> downwardBoundPickups;
    private final ImmutableList<ImmutableList<Queue<ISimulatedTraveller>>> passengerDropOffs;
    private final int floorCount;
    private final int carCount;
-
-   private ElevatorChangeHandler changeHandler;
 
    private EventBus localDispatch;
 
@@ -101,6 +100,8 @@ public class ElevatorSimulation
       final int pickupFloor = event.getOriginIndex();
       final int dropOffFloor = event.getDestinationIndex();
       final DirectionOfTravel direction = event.getDirection();
+      
+      log.info("Called onPickupRequested: {}", event);
 
       Preconditions
          .checkArgument(pickupFloor != dropOffFloor, "Origin and destination must be different");

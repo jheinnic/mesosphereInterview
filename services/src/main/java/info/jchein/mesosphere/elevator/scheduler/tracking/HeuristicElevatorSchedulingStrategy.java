@@ -16,7 +16,7 @@ import info.jchein.mesosphere.elevator.control.event.PickupCallAdded;
 import info.jchein.mesosphere.elevator.control.event.PickupCallRemoved;
 import info.jchein.mesosphere.elevator.control.event.TravelledPastFloor;
 import info.jchein.mesosphere.elevator.control.sdk.AbstractElevatorSchedulingStrategy;
-import info.jchein.mesosphere.elevator.control.sdk.IElevatorDispatcherPort;
+import info.jchein.mesosphere.elevator.control.sdk.IDispatchPort;
 
 public class HeuristicElevatorSchedulingStrategy extends AbstractElevatorSchedulingStrategy {
 
@@ -26,7 +26,7 @@ public class HeuristicElevatorSchedulingStrategy extends AbstractElevatorSchedul
 	
 
 	public HeuristicElevatorSchedulingStrategy(
-		final IElevatorDispatcherPort port, final EmulatorProperties bootstrapData, final IElevatorPhysicsService physicsService
+		final IDispatchPort port, final EmulatorProperties bootstrapData, final IElevatorPhysicsService physicsService
 	) {
 		super(port);
       this.bootstrapData = bootstrapData;

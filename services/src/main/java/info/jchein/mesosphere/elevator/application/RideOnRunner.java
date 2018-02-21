@@ -3,8 +3,10 @@ package info.jchein.mesosphere.elevator.application;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
@@ -14,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
+@Scope(BeanDefinition.SCOPE_SINGLETON)
 public class RideOnRunner
 implements ApplicationRunner
 {

@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -15,6 +16,7 @@ import info.jchein.mesosphere.elevator.simulator.model.ISimulatedPopulation;
 
 
 @Component
+@Lazy
 @Scope(BeanDefinition.SCOPE_SINGLETON)
 public class SimulationEcosystem
 {

@@ -5,8 +5,10 @@ import info.jchein.mesosphere.elevator.common.bootstrap.InitialCarState;
 
 public interface IElevatorCarDriver
 {
+   public static final String CAR_DRIVER_BEAN_NAME = "elevatorCarDriver";
+
    public InitialCarState initialize();
 
-   public void dispatchCar(int carIndex, int floorIndex, DirectionOfTravel direction);
-   public void openDoors(int carIndex);
+   public void dispatchTo(int floorIndex);
+   public void openDoors(DirectionOfTravel direction);
 }
