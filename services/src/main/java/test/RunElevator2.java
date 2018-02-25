@@ -7,12 +7,12 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
-import info.jchein.mesosphere.elevator.runtime.temporal.VirtualRuntimeConfiguration;
+import info.jchein.mesosphere.elevator.runtime.temporal.VirtualTimerConfiguration;
 import info.jchein.mesosphere.elevator.simulator.model.ElevatorSimulationConfiguration;
 import info.jchein.mesosphere.elevator.simulator.model.IElevatorSimulation;
 
 @SpringBootApplication
-@Import({ VirtualRuntimeConfiguration.class, ElevatorSimulationConfiguration.class }) // , ExternalConfigurationProperties.class })
+@Import({ VirtualTimerConfiguration.class, ElevatorSimulationConfiguration.class }) // , ExternalConfigurationProperties.class })
 @ComponentScan(basePackages={
     "info.jchein.mesosphere.elevator.configuration",
     "info.jchein.mesosphere.elevator.configuration.workloads",

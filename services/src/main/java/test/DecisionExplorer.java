@@ -13,7 +13,7 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import info.jchein.mesosphere.elevator.common.bootstrap.BuildingDescription;
-import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeDescription;
+import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeConfiguration;
 import rx.Observable;
 import rx.Scheduler;
 import rx.Scheduler.Worker;
@@ -41,7 +41,7 @@ public class DecisionExplorer {
 	}
 
 	private Scheduler scheduler;
-	private VirtualRuntimeDescription runtimeConfig;
+	private VirtualRuntimeConfiguration runtimeConfig;
 	private BuildingDescription bldgProps;
 	private long clockTickDuration;
 	private EventBus eventBus;
@@ -134,7 +134,7 @@ public class DecisionExplorer {
 		}
 	}
 
-	public DecisionExplorer(Scheduler scheduler, EventBus eventBus, VirtualRuntimeDescription runtimeConfig,
+	public DecisionExplorer(Scheduler scheduler, EventBus eventBus, VirtualRuntimeConfiguration runtimeConfig,
 			BuildingDescription bldgProps) {
 		this.scheduler = scheduler;
 		this.eventBus = eventBus;
@@ -187,7 +187,7 @@ public class DecisionExplorer {
 		final Scheduler scheduler = Schedulers.from(rxPool);
 		final EventBus eventBus = new AsyncEventBus(busPool);
 
-		final VirtualRuntimeDescription runtimeProps = VirtualRuntimeDescription.build( bldr -> {
+		final VirtualRuntimeConfiguration runtimeProps = VirtualRuntimeConfiguration.build( bldr -> {
 		   bldr.tickDurationMillis(100);
 		});
 

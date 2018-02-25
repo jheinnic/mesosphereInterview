@@ -11,11 +11,11 @@ import org.springframework.stereotype.Component;
 
 import com.google.common.eventbus.Subscribe;
 
-import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
 import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
+import info.jchein.mesosphere.elevator.runtime.temporal.IRuntimeClock;
+import info.jchein.mesosphere.elevator.runtime.temporal.IRuntimeScheduler;
 import info.jchein.mesosphere.elevator.simulator.event.TravellerEvent;
-import info.jchein.mesosphere.elevator.simulator.passengers.SimulationEcosystem;
+import info.jchein.mesosphere.elevator.simulator.model.SimulationEcosystem;
 
 @Component
 @Scope(BeanDefinition.SCOPE_SINGLETON)

@@ -8,9 +8,9 @@ import java.util.stream.Collectors;
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 import info.jchein.mesosphere.elevator.common.physics.TravelPathDownComparator;
 import info.jchein.mesosphere.elevator.common.physics.TravelPathUpComparator;
-import info.jchein.mesosphere.elevator.domain.scheduler.ScheduledDrop;
-import info.jchein.mesosphere.elevator.domain.scheduler.ScheduledPickup;
-import info.jchein.mesosphere.elevator.domain.scheduler.ScheduledStop;
+import info.jchein.mesosphere.elevator.control.manifest.ScheduledDrop;
+import info.jchein.mesosphere.elevator.control.manifest.ScheduledPickup;
+import info.jchein.mesosphere.elevator.control.manifest.ScheduledStop;
 
 public class TestSort
 {

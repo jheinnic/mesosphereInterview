@@ -13,7 +13,7 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import info.jchein.mesosphere.elevator.common.bootstrap.BuildingDescription;
-import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeDescription;
+import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeConfiguration;
 import rx.Observable;
 import rx.Scheduler;
 import rx.Scheduler.Worker;
@@ -41,7 +41,7 @@ public class TestSchedThred {
 	}
 
 	private Scheduler scheduler;
-	private VirtualRuntimeDescription runtimeProps;
+	private VirtualRuntimeConfiguration runtimeProps;
 	private BuildingDescription bldgProps;
 	private long clockTickDuration;
 	private EventBus eventBus;
@@ -154,7 +154,7 @@ public class TestSchedThred {
 		}
 	}
 
-	public TestSchedThred(Scheduler scheduler, EventBus eventBus, VirtualRuntimeDescription runtimeProps,
+	public TestSchedThred(Scheduler scheduler, EventBus eventBus, VirtualRuntimeConfiguration runtimeProps,
 			BuildingDescription bldgProps) {
 		this.scheduler = scheduler;
 		this.eventBus = eventBus;
@@ -208,7 +208,7 @@ public class TestSchedThred {
 		ExecutorService busPool2 = Executors.newFixedThreadPool(1, foo);
 		Scheduler scheduler = Schedulers.from(rxPool2);
 		EventBus eventBus = new AsyncEventBus(busPool);
-		VirtualRuntimeDescription runtimeProps = VirtualRuntimeDescription.builder().tickDurationMillis(100).build();
+		VirtualRuntimeConfiguration runtimeProps = VirtualRuntimeConfiguration.builder().tickDurationMillis(100).build();
 		BuildingDescription bldgProps = BuildingDescription.build(bldr -> {
 			bldr.metersPerFloor(3.5).numElevators(4).numFloors(10);
 		});

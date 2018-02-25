@@ -7,18 +7,18 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.math3.distribution.ExponentialDistribution;
-import org.jctools.queues.atomic.SpscLinkedAtomicQueue;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import info.jchein.mesosphere.elevator.runtime.event.EventBusAdapter;
+import info.jchein.mesosphere.elevator.runtime.event.EventBusEmitter;
 import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
-import info.jchein.mesosphere.elevator.runtime.event.PollableEventQueue;
 import info.jchein.mesosphere.elevator.runtime.event.RuntimeEventBus;
 import lombok.Getter;
 import lombok.ToString;
+import rx.Emitter;
 import rx.Observable;
 import rx.Scheduler;
 import rx.Scheduler.Worker;
@@ -149,16 +149,16 @@ public class Throughput4
       }
    }
    
-   public static final class SnapCracklePopQueue extends PollableEventQueue<Message> 
+   public static final class SnapCracklePopListener extends EventBusEmitter<Message> 
    {
-      protected SnapCracklePopQueue( SpscLinkedAtomicQueue<Message> eventQueue )
+      public SnapCracklePopListener( Emitter<Message> emitter, IRuntimeEventBus eventBus )
       {
-         super(eventQueue);
+         super(emitter, eventBus);
       }
       
       @Subscribe
       public void riceKrispies(Message event) {
-         this.offer(event);
+         this.emit(event);
       }
    }
 
@@ -204,11 +204,8 @@ public class Throughput4
       // System.out.println("Advance scheduled!");
 
       // EventBusEmitter.<Pop> create(bus)
-      EventBusAdapter<Message, SnapCracklePopQueue> adapter =
-         new EventBusAdapter<Message, SnapCracklePopQueue>(bus, () -> {
-            return new SnapCracklePopQueue(
-               new SpscLinkedAtomicQueue<Message>());
-         });
+      EventBusAdapter<Message, SnapCracklePopListener> adapter =
+         new EventBusAdapter<Message, SnapCracklePopListener>(bus, SnapCracklePopListener::new);
       final Observable<Message> msgSource = adapter.toObservable();
       final Observable<Message> snapSource = adapter.toObservable().filter(item -> { return item instanceof Snap; });
       final Observable<Message> crackleSource = adapter.toObservable().filter(item -> { return item instanceof Crackle; });

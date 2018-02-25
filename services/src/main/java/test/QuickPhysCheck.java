@@ -6,13 +6,12 @@ import info.jchein.mesosphere.elevator.common.bootstrap.DeploymentConfiguration;
 import info.jchein.mesosphere.elevator.common.bootstrap.DoorTimeDescription;
 import info.jchein.mesosphere.elevator.common.bootstrap.StartStopDescription;
 import info.jchein.mesosphere.elevator.common.bootstrap.TravelSpeedDescription;
-import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeDescription;
 import info.jchein.mesosphere.elevator.common.bootstrap.WeightDescription;
+import info.jchein.mesosphere.elevator.common.physics.BrakingSolver;
 import info.jchein.mesosphere.elevator.common.physics.ElevatorPhysicsService;
+import info.jchein.mesosphere.elevator.common.physics.IBrakingSolver;
 import info.jchein.mesosphere.elevator.common.physics.IPathLeg;
 import info.jchein.mesosphere.elevator.common.physics.JourneyArc;
-import info.jchein.mesosphere.elevator.runtime.temporal.VirtualClock;
-import rx.schedulers.Schedulers;
 
 
 public class QuickPhysCheck
@@ -38,7 +37,7 @@ public class QuickPhysCheck
       });
       
       WeightDescription weightProps = WeightDescription.build(bldr -> {
-         bldr.maxForTravel(3000)
+         bldr.maxWeightAllowed(3000)
             .pctMaxForIdeal(0.45)
             .pctMaxForPickup(0.88)
             .avgPassenger(75.0);
@@ -58,13 +57,12 @@ public class QuickPhysCheck
             .doors(doorProps);
       });
       
-      VirtualRuntimeDescription runtimeProps = VirtualRuntimeDescription.build( bldr -> {
-         bldr.tickDurationMillis(100);
-      });
+      ElevatorPhysicsService physicsService = new ElevatorPhysicsService(bootstrapData) {
+         protected IBrakingSolver getBrakingSolver(final double brakeDistance, final double brakeVelocity, final double initialVelocity, final double maxJerk) {
+            return new BrakingSolver(brakeDistance, brakeVelocity, initialVelocity, maxJerk);
+         }
+      };
 
-      VirtualClock clock = new VirtualClock(Schedulers.test(), runtimeProps);
-      
-      ElevatorPhysicsService physicsService = new ElevatorPhysicsService(bootstrapData);
 
       for (int ii = 0; ii < 12; ii++) {
          for (int jj = ii + 1; jj < 12; jj++) {

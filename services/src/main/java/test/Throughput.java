@@ -9,12 +9,16 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.math3.distribution.ExponentialDistribution;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
+import info.jchein.mesosphere.elevator.runtime.event.EventBusAdapter;
+import info.jchein.mesosphere.elevator.runtime.event.EventBusEmitter;
 import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
 import info.jchein.mesosphere.elevator.runtime.event.RuntimeEventBus;
 import lombok.Getter;
 import lombok.ToString;
+import rx.Emitter;
 import rx.Observable;
 import rx.Scheduler;
 import rx.Scheduler.Worker;
@@ -22,6 +26,8 @@ import rx.Subscription;
 import rx.functions.Action0;
 import rx.schedulers.Schedulers;
 import rx.schedulers.TestScheduler;
+import test.Throughput4.Message;
+import test.Throughput4.SnapCracklePopListener;
 
 
 public class Throughput
@@ -65,6 +71,19 @@ public class Throughput
          this.worker.schedule(this, 250, TimeUnit.MILLISECONDS);
          // this.worker.schedule(this);
 
+      }
+   }
+
+   public static final class SnapCracklePopListener extends EventBusEmitter<Message> 
+   {
+      public SnapCracklePopListener( Emitter<Message> emitter, IRuntimeEventBus eventBus )
+      {
+         super(emitter, eventBus);
+      }
+      
+      @Subscribe
+      public void riceKrispies(Message event) {
+         this.emit(event);
       }
    }
 
@@ -130,7 +149,9 @@ public class Throughput
       // System.out.println("Advance scheduled!");
 
       // EventBusEmitter.<Message> create(bus)
-      final Observable<Message> source = bus.toObservable();
+      EventBusAdapter<Message, SnapCracklePopListener> adapter =
+         new EventBusAdapter<Message, SnapCracklePopListener>(bus, SnapCracklePopListener::new);
+      final Observable<Message> source = adapter.toObservable();
       final Subscription subOne =
          source.window(500, TimeUnit.MILLISECONDS, rxSched)
             .concatMap(window -> window.count())
