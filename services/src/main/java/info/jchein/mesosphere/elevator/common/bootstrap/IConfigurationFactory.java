@@ -6,7 +6,7 @@ public interface IConfigurationFactory
 
    DeploymentConfiguration hardenDeploymentConfig( DeploymentProperties mutableProps );
    
-   VirtualRuntimeDescription hardenVirtualRuntimeConfig( VirtualRuntimeProperties mutableProps );
+   VirtualRuntimeConfiguration hardenVirtualRuntimeConfig( VirtualRuntimeProperties mutableProps );
 
    DemographicConfiguration hardenDemographicConfig(DemographicProperties mutableProps);
 }

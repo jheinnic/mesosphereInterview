@@ -15,8 +15,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
 
+import fixtures.elevator.runtime.temporal.EnableTestVirtualRuntime;
 import info.jchein.mesosphere.elevator.runtime.IRuntime;
-import info.jchein.mesosphere.test.config.runtime.temporal.EnableTestVirtualRuntime;
 import rx.schedulers.TestScheduler;
 
 

@@ -1,22 +1,22 @@
 package info.jchein.mesosphere.elevator.runtime.event;
 
 
-import java.util.function.Supplier;
+import java.util.function.BiFunction;
 
 import javax.annotation.PostConstruct;
 
+import rx.Emitter;
+import rx.Emitter.BackpressureMode;
 import rx.Observable;
-import rx.Observer;
-import rx.observables.SyncOnSubscribe;
 
 
-public class EventBusAdapter<E, S extends PollableEventQueue<E>> implements IEventBusAdapter<E>
+public class EventBusAdapter<T, E extends EventBusEmitter<T>> implements IEventBusAdapter<T>
 {
    private final IRuntimeEventBus bus;
-   private final Supplier<S> listenerFactory;
-   private Observable<E> observable;
+   private final BiFunction<Emitter<T>, IRuntimeEventBus, E> listenerFactory;
+   private Observable<T> observable;
 
-   public EventBusAdapter(IRuntimeEventBus bus, Supplier<S> listenerFactory)
+   public EventBusAdapter(IRuntimeEventBus bus, BiFunction<Emitter<T>, IRuntimeEventBus, E> listenerFactory)
    {
       this.bus = bus;
       this.listenerFactory = listenerFactory;
@@ -24,30 +24,16 @@ public class EventBusAdapter<E, S extends PollableEventQueue<E>> implements IEve
    
    @PostConstruct
    void init() {
-      this.observable = Observable.create(
-         SyncOnSubscribe.<S, E> createSingleState(this::subscribeListener, this::observeOne, this::unsubscribeListener));
-      this.bus.registerListener(this);
+      this.observable = Observable.create( (Emitter<T> emitter) -> {
+         System.out.println("Create");
+         E listener = this.listenerFactory.apply(emitter, bus);
+         bus.registerListener(listener);
+         emitter.setCancellation(listener::close);
+      }, BackpressureMode.BUFFER);
    }
    
-   public Observable<E> toObservable() {
+   public Observable<T> toObservable() {
       if (this.observable == null) { this.init(); }
       return this.observable;
-   }
-
-   S subscribeListener()
-   {
-      final S retVal = this.listenerFactory.get();
-      this.bus.registerListener(retVal);
-      return retVal;
-   }
-
-   void observeOne(S queue, Observer<? super E> observer) {
-      queue.drainOne(observer::onNext);
-   }
-   
-   void unsubscribeListener(S listener)
-   {
-      this.bus.unregisterListener(listener);
-      listener.clear();
    }
 }

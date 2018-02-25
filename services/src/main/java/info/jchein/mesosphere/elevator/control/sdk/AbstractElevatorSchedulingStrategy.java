@@ -2,6 +2,9 @@ package info.jchein.mesosphere.elevator.control.sdk;
 
 import com.google.common.eventbus.Subscribe;
 
+import info.jchein.mesosphere.elevator.common.bootstrap.DeploymentConfiguration;
+import info.jchein.mesosphere.elevator.common.graph.IVertexFactory;
+import info.jchein.mesosphere.elevator.common.physics.IElevatorPhysicsService;
 import info.jchein.mesosphere.elevator.control.event.DepartedLanding;
 import info.jchein.mesosphere.elevator.control.event.DropOffRequested;
 import info.jchein.mesosphere.elevator.control.event.ParkedAtLanding;
@@ -9,6 +12,7 @@ import info.jchein.mesosphere.elevator.control.event.PassengerDoorsClosed;
 import info.jchein.mesosphere.elevator.control.event.PassengerDoorsOpened;
 import info.jchein.mesosphere.elevator.control.event.TravelledPastFloor;
 import info.jchein.mesosphere.elevator.control.event.WeightLoadUpdated;
+import info.jchein.mesosphere.elevator.scheduler.model.ServiceScenario;
 import info.jchein.mesosphere.elevator.control.event.PickupCallAdded;
 import info.jchein.mesosphere.elevator.control.event.PickupCallRemoved;
 
@@ -26,10 +30,20 @@ import info.jchein.mesosphere.elevator.control.event.PickupCallRemoved;
  * @author jheinnic
  */
 public abstract class AbstractElevatorSchedulingStrategy implements IDispatchStrategy {
-   protected final IDispatchPort port;
+   protected final IDispatchPort dispatchPort;
+   protected final DeploymentConfiguration deploymentConfig;
+   protected final IElevatorPhysicsService physicsService;
+   protected final IVertexFactory vertexFactory;
+   
+//   protected final ServiceScenario serviceScenario;
 
-   protected AbstractElevatorSchedulingStrategy(IDispatchPort port) {
-      this.port = port;
+   protected AbstractElevatorSchedulingStrategy(
+      IDispatchPort dispatchPort, DeploymentConfiguration deploymentConfig, IElevatorPhysicsService physicsService, IVertexFactory vertexFactory)
+   {
+      this.dispatchPort = dispatchPort;
+      this.deploymentConfig = deploymentConfig;
+      this.physicsService = physicsService;
+      this.vertexFactory = vertexFactory;
    }
 
    @Subscribe

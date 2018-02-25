@@ -6,19 +6,18 @@ import javax.validation.executable.ValidateOnExecution;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.google.common.eventbus.EventBus;
 
-@Component
-@Scope(BeanDefinition.SCOPE_SINGLETON)
-@ValidateOnExecution(type= {ExecutableType.ALL})
+//@ValidateOnExecution(type= {ExecutableType.ALL})
 public class RuntimeEventBus implements IRuntimeEventBus 
 {
    private final EventBus eventBus;
  
-   @Autowired
+//   @Autowired
    public RuntimeEventBus(@NotNull EventBus eventBus) {
       this.eventBus = eventBus;
    }

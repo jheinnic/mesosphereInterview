@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeProperties;
 import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
+import info.jchein.mesosphere.elevator.runtime.temporal.IRuntimeScheduler;
 
 @Component
 @Scope(BeanDefinition.SCOPE_SINGLETON)

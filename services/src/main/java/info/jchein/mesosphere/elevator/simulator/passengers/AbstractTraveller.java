@@ -9,9 +9,9 @@ import org.statefulj.fsm.model.State;
 
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 import info.jchein.mesosphere.elevator.common.PassengerId;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
 import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
+import info.jchein.mesosphere.elevator.runtime.temporal.IRuntimeClock;
+import info.jchein.mesosphere.elevator.runtime.temporal.IRuntimeScheduler;
 import info.jchein.mesosphere.elevator.simulator.event.BoardedElevator;
 import info.jchein.mesosphere.elevator.simulator.event.DisembarkedElevator;
 import info.jchein.mesosphere.elevator.simulator.event.PickupRequested;

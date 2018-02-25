@@ -1,13 +1,10 @@
 package info.jchein.mesosphere.elevator.runtime.event;
 
-import java.util.function.Supplier;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import info.jchein.mesosphere.elevator.control.event.ElevatorCarEventQueue;
 import rx.Observable;
 import rx.Observable.Transformer;
 
@@ -15,14 +12,13 @@ import rx.Observable.Transformer;
 @Scope(BeanDefinition.SCOPE_SINGLETON)
 public class OnClockTransform<T> implements Transformer<T, T>
 {
-   private RuntimeEventBus eventBus;
-   private Supplier<ElevatorCarEventQueue> queueFactory;
+
+   private final IEventBusAdapter<T> eventBusAdapter;
 
    @Autowired
-   public OnClockTransform(RuntimeEventBus eventBus, Supplier<ElevatorCarEventQueue> queueFactory)
+   public OnClockTransform(IEventBusAdapter<T> eventBusAdapter) 
    {
-      this.eventBus = eventBus;
-      this.queueFactory = queueFactory;
+      this.eventBusAdapter = eventBusAdapter;
    }
    
    @Override

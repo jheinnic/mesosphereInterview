@@ -11,8 +11,8 @@ import com.google.common.eventbus.Subscribe;
 
 import info.jchein.mesosphere.elevator.control.event.ElevatorCarEvent;
 import info.jchein.mesosphere.elevator.control.event.LandingEvent;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
 import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
+import info.jchein.mesosphere.elevator.runtime.temporal.IRuntimeClock;
 import info.jchein.mesosphere.elevator.simulator.event.TravellerEvent;
 import lombok.extern.slf4j.Slf4j;
 

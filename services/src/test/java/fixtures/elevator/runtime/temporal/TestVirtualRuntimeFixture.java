@@ -16,7 +16,6 @@ public final class TestVirtualRuntimeFixture
     
     public static final int NUM_FLOORS = 25;
     public static final int NUM_ELEVATORS = 6;
-    public static final long SF_POLICY_UPDATES = -1;
     
     public static final int FLOOR_INDEX_ONE = 4;
     public static final int FLOOR_INDEX_TWO = 7;

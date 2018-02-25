@@ -11,17 +11,12 @@ import info.jchein.mesosphere.elevator.common.bootstrap.StartStopDescription
 import info.jchein.mesosphere.elevator.common.bootstrap.TravelSpeedDescription
 import info.jchein.mesosphere.elevator.common.bootstrap.WeightDescription
 import org.eclipse.xtend.lib.annotations.ToString
-import org.springframework.stereotype.Component
 import org.springframework.util.Assert
 
 import static extension java.lang.Math.floor
-import org.springframework.context.annotation.Scope
-import org.springframework.beans.factory.config.BeanDefinition
 
 @ToString
-@Component
-@Scope(BeanDefinition.SCOPE_SINGLETON)
-class ElevatorPhysicsService implements IElevatorPhysicsService {
+abstract class ElevatorPhysicsService implements IElevatorPhysicsService {
 	val BuildingDescription buildingProps
 	val StartStopDescription motorProps
 	val TravelSpeedDescription speedProps
@@ -257,53 +252,16 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		}
 
 		// Reverse the paired jerk maneuvers to brake down towards braking speed, then from braking speed to rest.
+		val IBrakingSolver brakingSolver = this.getBrakingSolver(this.distBrk, this.upSpeedBrk, toJerkDownTwo.finalVelocity, this.maxJerk);
+		val PathMoment atPreBrakeZero = toJerkDownTwo.nextMoment(listBuilder, brakingSolver.jerkZero)
+		val toPreBrakeOne = new ConstantJerkPathLeg(atPreBrakeZero, brakingSolver.timeZero)
+		val atPreBrakeOne = toPreBrakeOne.nextMoment(listBuilder, brakingSolver.jerkOne)
+		val toBrakes = new ConstantJerkPathLeg(atPreBrakeOne, brakingSolver.timeOne)
+		val atBrakes = toBrakes.nextMoment(listBuilder, brakingSolver.jerkTwo)
 
-		// First, compute the initial acceleration required to be able to decelerate from the braking speed in the braking distance.  This will also
-		// require calculating the required jerk and the duration it needs to be applied.  Use this result as target acceleration in the next step, 
-		// working backwards to get to braking speed from travelling speed.
-		// sf = s0 + v0*t + (a0*t^2)/2 + (j*t^3)/6
-		// vf = v0 + a0*t + (j*t^2)/2
-		// af = a0 + j*t
-		// s0 = 0, sf = d(brk)
-		// v0 = v(brk), vf = 0
-		// a0 = a(min), af = 0
-		// a0 = -j*t
-		// v0 = 0 - a0*t - (j*t^2)/2
-		// v0 = (j*t^2) - (j*t^2)/2 = (j*t^2)/2
-		// d(brk) = 0 + ((j*t^2)/2)*t + (-j*t)*((t^2)/2) + (j*t^3)/6
-		// d(brk) = ((j*t^3)/2) - ((j*t^3)/2) + (j*t^3)/6 = (j*t^3)/6
-		// d(brk) = (v0*t)/3
-		// t = 3 * d(brk) / v0
-		// j = 6 * d(brk) / t^3
-		// a0 = -j * t
-
-		val double tJerkUpTwo = 3 * this.distBrk / this.upSpeedBrk;
-		val double jerkUpTwo = 6 * this.distBrk / tJerkUpTwo / tJerkUpTwo / tJerkUpTwo;
-		val double aJerkDownTwo = -1 * jerkUpTwo * tJerkUpTwo
-
-		// Working backwards from
-		// a(sb) = a(0) + j*t(toBrk)
-		// j*t = a(sb) - a(0)
-		// v(sb) = v(0) + a(0)*t + (j*t^2)/2.0
-		// v(sb) - v(0) = t*a(0) + (t*a(sb) - t*a(0))/2.0
-		// t = ((v(sb) - v(0)) / (2*a(0) + a(sb) - a(0))/2.0
-		// t = ((v(sb) - v(0)) * 2.0) / ( a(0) + a(sb) )
-		// ... yields ...
-		// t(toBrk) = 2(v(brk) - v(0)) / (a(0) + a(brk))
-		
-		// Next, given the current velocity, braking velocity, and target acceleration, compute the time required to make that transition, and then
-		// derive the required jerk.  Presume that we will not exceed maximum jerk since we accelerated to the current speed from rest without doing
-		// so and are now decelerating to a velocity that is greater than 0 and in the same direction.
-		val double tJerkDownTwo = (this.upSpeedBrk - toJerkDownTwo.finalVelocity) * 2 / aJerkDownTwo
-		val double jerkDownTwo  = aJerkDownTwo / tJerkDownTwo
-
-		val PathMoment atJerkDownTwo = toJerkDownTwo.nextMoment(listBuilder, jerkDownTwo)
-		val toBrakes = new ConstantJerkPathLeg(atJerkDownTwo, tJerkDownTwo)
-		val atBrakes = toBrakes.nextMoment(listBuilder, jerkUpTwo)
-
-		System.out.println(String.format("%f %f", tJerkUpTwo, this.tStopBrk));
+		System.out.println(String.format("%f %f", brakingSolver.timeTwo, this.tStopBrk));
 		return JourneyArc.fromList(
-			new ConstantJerkPathLeg(atBrakes, tJerkUpTwo).endPath(listBuilder)
+			new ConstantJerkPathLeg(atBrakes, brakingSolver.timeTwo).endPath(listBuilder)
 		)
 	}
 
@@ -362,55 +320,20 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 		}
 
 		// Reverse the paired jerk maneuvers to brake down towards braking speed, then from braking speed to rest.
+		val IBrakingSolver brakingSolver = this.getBrakingSolver(this.distBrk, this.downSpeedBrk, toJerkUpTwo.finalVelocity, this.maxJerk);
+		val PathMoment atPreBrakeZero = toJerkUpTwo.nextMoment(listBuilder, brakingSolver.jerkZero)
+		val toPreBrakeOne = new ConstantJerkPathLeg(atPreBrakeZero, brakingSolver.timeZero)
+		val atPreBrakeOne = toPreBrakeOne.nextMoment(listBuilder, brakingSolver.jerkOne)
+		val toBrakes = new ConstantJerkPathLeg(atPreBrakeOne, brakingSolver.timeOne)
+		val atBrakes = toBrakes.nextMoment(listBuilder, brakingSolver.jerkTwo)
 
-		// First, compute the initial acceleration required to be able to decelerate from the braking speed in the braking distance.  This will also
-		// require calculating the required jerk and the duration it needs to be applied.  Use this result as target acceleration in the next step, 
-		// working backwards to get to braking speed from travelling speed.
-		// sf = s0 + v0*t + (a0*t^2)/2 + (j*t^3)/6
-		// vf = v0 + a0*t + (j*t^2)/2
-		// af = a0 + j*t
-		// s0 = 0, sf = d(brk)
-		// v0 = v(brk), vf = 0
-		// a0 = a(min), af = 0
-		// a0 = -j*t
-		// v0 = 0 - a0*t - (j*t^2)/2
-		// v0 = (j*t^2) - (j*t^2)/2 = (j*t^2)/2
-		// d(brk) = 0 + ((j*t^2)/2)*t + (-j*t)*((t^2)/2) + (j*t^3)/6
-		// d(brk) = ((j*t^3)/2) - ((j*t^3)/2) + (j*t^3)/6 = (j*t^3)/6
-		// d(brk) = (v0*t)/3
-		// t = 3 * d(brk) / v0
-		// j = 6 * d(brk) / t^3
-		// a0 = -j * t
-
-		val double tJerkDownTwo = -3 * this.distBrk / this.downSpeedBrk;
-		val double jerkDownTwo = -6 * this.distBrk / tJerkDownTwo / tJerkDownTwo / tJerkDownTwo;
-		val double aJerkUpTwo = -1 * jerkDownTwo * tJerkDownTwo
-
-		// Working backwards from
-		// a(sb) = a(0) + j*t(toBrk)
-		// j*t = a(sb) - a(0)
-		// v(sb) = v(0) + a(0)*t + (j*t^2)/2.0
-		// v(sb) - v(0) = t*a(0) + (t*a(sb) - t*a(0))/2.0
-		// t = ((v(sb) - v(0)) / (2*a(0) + a(sb) - a(0))/2.0
-		// t = ((v(sb) - v(0)) * 2.0) / ( a(0) + a(sb) )
-		// ... yields ...
-		// t(toBrk) = 2(v(brk) - v(0)) / (a(0) + a(brk))
-		
-		// Next, given the current velocity, braking velocity, and target acceleration, compute the time required to make that transition, and then
-		// derive the required jerk.  Presume that we will not exceed maximum jerk since we accelerated to the current speed from rest without doing
-		// so and are now decelerating to a velocity that is greater than 0 and in the same direction.
-		val double tJerkUpTwo = (this.downSpeedBrk - toJerkUpTwo.finalVelocity) * 2 / aJerkUpTwo
-		val double jerkUpTwo  = aJerkUpTwo / tJerkUpTwo
-
-		val PathMoment atJerkUpTwo = toJerkUpTwo.nextMoment(listBuilder, jerkUpTwo)
-		val toBrakes = new ConstantJerkPathLeg(atJerkUpTwo, tJerkUpTwo)
-		val atBrakes = toBrakes.nextMoment(listBuilder, jerkDownTwo)
-
-		System.out.println(String.format("%f %f", tJerkDownTwo, this.tStopBrk));
+		System.out.println(String.format("%f %f", brakingSolver.timeTwo, this.tStopBrk));
 		return JourneyArc.fromList(
-			new ConstantJerkPathLeg(atBrakes, tJerkDownTwo).endPath(listBuilder)
+			new ConstantJerkPathLeg(atBrakes, brakingSolver.timeTwo).endPath(listBuilder)
 		)
 	}
+	
+	def abstract protected IBrakingSolver getBrakingSolver(double brakeDistance, double brakeVelocity, double initialVelocity, double maxJerk);
 
 	override isTravelFast(int fromFloorIndex, int toFloorIndex) {
 		return if (fromFloorIndex > toFloorIndex) {
@@ -429,13 +352,13 @@ class ElevatorPhysicsService implements IElevatorPhysicsService {
 
 	override getIdealPassengerCount() {
 		return ((
-			this.weightProps.maxForTravel * this.weightProps.pctMaxForIdeal
+			this.weightProps.maxWeightAllowed * this.weightProps.pctMaxForIdeal
 		) / this.weightProps.avgPassenger).floor() as int
 	}
 
 	override getMaxTolerancePassengerCount() {
 		return ((
-			this.weightProps.maxForTravel * this.weightProps.pctMaxForPickup
+			this.weightProps.maxWeightAllowed * this.weightProps.pctMaxForPickup
 		) / this.weightProps.avgPassenger).floor() as int
 	}
 

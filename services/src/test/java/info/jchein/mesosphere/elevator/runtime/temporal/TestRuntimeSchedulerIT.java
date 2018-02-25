@@ -1,8 +1,6 @@
 package info.jchein.mesosphere.elevator.runtime.temporal;
 
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -12,21 +10,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
+import fixtures.elevator.runtime.temporal.EnableTestVirtualRuntime;
 import fixtures.elevator.runtime.temporal.QueuePackingIntervalHandler;
+import info.jchein.mesosphere.elevator.runtime.IRuntime;
 import info.jchein.mesosphere.elevator.runtime.temporal.VirtualScheduler;
-import info.jchein.mesosphere.elevator.runtime.temporal.temporal.IVirtualRuntimeService;
-import info.jchein.mesosphere.test.config.runtime.temporal.EnableTestVirtualRuntime;
-import info.jchein.mesosphere.test.config.runtime.temporal.VirtualRuntimeTestConfiguration;
-import rx.Scheduler;
 import rx.schedulers.TestScheduler;
 
 
@@ -54,7 +43,7 @@ public class TestRuntimeSchedulerIT
    public static int PRIORITY_FOUR = 20;
 
    @Autowired
-   @Qualifier(IVirtualRuntimeService.ELEVATOR_RUNTIME_QUALIFIER)
+   @Qualifier(IRuntime.ELEVATOR_RUNTIME_QUALIFIER)
    TestScheduler scheduler;
 
    @Autowired

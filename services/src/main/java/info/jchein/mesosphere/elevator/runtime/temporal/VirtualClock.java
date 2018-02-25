@@ -15,9 +15,8 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeDescription;
+import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeConfiguration;
 import info.jchein.mesosphere.elevator.runtime.IRuntime;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
 import lombok.SneakyThrows;
 import rx.Scheduler;
 import rx.schedulers.TestScheduler;
@@ -49,7 +48,7 @@ implements IRuntimeClock
 
    @Autowired
    public VirtualClock( @NotNull @Qualifier(IRuntime.ELEVATOR_RUNTIME_QUALIFIER) Scheduler authority,
-      @NotNull VirtualRuntimeDescription runtimeProps )
+      @NotNull VirtualRuntimeConfiguration runtimeProps )
    {
       this(ZoneId.systemDefault(), authority, runtimeProps.getTickDurationMillis());
    }

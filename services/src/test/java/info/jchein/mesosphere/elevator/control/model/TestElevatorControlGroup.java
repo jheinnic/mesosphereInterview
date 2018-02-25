@@ -16,15 +16,16 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
 
+import fixtures.elevator.emulator.model.EmulatorBootstrapTestConfiguration;
+import fixtures.elevator.emulator.model.EnableTestEmulatedElevator;
 import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeProperties;
+import info.jchein.mesosphere.elevator.control.ElevatorGroupControl;
 import info.jchein.mesosphere.elevator.control.event.ElevatorCarEvent;
 import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
 import info.jchein.mesosphere.elevator.runtime.temporal.temporal.RuntimeClock;
-import info.jchein.mesosphere.test.config.runtime.temporal.EnableTestEmulatorInstance;
 import rx.Observable;
 
-@EnableConfigurationProperties(VirtualRuntimeProperties.class)
-@EnableTestEmulatorInstance
+@Import(EmulatorBootstrapTestConfiguration.class)
 //@RunWith(SpringRunner.class)
 public class TestElevatorControlGroup
 {

@@ -24,7 +24,6 @@ import com.google.common.base.Preconditions;
 
 import info.jchein.mesosphere.elevator.common.bootstrap.VirtualRuntimeProperties;
 import info.jchein.mesosphere.elevator.runtime.IIntervalHandler;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
 import info.jchein.mesosphere.elevator.runtime.IVariableIntervalFunction;
 import rx.Scheduler.Worker;
 import rx.Subscription;

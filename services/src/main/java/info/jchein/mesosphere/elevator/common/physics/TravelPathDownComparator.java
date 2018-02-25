@@ -6,7 +6,7 @@ import java.util.Comparator;
 import com.google.common.base.Preconditions;
 
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
-import info.jchein.mesosphere.elevator.domain.scheduler.ScheduledStop;
+import info.jchein.mesosphere.elevator.control.manifest.ScheduledStop;
 
 
 public class TravelPathDownComparator

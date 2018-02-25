@@ -10,7 +10,7 @@ import javax.validation.constraints.Size;
 
 import com.google.common.collect.ImmutableList;
 
-import info.jchein.mesosphere.elevator.common.PendingDropOff;
+import info.jchein.mesosphere.elevator.monitor.model.PendingDropOff;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

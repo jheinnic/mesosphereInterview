@@ -9,9 +9,9 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
-import info.jchein.mesosphere.elevator.simulator.passengers.SimulationEcosystem;
+import info.jchein.mesosphere.elevator.runtime.temporal.IRuntimeClock;
+import info.jchein.mesosphere.elevator.runtime.temporal.IRuntimeScheduler;
+import info.jchein.mesosphere.elevator.simulator.model.SimulationEcosystem;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -20,16 +20,16 @@ import lombok.extern.slf4j.Slf4j;
 public class RideOnRunner
 implements ApplicationRunner
 {
-   private IRuntimeScheduler scheduler;
    private IRuntimeClock clock;
+   private IRuntimeScheduler scheduler;
    private SimulationEcosystem simulationEcosystem;
 
 
    @Autowired
    public RideOnRunner( IRuntimeScheduler scheduler, IRuntimeClock clock, SimulationEcosystem simulationEcosystem )
    {
-      this.scheduler = scheduler;
       this.clock = clock;
+      this.scheduler = scheduler;
       this.simulationEcosystem = simulationEcosystem;
    }
    

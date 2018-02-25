@@ -13,18 +13,18 @@ import info.jchein.mesosphere.elevator.common.bootstrap.BootstrapConfiguration;
 import info.jchein.mesosphere.elevator.common.graph.GraphUtilsConfiguration;
 import info.jchein.mesosphere.elevator.common.physics.PhysicsUtilsConfiguration;
 import info.jchein.mesosphere.elevator.common.probability.ProbabilityUtilsConfiguration;
-import info.jchein.mesosphere.elevator.control.model.ElevatorControlConfiguration;
-import info.jchein.mesosphere.elevator.emulator.model.EmulatedElevatorDriverConfiguration;
+import info.jchein.mesosphere.elevator.control.ElevatorControlConfiguration;
+import info.jchein.mesosphere.elevator.emulator.model.EmulatorDriverConfiguration;
 import info.jchein.mesosphere.elevator.runtime.event.EventBusConfiguration;
-import info.jchein.mesosphere.elevator.runtime.temporal.VirtualRuntimeConfiguration;
+import info.jchein.mesosphere.elevator.runtime.temporal.VirtualTimerConfiguration;
 import info.jchein.mesosphere.elevator.simulator.model.ElevatorSimulationConfiguration;
 
 
 @Import({
    BootstrapConfiguration.class, GraphUtilsConfiguration.class, PhysicsUtilsConfiguration.class,
    ProbabilityUtilsConfiguration.class, ElevatorControlConfiguration.class,
-   EmulatedElevatorDriverConfiguration.class, ElevatorSimulationConfiguration.class,
-   EventBusConfiguration.class, VirtualRuntimeConfiguration.class, IdentityConfiguration.class
+   EmulatorDriverConfiguration.class, ElevatorSimulationConfiguration.class,
+   EventBusConfiguration.class, VirtualTimerConfiguration.class, IdentityConfiguration.class
 })
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

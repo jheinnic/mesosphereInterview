@@ -5,8 +5,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -14,23 +12,19 @@ import org.springframework.stereotype.Component;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
+import info.jchein.mesosphere.elevator.control.IElevatorGroupControl;
 import info.jchein.mesosphere.elevator.control.event.DepartedLanding;
-import info.jchein.mesosphere.elevator.control.event.ElevatorCarEvent;
 import info.jchein.mesosphere.elevator.control.event.ParkedAtLanding;
 import info.jchein.mesosphere.elevator.control.event.PassengerDoorsClosed;
 import info.jchein.mesosphere.elevator.control.event.PassengerDoorsOpened;
 import info.jchein.mesosphere.elevator.control.event.TravelledPastFloor;
-import info.jchein.mesosphere.elevator.control.model.IElevatorGroupControl;
 import info.jchein.mesosphere.elevator.emulator.model.IEmulatorControl;
 import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
 import info.jchein.mesosphere.elevator.simulator.event.PickupRequested;
 import lombok.extern.slf4j.Slf4j;
-import rx.Observable;
-import rx.Subscription;
 
 
 @Slf4j
@@ -44,12 +38,6 @@ public class ElevatorSimulation
    private final ImmutableList<ImmutableList<Queue<ISimulatedTraveller>>> passengerDropOffs;
    private final int floorCount;
    private final int carCount;
-
-   private EventBus localDispatch;
-
-   private Observable<ElevatorCarEvent> changeStream;
-
-   private Subscription changeSubscription;
 
 
    @Autowired
@@ -86,11 +74,12 @@ public class ElevatorSimulation
 
       // There has to be a simpler way to do this and there has to be a way to be able to defer receiving
       // events until this next clock pulse! TODO!
-      this.localDispatch = new EventBus();
-      this.localDispatch.register(this);
-      this.changeSubscription =
-         groupControl.getChangeStream()
-            .subscribe(this.localDispatch::post);
+      eventBus.registerListener(this);
+//      this.localDispatch = new EventBus();
+//      this.localDispatch.register(this);
+//      this.changeSubscription =
+//         groupControl.getChangeStream()
+//            .subscribe(this.localDispatch::post);
    }
 
 
@@ -162,21 +151,17 @@ public class ElevatorSimulation
          .updateManifest(event.getCarIndex(), event.getFloorIndex(), direction, mbldr -> {
             Iterator<ISimulatedTraveller> nextIter = dropOffQueue.iterator();
             while (nextIter.hasNext()) {
-               ISimulatedTraveller nextTraveller = nextIter.next();
-               if (mbldr.disembark(nextTraveller.getWeight())) {
-                  nextIter.remove();
-                  nextTraveller.disembarkElevator();
-               } else {
-                  log.error("Could not remove passengers??");
-                  break;
-               }
+               final ISimulatedTraveller nextTraveller = nextIter.next();
+               mbldr.disembark(nextTraveller.getWeight());
+               nextTraveller.disembarkElevator();
+               nextIter.remove();
             }
 
             nextIter = pickupQueue.iterator();
             while (nextIter.hasNext()) {
-               ISimulatedTraveller nextTraveller = nextIter.next();
+               final ISimulatedTraveller nextTraveller = nextIter.next();
                if (mbldr.board(nextTraveller.getWeight())) {
-                  mbldr.requestStop(nextTraveller.getDestinationFloor());
+                  mbldr.requestDropOff(nextTraveller.getDestinationFloor());
                   nextIter.remove();
                   nextTraveller.boardElevator(event.getCarIndex());
                } else {
@@ -185,6 +170,7 @@ public class ElevatorSimulation
                }
             }
 
+            // TODO: Verify that this will allow the full car to leave without preventing a second car for answering the call.
             if (pickupQueue.isEmpty() == false) {
                ElevatorSimulation.this.emulatedControl.callForPickup(event.getFloorIndex(), direction);
             }

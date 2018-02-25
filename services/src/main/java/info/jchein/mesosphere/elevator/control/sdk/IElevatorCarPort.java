@@ -1,17 +1,30 @@
 package info.jchein.mesosphere.elevator.control.sdk;
 
+import info.jchein.mesosphere.elevator.common.bootstrap.InitialCarState;
+
 public interface IElevatorCarPort {
 //	Subscription bootstrapDriver(Observer<StopItineraryUpdated> observer, double floorHeight, double weightLoad, BitSet dropOffRequests);
+   void bootstrapDriver(InitialCarState initialData);
 	
 	void dropOffRequested(int floorIndex);
 		
-	void updateWeightLoad(double weightLoad);
+	void updateWeightLoad(double previousLoad, double weightDelta, double currentLoad);
 
-	void slowedForArrival();
-
-	void parkedAtLanding();
+	void parkedAtLanding(long timeDelta);
 	
-	void passengerDoorsClosed();
+	void passengerDoorsOpened(long timeDelta);
+
+	void passengerDoorsClosed(long timeDelta);
+
+   int getCarIndex();
+   
+   int getCurrentFloorIndex();
+
+   double getExpectedLocation();
+
+   double getCurrentWeightLoad();
+
+   double getMaximumWeightLoad();
 
 //	void updateLocation(double floorHeight, boolean brakingToStop);
 //	void openingAccessDoor();

@@ -10,6 +10,10 @@ public interface IVertexFactory
    BeforeTravelling getTravelPathOriginNode();
 
    AfterTravelling getTravelPathTerminalNode();
+   
+   InitialPickupStep getInitialPickupStepNode(int pickupFloorIndex );
+   
+   
 
-   TravelPathStageNodes getNextPathStage( int pickupFloorIndex, int nextFloorIndex, BitSet possibleDropFloors, Collection<TravellingPassengers> previousStage );
+   TravelPathStageNodes getNextPathStage( int pickupFloorIndex, int nextFloorIndex, BitSet possibleDropFloors, TravelPathStageNodes previousStage );
 }

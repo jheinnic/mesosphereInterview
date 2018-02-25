@@ -3,6 +3,7 @@ package info.jchein.mesosphere.elevator.emulator.model;
 import java.util.function.Consumer;
 
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
+import info.jchein.mesosphere.elevator.control.event.PassengerDoorsOpened;
 
 /**
  * IEmulated interfaces are software entities that play the role of physical control elements by providing methods that 
@@ -19,7 +20,20 @@ public interface IEmulatorControl
 //   public int getNumElevators();
 
 	public void callForPickup(int floorIndex, DirectionOfTravel direction);
-	public void updateManifest(int carIndex, int floorIndex, DirectionOfTravel direction, Consumer<IManifestUpdate> director);
+	
+	/**
+	 * API method for use when handling a {@link PassengerDoorsOpened} event to perform all required boarding,
+	 * disembarking, and drop off requesting.
+	 * 
+	 * @param carIndex
+	 * @param floorIndex
+	 * @param direction
+	 * @param onPickupCallback
+	 * @throws IllegalArgumentException if the car at {@code carIndex} is not currently at {@code floorIndex} with
+	 *                                  its doors open for boarding in {@code direction}, IllegalArgumentException
+	 *                                  will be thrown and no call to the 
+	 */
+	public void updateManifest(int carIndex, int floorIndex, DirectionOfTravel direction, Consumer<IManifestUpdate> onPickupCallback);
 	public void blockUntil(long clockTime);
 }
 

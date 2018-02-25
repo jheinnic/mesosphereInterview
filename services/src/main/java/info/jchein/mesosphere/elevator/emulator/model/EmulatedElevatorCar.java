@@ -1,117 +1,96 @@
 package info.jchein.mesosphere.elevator.emulator.model;
 
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
+import java.util.concurrent.TimeUnit;
 
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
+import info.jchein.mesosphere.elevator.common.bootstrap.DeploymentConfiguration;
 import info.jchein.mesosphere.elevator.common.bootstrap.InitialCarState;
 import info.jchein.mesosphere.elevator.common.physics.IElevatorPhysicsService;
 import info.jchein.mesosphere.elevator.common.physics.JourneyArc;
-import info.jchein.mesosphere.elevator.common.physics.JourneyArcMomentSeries;
 import info.jchein.mesosphere.elevator.common.physics.PathMoment;
-import info.jchein.mesosphere.elevator.control.model.IElevatorCarScope;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarDriver;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarPort;
+import info.jchein.mesosphere.elevator.control.sdk.Priorities;
+import info.jchein.mesosphere.elevator.runtime.temporal.IRuntimeScheduler;
 
-@Component
-@Scope(IElevatorCarScope.SCOPE_NAME)
+//@Component
+//@Scope(IElevatorCarScope.SCOPE_NAME)
 public class EmulatedElevatorCar implements IElevatorCarDriver {
-   private final IElevatorPhysicsService physics;
+   private static final double MARGIN_OF_ERROR = 0.00000001;
+
+   private final IElevatorPhysicsService physicsService;
    private final IElevatorCarPort port;
-   private final IEmulatorRoot parent;
-   private final InitialCarState initialState;
+   private final IRuntimeScheduler scheduler;
+   private final DeploymentConfiguration deployConfig;
+   private final long doorOpenCloseTime;
 
-	private JourneyArcMomentSeries iterableTrajectory;
-	private DirectionOfTravel currentDirection;
-	private JourneyArc pathToDestination;
-	private PathMoment physicsState;
-	private int currentDestination;
+   private PathMoment brakeMoment;
+   private PathMoment landingMoment;
 	
-	public EmulatedElevatorCar(IEmulatorRoot parent, IElevatorCarPort port, IElevatorPhysicsService physics) // , InitialCarState initialState)
+	public EmulatedElevatorCar(
+	   IElevatorCarPort port, IRuntimeScheduler scheduler, IElevatorPhysicsService physics, DeploymentConfiguration deployConfig) 
 	{
-	   this.parent = parent;
       this.port = port;
-      this.physics = physics;
-      this.initialState = InitialCarState.builder().build();
+      this.scheduler = scheduler;
+      this.physicsService = physics;
+      this.deployConfig = deployConfig;
+      this.doorOpenCloseTime = Math.round(Math.ceil(1000 * this.deployConfig.getDoors().getOpenCloseTime()));
 	}
-
-   @Override
-   public InitialCarState initialize()
-   {
-      return this.initialState;
-   }
-
-   /*
-   @Override
-   public void onNext(StopItineraryUpdated arg0)
-   {
-      this.latestItinerary = arg0;
-      if (this.currentDirection != DirectionOfTravel.STOPPED) {
-         Preconditions.checkArgument(arg0.getInitialDirection() == this.currentDirection, "Direction violation!");
-      }
-
-      // Check for a change in next destination
-      if (this.currentDirection == DirectionOfTravel.GOING_UP) {
-         int nextClosestFloor = (int) Math.ceil(this.physicsState.getHeight());
-         int nextClosestStop = this.latestItinerary.getUpwardStops().nextSetBit(nextClosestFloor);
-         if (nextClosestStop < this.destination) {
-            double originalDistance = this.trajectory.distance();
-            double newArcDistance = originalDistance - (this.metersPerFloor * (nextClosestStop - this.destination));
-            if (this.trajectory.getShortestPossibleArc() >= newArcDistance) {
-               this.trajectory = this.trajectory.adjustConstantRegion(newArcDistance);
-               this.arcIterator = this.trajectory.asMomentIterable(this.tickDuration).iterator();
-               PathMoment nextMoment = this.arcIterator.next();
-               while(nextMoment.getHeight() < this.physicsState.getHeight()) {
-                  nextMoment = this.arcIterator.next();
-               }
-               this.physicsState = nextMoment;
-            } else {
-               throw new IllegalArgumentException("Too late to adjust destination to next prescribed destinaation!");
-            }
-         }
-      } else if (this.currentDirection == DirectionOfTravel.GOING_DOWN) {
-         int nextClosestFloor = (int) Math.floor(this.physicsState.getHeight());
-         int nextClosestStop = this.latestItinerary.getDownwardStops().previousSetBit(nextClosestFloor);
-         if (nextClosestStop > this.destination) {
-            double originalDistance = this.trajectory.distance();
-            double newArcDistance = originalDistance - (this.metersPerFloor * (this.destination - nextClosestFloor));
-            if (this.trajectory.getShortestPossibleArc() >= newArcDistance) {
-               this.trajectory = this.trajectory.adjustConstantRegion(newArcDistance);
-               this.arcIterator = this.trajectory.asMomentIterable(this.tickDuration).iterator();
-               PathMoment nextMoment = this.arcIterator.next();
-               while(nextMoment.getHeight() > this.physicsState.getHeight()) {
-                  nextMoment = this.arcIterator.next();
-               }
-               this.physicsState = nextMoment;
-            } else {
-               throw new IllegalArgumentException("Too late to adjust destination to next prescribed destinaation!");
-            }
-         }
-      } else if(this.latestItinerary.getInitialDirection() != DirectionOfTravel.STOPPED) {
-        int currentFloor = (int) Math.round(this.physicsState.getHeight());
-        if (this.latestItinerary.getInitialDirection() == DirectionOfTravel.GOING_UP) {
-           this.destination = this.latestItinerary.getUpwardStops().nextSetBit(currentFloor + 1);
-        } else {
-           this.destination = this.latestItinerary.getDownwardStops().nextSetBit(currentFloor - 1);
-        }
-        this.trajectory = this.physics.getTraversalPath(currentFloor, this.destination);
-        this.arcIterator = this.trajectory.asMomentIterable(this.tickDuration).iterator();
-      }
-   }
-   */
-
-   @Override
-   public void dispatchTo(int floorIndex)
-   {
-      // TODO Auto-generated method stub
-      throw new UnsupportedOperationException();
-   }
+	
+	public void setInitialState(InitialCarState initialData) {
+	   this.port.bootstrapDriver(initialData);
+	}
 
    @Override
    public void openDoors(DirectionOfTravel direction)
    {
-      // TODO Auto-generated method stub
-      throw new UnsupportedOperationException();
+      this.scheduler.scheduleOnce(
+         this.doorOpenCloseTime, 
+         TimeUnit.MILLISECONDS, 
+         Priorities.OPEN_DOORS.getValue(), 
+         this.port::passengerDoorsOpened);
    }
+
+   @Override
+   public void closeDoors()
+   {
+      this.scheduler.scheduleOnce(
+         this.doorOpenCloseTime, 
+         TimeUnit.MILLISECONDS, 
+         Priorities.CLOSE_DOORS.getValue(), 
+         this.port::passengerDoorsClosed);
+   }
+   
+
+   @Override
+   public JourneyArc dispatchTo(int toFloorIndex)
+   {
+      // TODO: Alter the physics service to allow arbitrary initial heights
+      final JourneyArc retVal =
+         this.physicsService.getTraversalPath(this.port.getCurrentFloorIndex(), toFloorIndex);
+      this.brakeMoment = retVal.getBrakeAppliedMoment();
+      this.landingMoment = retVal.getTerminalMoment();
+
+      return retVal;
+   }
+
+   @Override
+   public void slowForArrival()
+   {
+      double currentHeight = this.port.getExpectedLocation();
+      double targetHeight = this.brakeMoment.getHeight();
+      if (Math.abs(currentHeight - targetHeight) < MARGIN_OF_ERROR) {
+         double secondsToLand = this.landingMoment.getTime() - this.brakeMoment.getTime();
+         long millisToLand = Math.round(1000 * secondsToLand);
+         this.scheduler.scheduleOnce(
+            millisToLand,
+            TimeUnit.MILLISECONDS, 
+            Priorities.SCHEDULE_LANDING.getValue(), 
+            this.port::parkedAtLanding);
+      } else {
+         throw new IllegalStateException(
+            String.format("Current height (%f) and target height (%f) are too far appart to begin braking",
+               currentHeight, targetHeight));
+      }
+   } 
 }

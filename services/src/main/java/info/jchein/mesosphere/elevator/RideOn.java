@@ -9,24 +9,22 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Scope;
 
 import com.google.common.collect.ImmutableList;
 
-import info.jchein.mesosphere.elevator.application.RideOnConfiguration;
-import info.jchein.mesosphere.elevator.application.RideOnRunner;
-import info.jchein.mesosphere.elevator.control.model.ElevatorCarScope;
-import info.jchein.mesosphere.elevator.control.model.IElevatorCarScope;
+import info.jchein.mesosphere.elevator.common.CarIndexContext;
+import info.jchein.mesosphere.elevator.control.ElevatorCarScope;
+import info.jchein.mesosphere.elevator.control.IElevatorCarScope;
 import lombok.SneakyThrows;
 
 @SpringBootApplication
 @EnableAutoConfiguration
-@Import(RideOnConfiguration.class)
 @ComponentScan
 public class RideOn
 {
-   private static final ElevatorCarScope ELEVATOR_CAR_SCOPE = new ElevatorCarScope();
+   private static final CarIndexContext CAR_INDEX_CONTEXT = new CarIndexContext();
+   private static final ElevatorCarScope ELEVATOR_CAR_SCOPE = new ElevatorCarScope(CAR_INDEX_CONTEXT);
    
    @SneakyThrows
     public static void main(String[] args) {
@@ -34,8 +32,6 @@ public class RideOn
         app.setHeadless(true);
         app.setLogStartupInfo(true);
         app.setAdditionalProfiles("elevator.runtime.virtual", "workload.toy");
-        // app.setWebEnvironment(true);
-        // app.setBannerMode(Banner.Mode.OFF);
         
       app.setInitializers(
          ImmutableList.of(new ApplicationContextInitializer<ConfigurableApplicationContext>() {
@@ -47,13 +43,11 @@ public class RideOn
             applicationContext.addBeanFactoryPostProcessor(addElevatorCarScopePostProcessor);
          }
         }));
-        ConfigurableApplicationContext context = app.run(args);
-        RideOnRunner runner = context.getBean(RideOnRunner.class);
-        runner.run(null);
+      app.run(args);
     }
     
-    @Bean
-    @Scope(BeanDefinition.SCOPE_SINGLETON)
+//    @Bean
+//    @Scope(BeanDefinition.SCOPE_SINGLETON)
     public static CustomScopeConfigurer customScopeConfigurer()
     {
        CustomScopeConfigurer retVal = new CustomScopeConfigurer();
@@ -66,5 +60,12 @@ public class RideOn
     public static ElevatorCarScope elevatorCarScope()
     {
        return ELEVATOR_CAR_SCOPE;
+    }
+    
+    @Bean
+    @Scope(BeanDefinition.SCOPE_SINGLETON)
+    public static CarIndexContext elevatorCarIndexContext()
+    {
+       return CAR_INDEX_CONTEXT;
     }
 }

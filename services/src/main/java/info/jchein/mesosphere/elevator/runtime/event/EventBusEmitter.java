@@ -1,11 +1,7 @@
 package info.jchein.mesosphere.elevator.runtime.event;
 
 
-import com.google.common.eventbus.Subscribe;
-
 import rx.Emitter;
-import rx.Emitter.BackpressureMode;
-import rx.Observable;
 
 
 /**
@@ -37,37 +33,41 @@ import rx.Observable;
  *
  * @param <E>
  */
-public class EventBusEmitter<E>
+public abstract class EventBusEmitter<E>
 {
-   private final Emitter<E> emitter;
-   private final IRuntimeEventBus eventBus;
+   private Emitter<E> emitter;
+   private IRuntimeEventBus eventBus;
 
 
-   EventBusEmitter(Emitter<E> emitter, IRuntimeEventBus eventBus) { 
+   protected EventBusEmitter(Emitter<E> emitter, IRuntimeEventBus eventBus) { 
       this.emitter = emitter;
       this.eventBus = eventBus;
       System.out.println("Open");
    }
 
-   @Subscribe
-   public void emit(E event)
+   protected void emit(E event)
    {
       this.emitter.onNext(event);
    }
 
-   public void close()
+   protected void done()
    {
-      this.eventBus.unregisterListener(this);
+      this.close();
       this.emitter.onCompleted();
+      this.emitter = null;
    }
-
-   public static <T> Observable<T> create(IRuntimeEventBus bus)
+   
+   protected void fail(Throwable err)
    {
-      return Observable.create( (Emitter<T> emitter) -> {
-         System.out.println("Create");
-         bus.registerListener(
-            new EventBusEmitter<T>(emitter, bus)
-         );
-      }, BackpressureMode.BUFFER);
+      this.close();
+      this.emitter.onError(err);
+      this.emitter = null;
+   }
+   
+   void close() {
+      if (this.eventBus != null) {
+         this.eventBus.unregisterListener(this);
+         this.eventBus = null;
+      }
    }
 }

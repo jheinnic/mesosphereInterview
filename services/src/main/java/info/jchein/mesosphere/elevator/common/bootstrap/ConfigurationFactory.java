@@ -14,9 +14,9 @@ import org.springframework.stereotype.Component;
 import com.google.common.collect.ImmutableList;
 
 import info.jchein.mesosphere.elevator.common.PassengerId;
-import info.jchein.mesosphere.elevator.common.PendingDropOff;
-import info.jchein.mesosphere.elevator.common.PendingPickup;
 import info.jchein.mesosphere.elevator.common.demographic.AgeGroupWeightSample;
+import info.jchein.mesosphere.elevator.monitor.model.PendingDropOff;
+import info.jchein.mesosphere.elevator.monitor.model.PendingPickup;
 
 
 @Component
@@ -105,7 +105,7 @@ implements IConfigurationFactory
                   .maxJerk(mutable.getMotor().maxJerk);
             }))
             .weight(WeightDescription.build(wbldr -> {
-               wbldr.maxForTravel(mutable.getWeight().maxForTravel)
+               wbldr.maxWeightAllowed(mutable.getWeight().maxForTravel)
                   .avgPassenger(mutable.getWeight().avgPassenger)
                   .pctMaxForIdeal(mutable.getWeight().pctMaxForIdeal)
                   .pctMaxForPickup(mutable.getWeight().pctMaxForPickup);
@@ -114,16 +114,15 @@ implements IConfigurationFactory
                dbldr.minHold(mutable.getDoors().minHold)
                   .personHold(mutable.getDoors().personHold)
                   .openCloseTime(mutable.getDoors().openCloseTime);
-            }))
-            .carDriverKey(mutable.getCarDriverKey());
+            }));
       });
    }
 
 
    @Override
-   public VirtualRuntimeDescription hardenVirtualRuntimeConfig(VirtualRuntimeProperties mutableProps)
+   public VirtualRuntimeConfiguration hardenVirtualRuntimeConfig(VirtualRuntimeProperties mutableProps)
    {
-      return VirtualRuntimeDescription.build(bldr -> {
+      return VirtualRuntimeConfiguration.build(bldr -> {
          bldr.tickDurationMillis(mutableProps.getTickDurationMillis());
       });
    }
@@ -132,15 +131,18 @@ implements IConfigurationFactory
    @Override
    public DemographicConfiguration hardenDemographicConfig(DemographicProperties mutableProps) {
       return DemographicConfiguration.build(bldr -> {
-         bldr.femaleWeightSamples( mutableProps.getFemaleWeightSamples().stream().<AgeGroupWeightSample>map(sample -> {
-            return AgeGroupWeightSample.build(abldr -> {
-               abldr.minAge(sample.getAge().getMin())
-               .maxAge(sample.getAge().getMax())
-               .weightMean(sample.getWeight().getMean())
-               .weightStdDev(sample.getWeight().getStdDev())
-               .count(sample.getCount());
-            });
-         }).collect(Collectors.toList()))
+         bldr.femaleWeightSamples(
+            mutableProps.getFemaleWeightSamples()
+               .stream()
+               .<AgeGroupWeightSample>map(sample -> {
+		            return AgeGroupWeightSample.build(abldr -> {
+		               abldr.minAge(sample.getAge().getMin())
+		               .maxAge(sample.getAge().getMax())
+		               .weightMean(sample.getWeight().getMean())
+		               .weightStdDev(sample.getWeight().getStdDev())
+		               .count(sample.getCount());
+		            });
+		         }).collect(Collectors.toList()))
          .maleWeightSamples(
             mutableProps.getMaleWeightSamples()
                .stream()

@@ -8,8 +8,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Scope;
 
-import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
+import info.jchein.mesosphere.elevator.runtime.temporal.IRuntimeClock;
+import info.jchein.mesosphere.elevator.runtime.temporal.IRuntimeScheduler;
 import info.jchein.mesosphere.elevator.simulator.passengers.TravellerSourceNames;
 
 @Configuration

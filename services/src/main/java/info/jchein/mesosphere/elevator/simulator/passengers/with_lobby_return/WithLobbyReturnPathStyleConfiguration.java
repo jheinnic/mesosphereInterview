@@ -8,9 +8,9 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 import info.jchein.mesosphere.elevator.common.PassengerId;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
 import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
+import info.jchein.mesosphere.elevator.runtime.temporal.IRuntimeClock;
+import info.jchein.mesosphere.elevator.runtime.temporal.IRuntimeScheduler;
 
 
 @Configuration

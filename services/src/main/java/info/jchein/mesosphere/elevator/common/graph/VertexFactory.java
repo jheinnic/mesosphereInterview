@@ -1,7 +1,6 @@
 package info.jchein.mesosphere.elevator.common.graph;
 
 import java.util.BitSet;
-import java.util.Collection;
 
 import javax.validation.constraints.NotNull;
 
@@ -182,7 +181,7 @@ public class VertexFactory implements IVertexFactory
 
    @Override
    public TravelPathStageNodes getNextPathStage(int pickupFloorIndex, int nextFloorIndex,
-      @NotNull BitSet possibleDropFloors, @NotNull Collection<TravellingPassengers> previousStage)
+      @NotNull BitSet possibleDropFloors, TravelPathStageNodes previousStage)
    {
       Preconditions.checkArgument(pickupFloorIndex > 0 && pickupFloorIndex < this.numFloors);
       Preconditions.checkArgument(nextFloorIndex > 0 && nextFloorIndex < this.numFloors);
@@ -207,50 +206,52 @@ public class VertexFactory implements IVertexFactory
       // a partition.  Any bits of the new stage's drop requests that were not removed by matching of any existing partition yields an additional final vertex.
       // If there are N vertices in the previous stage, there will be somewhere between |N| vertices and |1 + 2N| vertices in the "next" generation.
       final BitSet nextStageOnly = protectedDropOffFloors.copy();
-      previousStage.forEach( previousPool -> {
-         final BitSet previousOnly = previousPool.getDropOffFloors().copy();
-         final BitSet sharedDest = (BitSet) previousOnly.clone();
-         
-         // Common destinations will be in "and" of previous and next.  Unique stops will be in an appropriate "andNot" of previous or next with the
-         // shared common destiations, removing just what's in common.
-         sharedDest.and(nextStageOnly);
-         previousOnly.andNot(sharedDest);
-         nextStageOnly.andNot(sharedDest);
-         
-         // Prune any references to the current floor from each previous stage's node.  For any that had this current floor queued as a destination,
-         if (previousOnly.get(pickupFloorIndex)) {
-            previousOnly.clear(pickupFloorIndex);
-            previousPool.getPickupFloors().stream().forEach( pickedUpFrom -> {
-               retValBuilder.departureNode(
-                  this.dropOffStepInterner.intern(
-                     new FinalDropOffStep(pickedUpFrom, pickupFloorIndex)));
-            });
-         }
-         
-         if (! sharedDest.isEmpty()) {
-            final BitSet mergedBoarding = previousPool.getPickupFloors().copy();
-            mergedBoarding.set(pickupFloorIndex);
-            retValBuilder.ongoingNode(
-               this.ongoingStepInterner.intern(
-                  new OngoingRidersStep(
-                     this.doGetInternedFloorBitSet(mergedBoarding),
-                     pickupFloorIndex,
-                     nextFloorIndex, 
-                     this.doGetInternedFloorBitSet(sharedDest))));
-         }
-
-         if (! previousOnly.isEmpty()) {
-            retValBuilder.ongoingNode(
-               this.ongoingStepInterner.intern(
-                  new OngoingRidersStep(
-                     previousPool.getPickupFloors(), 
-                     pickupFloorIndex, 
-                     nextFloorIndex, 
-                     this.doGetInternedFloorBitSet(previousOnly))));
-         }
-
-         // If the 
-      });
+      if (previousStage != null) {
+          previousStage.getOngoingNodes().forEach( previousPool -> {
+             final BitSet previousOnly = previousPool.getDropOffFloors().copy();
+             final BitSet sharedDest = (BitSet) previousOnly.clone();
+             
+             // Common destinations will be in "and" of previous and next.  Unique stops will be in an appropriate "andNot" of previous or next with the
+             // shared common destiations, removing just what's in common.
+             sharedDest.and(nextStageOnly);
+             previousOnly.andNot(sharedDest);
+             nextStageOnly.andNot(sharedDest);
+             
+             // Prune any references to the current floor from each previous stage's node.  For any that had this current floor queued as a destination,
+             if (previousOnly.get(pickupFloorIndex)) {
+                previousOnly.clear(pickupFloorIndex);
+                previousPool.getPickupFloors().stream().forEach( pickedUpFrom -> {
+                   retValBuilder.departureNode(
+                      this.dropOffStepInterner.intern(
+                         new FinalDropOffStep(pickedUpFrom, pickupFloorIndex)));
+                });
+             }
+             
+             if (! sharedDest.isEmpty()) {
+                final BitSet mergedBoarding = previousPool.getPickupFloors().copy();
+                mergedBoarding.set(pickupFloorIndex);
+                retValBuilder.ongoingNode(
+                   this.ongoingStepInterner.intern(
+                      new OngoingRidersStep(
+                         this.doGetInternedFloorBitSet(mergedBoarding),
+                         pickupFloorIndex,
+                         nextFloorIndex, 
+                         this.doGetInternedFloorBitSet(sharedDest))));
+             }
+    
+             if (! previousOnly.isEmpty()) {
+                retValBuilder.ongoingNode(
+                   this.ongoingStepInterner.intern(
+                      new OngoingRidersStep(
+                         previousPool.getPickupFloors(), 
+                         pickupFloorIndex, 
+                         nextFloorIndex, 
+                         this.doGetInternedFloorBitSet(previousOnly))));
+             }
+    
+             // If the 
+          });
+      }
       
       if (! nextStageOnly.isEmpty()) {
          retValBuilder.ongoingNode(
@@ -286,5 +287,12 @@ public class VertexFactory implements IVertexFactory
       Preconditions.checkArgument(pickupFloorIndex >= 0 && pickupFloorIndex < this.numFloors);
       
       return this.oneFloorBitSets[pickupFloorIndex];
+   }
+
+   @Override
+   public InitialPickupStep getInitialPickupStepNode(int pickupFloorIndex)
+   {
+      // TODO Auto-generated method stub
+      return null;
    }
 }

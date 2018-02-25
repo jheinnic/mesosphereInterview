@@ -1,8 +1,8 @@
 package info.jchein.mesosphere.elevator.simulator.model;
 
-import info.jchein.mesosphere.elevator.runtime.IRuntimeClock;
-import info.jchein.mesosphere.elevator.runtime.IRuntimeScheduler;
 import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
+import info.jchein.mesosphere.elevator.runtime.temporal.IRuntimeClock;
+import info.jchein.mesosphere.elevator.runtime.temporal.IRuntimeScheduler;
 
 public interface ISimulatedPopulation
 {

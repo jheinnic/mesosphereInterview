@@ -19,8 +19,8 @@ import info.jchein.mesosphere.elevator.control.event.PickupCallRemoved;
 import info.jchein.mesosphere.elevator.control.event.TravelledPastFloor;
 import info.jchein.mesosphere.elevator.control.event.WeightLoadUpdated;
 import info.jchein.mesosphere.elevator.control.model.ICallDispatcher;
-import info.jchein.mesosphere.elevator.control.sdk.IElevatorDispatcherPort;
-import info.jchein.mesosphere.elevator.control.sdk.IElevatorDispatchingStrategy;
+import info.jchein.mesosphere.elevator.control.sdk.IDispatchPort;
+import info.jchein.mesosphere.elevator.control.sdk.IDispatchStrategy;
 import org.jgrapht.graph.DefaultDirectedWeightedGraph;
 import org.jgrapht.graph.builder.GraphBuilder;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -32,9 +32,9 @@ import org.springframework.stereotype.Component;
 @Scope(BeanDefinition.SCOPE_SINGLETON)
 @SuppressWarnings("all")
 public class CallDispatcher
-implements ICallDispatcher, IElevatorDispatcherPort
+implements ICallDispatcher, IDispatchPort
 {
-   private IElevatorDispatchingStrategy strategy;
+   private IDispatchStrategy strategy;
 
    private GraphBuilder<?, ?, DefaultDirectedWeightedGraph<?, ?>> graphBuilder;
 
@@ -45,7 +45,7 @@ implements ICallDispatcher, IElevatorDispatcherPort
    }
 
 
-   public void attachStrategy(final IElevatorDispatchingStrategy strategy)
+   public void attachStrategy(final IDispatchStrategy strategy)
    {
       Preconditions.checkState(
          (this.strategy == null),

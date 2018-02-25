@@ -1,0 +1,17 @@
+{"properties": [
+  {
+    "name": "mesosphere.workload.morning.arrivals[0].meanTime",
+    "type": "java.lang.String",
+    "description": "A description for 'mesosphere.workload.morning.arrivals[0].meanTime'"
+  },
+  {
+    "name": "mesosphere.workload.morning.arrivals[0].meanTime",
+    "type": "java.lang.String",
+    "description": "A description for 'mesosphere.workload.morning.arrivals[0].meanTime'"
+  },
+  {
+    "name": "mesosphere.workload.morning.arrivals[0].floorIndex",
+    "type": "java.lang.String",
+    "description": "A description for 'mesosphere.workload.morning.arrivals[0].floorIndex'"
+  }
+]}

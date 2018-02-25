@@ -4,9 +4,7 @@ package info.jchein.mesosphere.elevator.common.bootstrap;
 import java.util.function.Consumer;
 
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 
-import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.validation.annotation.Validated;
 
@@ -47,10 +45,6 @@ public class DeploymentConfiguration
 
    @Valid
    final DoorTimeDescription doors;
-   
-   @NotBlank
-   @NotNull
-   String carDriverKey;
 
 
    public static DeploymentConfiguration build(Consumer<DeploymentConfigurationBuilder> director)

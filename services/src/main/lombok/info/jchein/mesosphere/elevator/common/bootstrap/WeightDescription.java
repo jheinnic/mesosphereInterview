@@ -25,7 +25,7 @@ import lombok.experimental.FieldDefaults;
 public class WeightDescription
 {
    @Positive
-   public double maxForTravel;
+   public double maxWeightAllowed;
    @Positive
    public double pctMaxForPickup;
    @Positive

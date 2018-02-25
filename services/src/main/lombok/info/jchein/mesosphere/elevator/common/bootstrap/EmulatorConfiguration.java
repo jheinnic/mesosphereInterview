@@ -9,12 +9,11 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 import org.hibernate.validator.constraints.NotBlank;
-import org.hibernate.validator.constraints.ScriptAssert;
 import org.springframework.validation.annotation.Validated;
 
 import com.google.common.collect.ImmutableList;
 
-import info.jchein.mesosphere.elevator.common.PendingPickup;
+import info.jchein.mesosphere.elevator.monitor.model.PendingPickup;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -11,10 +11,9 @@ public class WeightLoadUpdated implements ElevatorCarEvent {
    final EventType eventType = EventType.UPDATED_WEIGHT_LOAD;
    
 	int carIndex;
-	double hi;
-	double lo;
 	double current;
-	double weightLoad;
+	double delta;
+	double previous;
 	
    public static WeightLoadUpdated build(Consumer<WeightLoadUpdatedBuilder> director)
    {
