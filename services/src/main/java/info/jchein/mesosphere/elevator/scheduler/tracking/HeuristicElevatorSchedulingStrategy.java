@@ -25,8 +25,10 @@ import info.jchein.mesosphere.elevator.control.event.TravelledPastFloor;
 import info.jchein.mesosphere.elevator.control.sdk.AbstractElevatorSchedulingStrategy;
 import info.jchein.mesosphere.elevator.control.sdk.IDispatchPort;
 import info.jchein.mesosphere.elevator.runtime.temporal.IRuntimeScheduler;
+import lombok.extern.slf4j.Slf4j;
 
 
+@Slf4j
 @Component
 @Scope(BeanDefinition.SCOPE_SINGLETON)
 public class HeuristicElevatorSchedulingStrategy
@@ -59,7 +61,10 @@ extends AbstractElevatorSchedulingStrategy
    @Override
    public void onPickupCallAdded(PickupCallAdded event)
    {
-      this.dispatchPort.assignPickupCall(event.getFloorIndex(), event.getDirection(), this.tempSched.sample());
+      final int carIndex = this.tempSched.sample();
+      log.info("Dispatch strategy informed of pickup request from {} and assigned it to {}", event.getFloorIndex(), carIndex);
+      
+      this.dispatchPort.assignPickupCall(event.getFloorIndex(), event.getDirection(), carIndex);
    }
 
 

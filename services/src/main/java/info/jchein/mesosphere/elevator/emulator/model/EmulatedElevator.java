@@ -16,6 +16,7 @@ import com.google.common.base.Preconditions;
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 import info.jchein.mesosphere.elevator.common.bootstrap.DeploymentConfiguration;
 import info.jchein.mesosphere.elevator.common.bootstrap.EmulatorConfiguration;
+import info.jchein.mesosphere.elevator.common.bootstrap.InitialCarState;
 import info.jchein.mesosphere.elevator.common.physics.IElevatorPhysicsService;
 import info.jchein.mesosphere.elevator.control.IElevatorCarScope;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarPort;
@@ -89,6 +90,7 @@ implements IEmulatorControl
       Preconditions.checkState(this.emulatedCars[carIndex] == null);
       this.emulatedCars[carIndex] = new EmulatedElevatorCar(
          carPort, this.scheduler, this.physicsService, this.deploymentConfiguration);
+      this.emulatedCars[carIndex].setInitialState(InitialCarState.builder().build());
       return this.emulatedCars[carIndex];
    }
 

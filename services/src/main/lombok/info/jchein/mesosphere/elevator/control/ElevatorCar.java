@@ -149,7 +149,7 @@ implements IElevatorCar, IElevatorCarPort
    public void bootstrapDriver(InitialCarState data) 
    {
       this.fsm.onEvent(this, DRIVER_INITIALIZED, data);
-   }
+   } 
 
 
    @Override
@@ -210,7 +210,7 @@ implements IElevatorCar, IElevatorCarPort
    
    
    void onClockInterval(long timeDelta) {
-      
+      log.info("Elevator car {} handles clock interval at {} with {}", this.carIndex, this.clock.now(), timeDelta);
    }
 
 
@@ -247,8 +247,10 @@ implements IElevatorCar, IElevatorCarPort
 
    @Transition(from = WAITING_FOR_DRIVER, event = DRIVER_INITIALIZED, to = AVAILABLE)
    public void
-   onBootstrap(final String event, final IElevatorCarDriver driver, final InitialCarState data)
+   onBootstrap(final String event, final InitialCarState data)
    {
+      log.info("Elevator car {} driver called onBootstrap() at {} with {}", this.carIndex, this.clock.now(), data);
+
       final int initialFloor = data.getInitialFloor();
       final double initialWeight =
          data.passengers.stream()
