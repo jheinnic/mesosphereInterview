@@ -18,6 +18,7 @@ import info.jchein.mesosphere.elevator.control.event.DropOffRequested;
 import info.jchein.mesosphere.elevator.control.event.PassengerDoorsClosed;
 import info.jchein.mesosphere.elevator.control.event.PassengerDoorsOpened;
 import info.jchein.mesosphere.elevator.control.event.WeightLoadUpdated;
+import info.jchein.mesosphere.elevator.control.manifest.ScheduledStop.ScheduledStopBuilder;
 import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
 import lombok.extern.slf4j.Slf4j;
 
@@ -109,8 +110,11 @@ public abstract class PassengerManifest implements IPassengerManifest
       this.currentLoad = this.currentLoad + this.incomingLoad - this.outgoingLoad;
    }
 
-   private void enqueueNewStop(final int destinationFloor, final ScheduledStop newStop)
+   private void enqueueNewStop(final ScheduledStopBuilder newStop)
    {
+      int destinationFloor = newStop.getFloorIndex();
+      Preconditions.checkArgument(this.currentFloor != destinationFloor);
+      
       if (this.currentComparator == null) {
          // This is the first call from a parked state.  Set direction and launch!
          if (this.currentFloor < destinationFloor) {
@@ -138,8 +142,10 @@ public abstract class PassengerManifest implements IPassengerManifest
       final int destinationFloor = dropOffRequested.getDropOffFloorIndex();
       Preconditions.checkArgument(this.currentFloor != destinationFloor);
 
-      final ScheduledDrop newStop = new ScheduledDrop(dropOffRequested.getDropOffFloorIndex());
-      enqueueNewStop(destinationFloor, newStop);
+      final ScheduledStopBuilder newStop =
+         ScheduledStop.builder().floorIndex(destinationFloor)
+         .inbound((destinationFloor > this.currentFloor) ? DirectionOfTravel.GOING_UP : DirectionOfTravel.GOING_DOWN)
+      enqueueNewStop(newStop);
 
       this.nextTravelGraph.recordDropRequest(dropOffRequested.getDropOffFloorIndex());
    }
