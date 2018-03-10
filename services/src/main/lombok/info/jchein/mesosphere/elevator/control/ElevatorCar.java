@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -68,20 +69,18 @@ import info.jchein.mesosphere.elevator.common.physics.JourneyArcMomentSeries;
 import info.jchein.mesosphere.elevator.common.physics.PathMoment;
 import info.jchein.mesosphere.elevator.common.physics.TravelPathDownComparator;
 import info.jchein.mesosphere.elevator.common.physics.TravelPathUpComparator;
+import info.jchein.mesosphere.elevator.control.event.AssignedPickupCall;
 import info.jchein.mesosphere.elevator.control.event.DepartedLanding;
 import info.jchein.mesosphere.elevator.control.event.DriverBootstrapped;
 import info.jchein.mesosphere.elevator.control.event.DropOffRequested;
 import info.jchein.mesosphere.elevator.control.event.ParkedAtLanding;
 import info.jchein.mesosphere.elevator.control.event.PassengerDoorsClosed;
 import info.jchein.mesosphere.elevator.control.event.PassengerDoorsOpened;
+import info.jchein.mesosphere.elevator.control.event.PickupCallAdded;
 import info.jchein.mesosphere.elevator.control.event.SlowedForArrival;
 import info.jchein.mesosphere.elevator.control.event.TravelledPastFloor;
+import info.jchein.mesosphere.elevator.control.event.UnassignedPickupCall;
 import info.jchein.mesosphere.elevator.control.event.WeightLoadUpdated;
-import info.jchein.mesosphere.elevator.control.manifest.ITravelGraph;
-import info.jchein.mesosphere.elevator.control.manifest.PassengersOrigin;
-import info.jchein.mesosphere.elevator.control.manifest.ScheduledDrop;
-import info.jchein.mesosphere.elevator.control.manifest.ScheduledPickup;
-import info.jchein.mesosphere.elevator.control.manifest.ScheduledStop;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarDriver;
 import info.jchein.mesosphere.elevator.control.sdk.IElevatorCarPort;
 import info.jchein.mesosphere.elevator.control.sdk.Priorities;
@@ -117,42 +116,35 @@ implements IElevatorCar, IElevatorCarPort
    private StatefulFSM<ElevatorCar> fsm;
 
    private final int carIndex;
-   // private final IPassengerManifest passengerManifest;
    private final BuildingDescription bldgDesc;
    private final WeightDescription weightDesc;
    private final DoorTimeDescription doorDesc;
    private final IRuntimeClock clock;
    private final IRuntimeScheduler scheduler;
    private final IRuntimeEventBus eventBus;
+   
    private final IElevatorPhysicsService physicsService;
    private final IElevatorDriverLocator driverLocator;
    private IElevatorCarDriver driver = null;
+   private IPassengerManifest passengerManifest;
 
-   private ArrayList<PassengersOrigin> onboardPassengers;
-   private ArrayList<ScheduledStop> scheduledStops;
-   private Comparator<ScheduledStop> currentComparator;
-   // private BitSet currentDropRequests = null;
-   // private final BitSet pickupsGoingUp = new BitSet();
-   // private final BitSet pickupsGoingDown = new BitSet();
-
-   private TravelPathStageNodes travelPathNodes;
-   private JourneyArcMomentSeries iterableTrajectory;
-   private JourneyArc pathToDestination;
+   private Iterator<PathMoment> travelPath;
+   private PathMoment brakingMoment;
    private PathMoment estimatedLocation;
 
 //   private int reversePathFloorIndex = (-1);
-   private int currentFloorIndex = (-1);
-   private ScheduledStop currentDestination;
-   private DirectionOfTravel currentDirection;
+//   private int currentFloorIndex = (-1);
+//   private ScheduledStop currentDestination;
+//   private DirectionOfTravel currentDirection;
 //   private ScheduledStop nextDestination;
 
-   private ITravelGraph currentTravelGraph;
-   private ITravelGraph nextTravelGraph;
+//   private ITravelGraph currentTravelGraph;
+//   private ITravelGraph nextTravelGraph;
 //   private DirectionOfTravel nextDirection;
 
-   private double incomingWeightLoad;
-   private double outgoingWeightLoad;
-   private double currentWeightLoad = 0;
+//   private double incomingWeightLoad;
+//   private double outgoingWeightLoad;
+//   private double currentWeightLoad = 0;
 
    private long tickDurationMillis;
 
@@ -234,13 +226,13 @@ implements IElevatorCar, IElevatorCarPort
    }
 
 
-   @Override
-   @SneakyThrows
-   public void confirmNextDispatch(int floorIndex)
-   {
-      // TODO: Add floorIndex argument or not??
-      this.fsm.onEvent(this, DISPATCHED);
-   }
+//   @Override
+//   @SneakyThrows
+//   public void confirmNextDispatch(int floorIndex)
+//   {/
+//       TODO: Add floorIndex argument or not??
+//      this.fsm.onEvent(this, DISPATCHED);
+//   }
 
 
    void onClockInterval(long timeDelta)
@@ -255,9 +247,14 @@ implements IElevatorCar, IElevatorCarPort
 
    @Override
    @SneakyThrows
-   public void removePickupRequest(final int floorIndex, final DirectionOfTravel direction)
+   public boolean dropPickupRequest(final int floorIndex, final DirectionOfTravel direction)
    {
+      if ((this.passengerManifest.getCurrentDestination() == floorIndex) && (this.passengerManifest.getNextDirection() != direction)) {
+          return false;
+      }
+      
       this.fsm.onEvent(this, DROPPED_PICKUP_REQUEST, floorIndex, direction);
+      return true;
    }
 
 
@@ -269,6 +266,7 @@ implements IElevatorCar, IElevatorCarPort
    }
 
 
+   @Override
    @SneakyThrows
    public void notifyFloorSensorTriggered(int floorIndex, DirectionOfTravel direction)
    {
@@ -286,14 +284,15 @@ implements IElevatorCar, IElevatorCarPort
 
 
    @Transition(from = WAITING_FOR_DRIVER, event = DRIVER_INITIALIZED, to = AVAILABLE)
-   public void onBootstrap(final String event, final InitialCarState data)
+   public void onBootstrap(final String event, final IPassengerManifest data)
    {
       log.info(
          "Driver for elevator car {} called onBootstrap() at {} with {}",
          this.carIndex,
          this.clock.now(),
          data);
-
+      this.passengerManifest = data;
+/*
       final int initialFloor = data.getInitialFloor();
       final double initialWeight =
          data.passengers.stream()
@@ -337,7 +336,7 @@ implements IElevatorCar, IElevatorCarPort
       this.scheduledStops = new ArrayList<ScheduledStop>(initialDropRequests);
       Collections.sort(this.scheduledStops, this.currentComparator);
    }
-
+      */
 
       this.scheduler.scheduleInterrupt(
          this.tickDurationMillis,
@@ -349,10 +348,10 @@ implements IElevatorCar, IElevatorCarPort
       this.eventBus.post(DriverBootstrapped.build(bldr -> {
          bldr.clockTime(this.clock.now())
             .carIndex(this.carIndex)
-            .floorIndex(this.currentFloorIndex)
-            .weightLoad(this.currentWeightLoad)
-            .initialDirection(this.currentDirection)
-            .dropRequests(this.toBitSet(this.scheduledStops));
+            .floorIndex(data.getCurrentFloor())
+            .weightLoad(data.getCurrentWeightLoad())
+            .initialDirection(data.getCurrentDirection())
+            .dropRequests(data.getFloorStops());
       }));
    }
 
@@ -361,11 +360,14 @@ implements IElevatorCar, IElevatorCarPort
    public String onAssignedPickupWhileAvailable(final String event, final int floorIndex,
       final DirectionOfTravel direction)
    {
-      this.currentDestination = ScheduledPickup.builder().floorIndex(floorIndex).direction(direction).build();
-      this.currentDirection = direction;
+      this.passengerManifest.trackAssignedPickup(floorIndex, direction);
+      this.eventBus.post(AssignedPickupCall.build(bldr -> {
+         bldr.carIndex(this.carIndex)
+            .floorIndex(floorIndex)
+            .direction(direction);
+      }));
 
-      if (floorIndex == this.currentFloorIndex) {
-         // TODO: Need to notify passengerManifest or no??
+      if (floorIndex == this.passengerManifest.getCurrentFloor()) {
          return "event:" + ANSWERED_CALL;
       } else if ((direction == DirectionOfTravel.GOING_UP) || (direction == DirectionOfTravel.GOING_DOWN)) {
          return "event:" + DISPATCHED;
@@ -378,15 +380,20 @@ implements IElevatorCar, IElevatorCarPort
    @Transition(from = AVAILABLE, event = DROPOFF_REQUESTED)
    public String onAssignedDropOffWhileAvailable(final String event, final int floorIndex)
    {
-      this.currentDestination = ScheduledDrop.builder().floorIndex(floorIndex).build();
+      this.passengerManifest.trackDropRequest(floorIndex);
+      this.eventBus.post(DropOffRequested.build(bldr -> {
+         bldr.carIndex(this.carIndex)
+            .dropOffFloorIndex(floorIndex);
+      }));
 
-      if (floorIndex == this.currentFloorIndex) {
+      if (floorIndex == this.passengerManifest.getCurrentFloor()) {
          // TODO: This is not yet setting currentDirection because there is no known next destination at time doors open.  Should we
          //       instead make an educated guess?
-         this.currentDirection = DirectionOfTravel.STOPPED;
+         // this.currentDirection = DirectionOfTravel.STOPPED;
          return "event:" + ANSWERED_CALL;
       } else {
-         this.currentDirection = (this.currentFloorIndex < floorIndex) ? DirectionOfTravel.GOING_UP : DirectionOfTravel.GOING_DOWN;
+         // TODO: Make sure current direction gets set this code path
+         // this.currentDirection = (this.currentFloorIndex < floorIndex) ? DirectionOfTravel.GOING_UP : DirectionOfTravel.GOING_DOWN;
          return "event:" + DISPATCHED;
       }
    }
@@ -401,12 +408,12 @@ implements IElevatorCar, IElevatorCarPort
    public void
    onAssignedPickupRequest(final String event, final int floorIndex, final DirectionOfTravel direction)
    {
-      this.currentDestination = ScheduledPickup.builder().floorIndex(floorIndex).direction(direction).build();
-      this.currentDropRequests.set(floorIndex);
+      this.passengerManifest.trackAssignedPickup(floorIndex, direction);
 
-      this.eventBus.post(DropOffRequested.build(bldr -> {
+      this.eventBus.post(AssignedPickupCall.build(bldr -> {
          bldr.carIndex(this.carIndex)
-            .dropOffFloorIndex(floorIndex);
+            .floorIndex(floorIndex)
+            .direction(direction);
       }));
    }
 
@@ -420,17 +427,14 @@ implements IElevatorCar, IElevatorCarPort
    })
    public void onDroppedPickupRequest(final int floorIndex, final DirectionOfTravel direction)
    {
-      if (direction == DirectionOfTravel.GOING_UP) {
-         this.pickupsGoingUp.clear(floorIndex);
-      } else if (direction == DirectionOfTravel.GOING_DOWN) {
-         this.pickupsGoingDown.clear(floorIndex);
-      } else {
-         throw new IllegalArgumentException("Pickup requests must be ascending or descending");
-      }
+      this.passengerManifest.trackCanceledPickup(floorIndex, direction);
+      
+      // TODO: What if the cancelled pickup request was currently active??
 
-      this.eventBus.post(DropOffRequested.build(bldr -> {
+      this.eventBus.post(UnassignedPickupCall.build(bldr -> {
          bldr.carIndex(this.carIndex)
-            .dropOffFloorIndex(floorIndex);
+            .floorIndex(floorIndex)
+            .direction(direction);
       }));
    }
 
@@ -443,8 +447,10 @@ implements IElevatorCar, IElevatorCarPort
    })
    public void onDropOffRequested(final int floorIndex)
    {
-      this.currentDropRequests.set(floorIndex);
+      this.passengerManifest.trackDropRequest(floorIndex);
 
+      // TODO: What if the new drop request is for a floor earlier than one travelling to?
+      
       this.eventBus.post(DropOffRequested.build(bldr -> {
          bldr.carIndex(this.carIndex)
             .dropOffFloorIndex(floorIndex);
@@ -458,73 +464,20 @@ implements IElevatorCar, IElevatorCarPort
    })
    public void onDispatch(final String event)
    {
-      this.currentDestination = this.nextDestination;
-      if ((this.nextDestination == this.reversePathFloorIndex)) {
-         if (this.currentDirection == DirectionOfTravel.GOING_UP) {
-            final BitSet stopsGoingDown = (BitSet) this.currentDropRequests.clone();
-            stopsGoingDown.or(this.pickupsGoingDown);
-            stopsGoingDown.clear(this.reversePathFloorIndex);
-            this.nextDestination = stopsGoingDown.previousSetBit(this.reversePathFloorIndex);
+      JourneyArc journeyArc = this.physicsService.getTraversalPath(
+         this.passengerManifest.getCurrentFloor(),
+         this.passengerManifest.getCurrentDestination()
+      );
+      this.travelPath = journeyArc.asMomentIterable(this.tickDurationMillis).iterator();
+      this.brakingMoment = journeyArc.getBrakeAppliedMoment();
+      this.estimatedLocation = this.travelPath.next();
 
-            // TODO!!!
-            if ((this.nextDestination >= 0)) {}
-            final int nextPickupDown =
-               this.pickupsGoingDown.previousSetBit((this.reversePathFloorIndex - 1));
-            final int firstPickupUp = this.pickupsGoingUp.nextSetBit(0);
-            final int nextDropOff = this.currentDropRequests.previousSetBit(this.currentFloorIndex);
-            final int lastDropOff = this.currentDropRequests.nextSetBit(0);
-            int newNextDestination = Math.max(nextPickupDown, lastDropOff);
-            int newReversePathIndex = firstPickupUp;
-            if (((lastDropOff < 0) || (lastDropOff == this.reversePathFloorIndex))) {
-               if ((newNextDestination < 0)) {
-                  if ((firstPickupUp < 0)) {}
-               }
-            }
-         }
-
-         if ((this.currentDirection == DirectionOfTravel.GOING_UP) &&
-            (this.currentDropRequests.get(this.reversePathFloorIndex) ||
-               this.pickupsGoingDown.get(this.reversePathFloorIndex)))
-         {
-            this.nextDirection = DirectionOfTravel.GOING_DOWN;
-            this.nextDestination = this.reversePathFloorIndex;
-         } else if ((this.currentDirection == DirectionOfTravel.GOING_DOWN) &&
-            (this.currentDropRequests.get(this.reversePathFloorIndex) ||
-               this.pickupsGoingDown.get(this.reversePathFloorIndex)))
-         {
-            this.nextDirection = DirectionOfTravel.GOING_DOWN;
-            this.nextDestination = this.reversePathFloorIndex;
-         } else {
-            this.nextDirection = DirectionOfTowel.STOPPED;
-            this.nextDestination = (-1);
-         }
-      } else if (this.currentDirection == DirectionOfTravel.GOING_UP) {
-         this.currentDestination = this.nextDestination;
-         final int nextDrop = this.currentDropRequests.nextSetBit((this.currentDestination + 1));
-         final int nextPickup = this.pickupsGoingUp.nextSetBit((this.currentDestination + 1));
-
-         if (nextDrop > 0) {
-            if (nextPickup > 0) {
-               this.nextDestination = Math.min(nextDrop, nextPickup);
-            } else {
-               this.nextDestination = nextDrop;
-            }
-         } else if (nextPickup > 0) {
-            this.nextDestination = nextPickup;
-         }
-      } else if (this.currentDirection == DirectionOfTravel.GOING_DOWN) {
-         this.currentDestination = this.nextDestination;
-         final int nextDrop = this.currentDropRequests.previousSetBit((this.currentDestination - 1));
-         final int nextPickup = this.pickupsGoingUp.previousSetBit((this.currentDestination - 1));
-
-         this.nextDestination = Math.max(nextDrop, nextPickup);
-      }
-
+      // TODO: Use current or next direction?
       this.eventBus.post(DepartedLanding.build(bldr -> {
          bldr.carIndex(this.carIndex)
-            .origin(this.currentFloorIndex)
-            .destination(this.currentDestination)
-            .direction(this.currentDirection);
+            .origin(this.passengerManifest.getCurrentFloor())
+            .destination(this.passengerManifest.getCurrentDestination())
+            .direction(this.passengerManifest.getCurrentDirection());
       }));
    }
 
@@ -532,12 +485,7 @@ implements IElevatorCar, IElevatorCarPort
    @Transition(from = LANDING, event = STOPPED_AT_LANDING)
    public String onStoppedAtLanding(final String event)
    {
-      this.currentDestination = -1;
-      this.currentDirection = DirectionOfTravel.STOPPED;
-
-      if ((this.nextDirection != DirectionOfTravel.STOPPED) ||
-         this.currentDropRequests.get(this.currentFloorIndex))
-      {
+      if (this.passengerManifest.hasCurrentFloorStopRequest()) {
          return "event:" + ANSWERED_CALL;
       } else {
          return "event:" + PARKED;
@@ -551,7 +499,8 @@ implements IElevatorCar, IElevatorCarPort
    })
    public void onRequestDoorCycleOpen(final String event)
    {
-      this.driver.openDoors(this.nextDirection);
+      this.driver.openDoors(
+         this.passengerManifest.getCurrentDirection());
    }
 
 
@@ -563,7 +512,7 @@ implements IElevatorCar, IElevatorCarPort
    {
       this.eventBus.post(ParkedAtLanding.build(bldr -> {
          bldr.carIndex(this.carIndex)
-            .floorIndex(this.currentFloorIndex);
+            .floorIndex(this.passengerManifest.getCurrentFloor());
       }));
    }
 
@@ -575,20 +524,9 @@ implements IElevatorCar, IElevatorCarPort
    })
    public void onAnsweredCall(final String event)
    {
-      ScheduledStop thisCall = this.currentDestination;
-      this.currentDestination = this.scheduledStops.
-      this.currentDropRequests.clear(this.currentFloorIndex);
-
-      if (this.nextDirection == DirectionOfTravel.GOING_UP) {
-         this.pickupsGoingUp.clear(this.currentFloorIndex);
-      } else if (this.nextDirection == DirectionOfTravel.GOING_DOWN) {
-         this.pickupsGoingDown.clear(this.currentFloorIndex);
-      } else {
-         throw new IllegalStateException("Cannot answer next all when there is no next call");
-      }
-
+      this.passengerManifest.trackDoorsOpening();
       this.driver.openDoors(
-         this.currentDestination.getDirection());
+         this.passengerManifest.getCurrentDirection());
    }
 
 
@@ -596,9 +534,9 @@ implements IElevatorCar, IElevatorCarPort
    public void onOpenedDoors(final String event)
    {
       this.eventBus.post(PassengerDoorsOpened.build(bldr -> {
-         bldr.carIndex(this.carIndex)
-            .floorIndex(this.currentFloorIndex)
-            .direction(this.currentDestination.getDirection());
+         bldr.carIndex(this.carIndex);
+//            .floorIndex(this.passengerManifest.getCurrentFloor())
+//            .direction(this.passengerManifest.getCurrentDirection());
       }));
    }
 
@@ -606,11 +544,13 @@ implements IElevatorCar, IElevatorCarPort
    @Transition(from = CLOSING_DOORS, event = DOOR_CLOSED)
    public String onDoorCloseCompleted(final String event)
    {
+      this.passengerManifest.trackDoorsClosed();
       this.eventBus.post(PassengerDoorsClosed.build(bldr -> {
          bldr.carIndex(this.carIndex);
       }));
 
-      if ((this.scheduledStops.size() == 0)) { return "event:" + PARKED; }
+      // TODO: Use a more efficient means to get the stop count
+      if ((this.passengerManifest.getFloorStops().size() == 0)) { return "event:" + PARKED; }
 
       return "event:" + DISPATCHED;
    }
@@ -620,11 +560,7 @@ implements IElevatorCar, IElevatorCarPort
    public String onTravellingThroughFloorSensor(final String event, final int floorIndex,
       final DirectionOfTravel direction)
    {
-      this.currentFloorIndex = floorIndex;
-      if ((this.currentDirection == direction) &&
-         (((this.currentDestination.getFloorIndex() > floorIndex) && (direction == DirectionOfTravel.GOING_UP)) ||
-            ((this.currentDestination.getFloorIndex() < floorIndex) && (direction == DirectionOfTravel.GOING_DOWN))))
-      {
+      if (this.passengerManifest.trackTravelThrough(floorIndex, direction)) {
          this.eventBus.post(TravelledPastFloor.build(bldr -> {
             bldr.carIndex(this.carIndex)
                .floorIndex(floorIndex)
@@ -642,10 +578,7 @@ implements IElevatorCar, IElevatorCarPort
    public String onSlowingThroughFloorSensor(final String event, final int floorIndex,
       final DirectionOfTravel direction)
    {
-      if (
-         (this.currentDestination != null) && 
-         (this.currentDestination.getFloorIndex() == floorIndex) &&
-         (this.currentDirection == direction)) {
+      if (this.passengerManifest.trackSlowingThrough(floorIndex, direction)) {
          this.eventBus.post(SlowedForArrival.build(bldr -> {
             bldr.carIndex(this.carIndex);
          }));
@@ -659,9 +592,9 @@ implements IElevatorCar, IElevatorCarPort
 
    @Transition(from = "*", event = WEIGHT_UPDATED, to = "*")
    public void
-   onWeightUpdated(final double previousWeight, final double weightDelta, final double currentWeight)
+   onWeightUpdated(String event, final double previousWeight, final double weightDelta, final double currentWeight)
    {
-      this.currentWeightLoad = currentWeight;
+      this.passengerManifest.trackWeightChange(previousWeight, weightDelta, currentWeight);
       this.eventBus.post(WeightLoadUpdated.build(bldr -> {
          bldr.carIndex(this.carIndex)
             .previous(previousWeight)
@@ -678,14 +611,6 @@ implements IElevatorCar, IElevatorCarPort
    }
 
 
-   private BitSet toBitSet(final List<ScheduledStop> list)
-   {
-      final BitSet bitSet = new BitSet();
-      list.stream().map(stop -> stop.getFloorIndex()).forEach(bitSet::set);
-      return bitSet;
-   }
-
-
    public String getState()
    {
       return this.state;
@@ -699,16 +624,9 @@ implements IElevatorCar, IElevatorCarPort
 
 
    @Override
-   public int getCarIndex()
-   {
-      return this.carIndex;
-   }
-
-
-   @Override
    public int getCurrentFloorIndex()
    {
-      return this.currentFloorIndex;
+      return this.passengerManifest.getCurrentFloor();
    }
 
 
@@ -722,7 +640,7 @@ implements IElevatorCar, IElevatorCarPort
    @Override
    public double getCurrentWeightLoad()
    {
-      return this.currentWeightLoad;
+      return this.passengerManifest.getCurrentWeightLoad();
    }
 
 

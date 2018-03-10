@@ -4,7 +4,6 @@ import javax.validation.constraints.NotNull;
 
 import org.jgrapht.alg.util.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -19,18 +18,19 @@ import info.jchein.mesosphere.elevator.common.bootstrap.DeploymentConfiguration;
 import info.jchein.mesosphere.elevator.control.IElevatorCarScope;
 import info.jchein.mesosphere.elevator.control.PerformanceEstimate;
 import info.jchein.mesosphere.elevator.control.PickupImpactEstimate;
-import info.jchein.mesosphere.elevator.control.manifest.bad.TravelGraphIndex;
-import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
+import info.jchein.mesosphere.elevator.runtime.temporal.IRuntimeClock;
 
 @Configuration
 @ComponentScan
 public class ManifestConfiguration
 {
    private final DeploymentConfiguration deployConfig;
+   private final IRuntimeClock clock;
    
    @Autowired
-   public ManifestConfiguration(DeploymentConfiguration deployConfig) {
+   public ManifestConfiguration(DeploymentConfiguration deployConfig, IRuntimeClock clock) {
       this.deployConfig = deployConfig;
+      this.clock = clock;
    }
    
    @Bean
@@ -40,7 +40,7 @@ public class ManifestConfiguration
          @Override
          protected TravelGraph allocateTravelGraph(TravelGraphIndex graphIndex)
          {
-            return new TravelGraph(graphIndex);
+            return new TravelGraph(graphIndex, ManifestConfiguration.this.clock);
          }
       };
    }
@@ -48,10 +48,9 @@ public class ManifestConfiguration
    @Bean
    @Autowired
    @Scope(IElevatorCarScope.SCOPE_NAME)
-   PassengerManifest passengerManifest(
-      @NotNull CarIndexContext carContext, @NotNull @Qualifier(IElevatorCarScope.SCOPE_NAME) IRuntimeEventBus eventBusLocal )
+   PassengerManifest passengerManifest( )
    {
-      return new PassengerManifest(carContext, eventBusLocal) {
+      return new PassengerManifest(this.deployConfig.getBuilding().getNumFloors()) {
          @Override
          public PickupImpactEstimate estimatePickupImpact(int floorIndex, DirectionOfTravel direction,
             ImmutableList<Pair<Integer, Double>> passengers)
@@ -74,5 +73,4 @@ public class ManifestConfiguration
          }
       };
    }
-   
 }

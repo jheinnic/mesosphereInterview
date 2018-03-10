@@ -48,15 +48,28 @@ implements Comparator<ScheduledStop>
       final DirectionOfTravel o2Outbound = o2.getOutbound();
       
       // If the main direction is GOING_DOWN, use the negative for all floor indices.  This inversion transforms all floor-to-floor
-      // comparison semantics such that they become identical to the GOING_UP semantics with positive floor values.  This get rid of
+      // comparison semantics s  uch that they become identical to the GOING_UP semantics with positive floor values.  This get rid of
       // a whole lot of redundant branching!
       final int originFloor = originOutbound == DirectionOfTravel.GOING_UP ? this.originFloor : this.originFloor * -1;
       final int o1Floor = originOutbound == DirectionOfTravel.GOING_UP ? o1.getFloorIndex() : o1.getFloorIndex() * -1;
       final int o2Floor = originOutbound == DirectionOfTravel.GOING_UP ? o2.getFloorIndex() : o2.getFloorIndex() * -1;
       
-//      if (o1Outbound == o2Outbound) {
-//         if (
-//      }
+      if (o1Outbound == o2Outbound) {
+         if (o1Floor == o2Floor) {
+            // Both are going the same direction to the same floor, therefore they arrive at the same time.
+            return 0;
+         } else if (o1Outbound == originOutbound) {
+            // Both are going u
+         if (o1Floor > o2Floor) {
+            if ()
+            
+         } else if(o1Floor < o2Floor) {
+            
+         } else {
+         }
+            // Both are going up.  If both are 
+         }
+      }
       
       if (o1Floor == originFloor) {
          if (o2Floor == originFloor) { 

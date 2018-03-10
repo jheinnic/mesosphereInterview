@@ -75,11 +75,6 @@ public class ElevatorSimulation
       // There has to be a simpler way to do this and there has to be a way to be able to defer receiving
       // events until this next clock pulse! TODO!
       eventBus.registerListener(this);
-//      this.localDispatch = new EventBus();
-//      this.localDispatch.register(this);
-//      this.changeSubscription =
-//         groupControl.getChangeStream()
-//            .subscribe(this.localDispatch::post);
    }
 
 
@@ -179,15 +174,9 @@ public class ElevatorSimulation
 
 
    @Subscribe
-   public Object onPassengerDoorsClosed(final PassengerDoorsClosed event)
-   {
-      return null;
-   }
+   public void onPassengerDoorsClosed(final PassengerDoorsClosed event) { }
 
 
    @Subscribe
-   public Object onTravelledThroughFloor(final TravelledPastFloor event)
-   {
-      return null;
-   }
+   public void onTravelledThroughFloor(final TravelledPastFloor event) { }
 }

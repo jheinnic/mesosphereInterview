@@ -19,13 +19,13 @@ interface IElevatorCar
    void notifyFloorSensorTriggered(int floorIndex, DirectionOfTravel direction);
 
 
-   void confirmNextDispatch(int floorIndex);
+//   void confirmNextDispatch(int floorIndex);
 
 
    void acceptPickupRequest(int floorIndex, DirectionOfTravel direction);
 
 
-   void removePickupRequest(int floorIndex, DirectionOfTravel direction);
+   boolean dropPickupRequest(int floorIndex, DirectionOfTravel direction);
 
 
    static final class States

@@ -4,9 +4,9 @@ import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 
 public interface ITravelGraph
 {
-   void prepareForBoarding(int floorIndex);
+//   void prepareForBoarding(int floorIndex);
 
-   void prepareForDisembarking(int floorIndex);
+//   void prepareForDisembarking(int floorIndex);
 
    double getCurrentWeightLoad();
 
@@ -19,4 +19,8 @@ public interface ITravelGraph
    void recordAssignedPickup(int floorIndex, DirectionOfTravel direction);
 
    void recordCancelledPickup(int floorIndex, DirectionOfTravel direction);
+
+   void recordDoorsOpening(int floorIndex);
+   
+   void recordDoorsClosed();
 }

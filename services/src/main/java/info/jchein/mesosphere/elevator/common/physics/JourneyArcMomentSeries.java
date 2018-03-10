@@ -18,10 +18,10 @@ implements Iterable<PathMoment>
    private final double tickDuration;
 
 
-   JourneyArcMomentSeries( final Iterable<IPathLeg> journeyArc, final PathMoment terminal, final double tickDuration )
+   JourneyArcMomentSeries( final Iterable<IPathLeg> journeyArc, final PathMoment initial, final PathMoment terminal, final double tickDuration )
    {
       this.journeyArc = journeyArc;
-      this.initial = journeyArc.iterator().next().getInitialMoment();
+      this.initial = initial;
       this.terminal = terminal;
       this.tickDuration = tickDuration;
    }
@@ -64,7 +64,6 @@ implements Iterable<PathMoment>
       private Iterator<PathMoment> currentMomentSource;
       private double tickDuration;
       private double nextTickStart;
-      private PathMoment previousMoment;
 
       public JourneyArcPathMomentIterator( final Iterator<IPathLeg> legSource, PathMoment destination, final double tickDuration )
       {
@@ -104,28 +103,33 @@ implements Iterable<PathMoment>
 
          // Get the next moment to return. If it is the last of its PathLeg's content, read its timestamp and calculate
          // next PathLeg's stating point before losing reference on returning it.
-         this.previousMoment = this.currentMomentSource.next();
+         PathMoment thisMoment = this.currentMomentSource.next();
          if (! this.currentMomentSource.hasNext()) {
-            this.nextTickStart = this.previousMoment.getTime() + this.tickDuration;
+            this.nextTickStart = thisMoment.getTime() + this.tickDuration;
          }
 
-         return this.previousMoment;
+         return thisMoment;
       }
       
       /**
        * Exhause the current iteration to produce a new Series which can be used to recreate the current iteration as needed.
+       * 
        * @return
        */
+      // TODO: Either drop this method if it has no callers, or figure out how to expose it through the return type of JourneyArcPathSeries.iterator().
+      //       The emptyIterators it currently may return will lack a pruneHere() method.  Probably best bet is to create an interface that adds
+      //       pruneHere() to Iterator, then create a special empty implementation to replace Collections.emptyIterator().
       public JourneyArcMomentSeries pruneHere() {
          if (! this.hasNext()) { throw new NoSuchElementException(); }
          
+         final PathMoment initialMoment = this.next();
          final LinkedList<IPathLeg> newLegSource = new LinkedList<IPathLeg>();
-         newLegSource.add(this.currentLeg.truncate(this.previousMoment.getTime()));
+         newLegSource.add(this.currentLeg.truncate(initialMoment.getTime()));
          this.legSource.forEachRemaining(leg -> newLegSource.add(leg));
 
          this.currentMomentSource = Collections.emptyIterator();
 
-         return new JourneyArcMomentSeries(newLegSource, this.destination, this.tickDuration);
+         return new JourneyArcMomentSeries(newLegSource, initialMoment, this.destination, this.tickDuration);
       }
    }
 }

@@ -130,7 +130,7 @@ implements IElevatorGroupControl, IElevatorLandingsPort, IDispatchPort
    public void removePickupCall(int floorIndex, DirectionOfTravel departureDirection, int carIndex)
    {
       final IElevatorCar car = this.carList.get(carIndex);
-      car.removePickupRequest(floorIndex, departureDirection);
+      car.dropPickupRequest(floorIndex, departureDirection);
    }
 
 

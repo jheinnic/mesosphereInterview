@@ -2,6 +2,7 @@ package info.jchein.mesosphere.elevator.control.event;
 
 public enum EventType
 {
+   ASSIGNED_PICKUP_CALL,
    CAR_AVAILABLE_SIGNAL_LIT,
    CAR_AVAILABLE_SIGNAL_OFF,
    CHANGED_DIRECTION,
@@ -17,5 +18,6 @@ public enum EventType
    PICKUP_CALL_REMOVED,
    SLOWED_FOR_ARRIVAL,
    TRAVELLED_PAST_FLOOR,
+   UNASSIGNED_PICKUP_CALL,
    UPDATED_WEIGHT_LOAD;
 }
