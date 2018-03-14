@@ -33,17 +33,6 @@ public class ManifestConfiguration
       this.clock = clock;
    }
    
-   @Bean
-   @Scope(BeanDefinition.SCOPE_SINGLETON)
-   TravelGraphFactory graphFactory() {
-      return new TravelGraphFactory(this.deployConfig) {
-         @Override
-         protected TravelGraph allocateTravelGraph(TravelGraphIndex graphIndex)
-         {
-            return new TravelGraph(graphIndex, ManifestConfiguration.this.clock);
-         }
-      };
-   }
    
    @Bean
    @Autowired
@@ -66,11 +55,11 @@ public class ManifestConfiguration
          }
 
 
-         @Override
-         protected ITravelGraph allocateTravelGraph(DirectionOfTravel direction)
-         {
-            return ManifestConfiguration.this.graphFactory().apply(direction);
-         }
+//         @Override
+//         protected ITravelGraph allocateTravelGraph(DirectionOfTravel direction)
+//         {
+//            return ManifestConfiguration.this.graphFactory().apply(direction);
+//         }
       };
    }
 }

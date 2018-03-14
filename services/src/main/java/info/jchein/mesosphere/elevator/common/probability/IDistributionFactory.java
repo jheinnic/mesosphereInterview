@@ -1,5 +1,7 @@
 package info.jchein.mesosphere.elevator.common.probability;
 
+import java.util.List;
+
 import org.apache.commons.math3.distribution.EnumeratedDistribution;
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.apache.commons.math3.distribution.ExponentialDistribution;
@@ -28,17 +30,16 @@ public interface IDistributionFactory
    
    EnumeratedIntegerDistribution createEnumeratedIntegerDist(int[] values, double[] propbabilities);
    
-   <T> EnumeratedDistribution<T> createEnumeratedDist(Iterable<Pair<T, Double>> content);
+   <T> EnumeratedDistribution<T> createEnumeratedDist(List<Pair<T, Double>> content);
 
    <T> EnumeratedDistribution<T> createEnumeratedDist(Iterable<T> items, Function<T, Double> probFn);
 
-   <I, T extends RealDistribution> IPopulationSampler createPopulationSampler(
-      Iterable<I> items, Function<I, Double> probFn, Function<I, T> realDistFn);
+   <I> IPopulationSampler createPopulationSampler(
+      Iterable<I> items, Function<I, Double> probFn, Function<I, RealDistribution> realDistFn);
 
-   <I, T extends RealDistribution> IPopulationSampler createPopulationSampler(
-      Iterable<I> items, Function<I, Pair<T, Double>> mapFn );
+   <I> IPopulationSampler createPopulationSampler(
+      Iterable<I> items, Function<I, Pair<RealDistribution, Double>> mapFn );
 
-   <T extends RealDistribution> IPopulationSampler createPopulationSampler(
-      Iterable<Pair<T, Double>> items);
+   IPopulationSampler createPopulationSampler(List<Pair<RealDistribution, Double>> items);
 }
 

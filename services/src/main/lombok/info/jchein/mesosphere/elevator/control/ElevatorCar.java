@@ -168,6 +168,10 @@ implements IElevatorCar, IElevatorCarPort
       this.tickDurationMillis = runtimeConfig.getTickDurationMillis();
    }
 
+   @Override
+   public int getCarIndex() {
+      return this.carIndex;
+   }
 
    @Override
    @SneakyThrows

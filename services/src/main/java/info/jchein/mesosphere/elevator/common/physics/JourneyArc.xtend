@@ -25,7 +25,7 @@ class JourneyArc implements Iterable<IPathLeg>
 	}
 	
 	def JourneyArcMomentSeries asMomentIterable(double tickDuration) {
-		return new JourneyArcMomentSeries(this, this.terminalMoment, tickDuration);
+		return new JourneyArcMomentSeries(this, this.initialMoment, this.terminalMoment, tickDuration);
 	}
 
 	def DirectionOfTravel getDirection() {

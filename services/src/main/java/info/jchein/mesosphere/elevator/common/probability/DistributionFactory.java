@@ -1,7 +1,10 @@
 package info.jchein.mesosphere.elevator.common.probability;
 
 
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.apache.commons.math3.distribution.EnumeratedDistribution;
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
@@ -89,16 +92,14 @@ implements IDistributionFactory
    public EnumeratedIntegerDistribution
    createEnumeratedIntegerDist(int[] values, double[] probabilities)
    {
-      return new EnumeratedIntegerDistribution(values, probabilities);
+      return new EnumeratedIntegerDistribution(this.rng, values, probabilities);
    }
 
 
    @Override
-   public <T> EnumeratedDistribution<T> createEnumeratedDist(Iterable<Pair<T, Double>> content)
+   public <T> EnumeratedDistribution<T> createEnumeratedDist(List<Pair<T, Double>> content)
    {
-      ArrayList<Pair<T, Double>> foo = new ArrayList<Pair<T, Double>>();
-      content.iterator().forEachRemaining(foo::add);
-      return new EnumeratedDistribution<>(foo);
+      return new EnumeratedDistribution<>(this.rng, content);
    }
 
 
@@ -118,61 +119,98 @@ implements IDistributionFactory
 
 
    @Override
-   public <I, T extends RealDistribution> IPopulationSampler
-   createPopulationSampler(Iterable<I> items, Function<I, Double> probFn, Function<I, T> mapFn)
+   public <I> IPopulationSampler createPopulationSampler(Iterable<I> items, Function<I, Double> probFn,
+      Function<I, RealDistribution> mapFn)
    {
-      final EnumeratedDistribution<I> enumDist = this.createEnumeratedDist(items, probFn);
-      return new IPopulationSampler() {
-         @Override
-         public double sample()
-         {
-            final I innerGroup = enumDist.sample();
-            final T innerDist = mapFn.apply(innerGroup);
-            return innerDist.sample();
-         }
-      };
-   }
-
-
-   @Override
-   public <I, T extends RealDistribution> IPopulationSampler
-   createPopulationSampler(Iterable<I> items, Function<I, Pair<T, Double>> mapFn)
-   {
-      final ImmutableList.Builder<Pair<T, Double>> listBuilder =
-         ImmutableList.<Pair<T, Double>> builder();
-
-      items.forEach(item -> {
-         listBuilder.add(mapFn.apply(item));
+      return this.createPopulationSampler(items, (item) -> {
+         return new Pair<RealDistribution, Double>(mapFn.apply(item), probFn.apply(item));
       });
-
-      final EnumeratedDistribution<T> enumDist =
-         new EnumeratedDistribution<>(listBuilder.build());
-
-      return new IPopulationSampler() {
-         @Override
-         public double sample()
-         {
-            final T innerDist = enumDist.sample();
-            return innerDist.sample();
-         }
-      };
    }
 
 
    @Override
-   public <T extends RealDistribution> IPopulationSampler
-   createPopulationSampler(Iterable<Pair<T, Double>> items)
+   public <I> IPopulationSampler
+   createPopulationSampler(Iterable<I> items, Function<I, Pair<RealDistribution, Double>> mapFn)
    {
-      final EnumeratedDistribution<T> enumDist =
-         this.createEnumeratedDist(items);
+      return this.createPopulationSampler(
+         StreamSupport.stream(items.spliterator(), false)
+            .map(mapFn::apply)
+            .collect(Collectors.toList()));
+   }
 
-      return new IPopulationSampler() {
-         @Override
-         public double sample()
-         {
-            final T innerDist = enumDist.sample();
-            return innerDist.sample();
+
+   @Override
+   public IPopulationSampler createPopulationSampler(List<Pair<RealDistribution, Double>> items)
+   {
+      final EnumeratedDistribution<RealDistribution> enumDist = this.createEnumeratedDist(items);
+      return new TieredPopulationSampler(enumDist);
+   }
+
+
+   private class TieredPopulationSampler
+   implements IPopulationSampler
+   {
+      private final EnumeratedDistribution<RealDistribution> enumDist;
+      private double[] cumulativeProbabilities;
+      private RealDistribution[] subgroupDists;
+
+
+      private TieredPopulationSampler( EnumeratedDistribution<RealDistribution> enumDist )
+      {
+         this.enumDist = enumDist;
+
+         // EnumeratedDistribution lacks an inverseCdf() method, so unfortunately we need to duplicate
+         // some of its implementation in order to replace the random number generator with specific
+         // inputs. Alternately, we could have build the same EnumeratedDistribution twice and injected
+         // an owned implementation of RandomGenerator in order to feed specific inputs, but this would
+         // have had an adverse effect on thread safety, so code duplication was utilized instead.
+         final List<Pair<RealDistribution, Double>> probabilities = enumDist.getPmf();
+         final int numGroups = probabilities.size();
+         this.subgroupDists = new RealDistribution[numGroups];
+         this.cumulativeProbabilities = new double[numGroups];
+
+         double sum = 0;
+         for (int i = 0; i < numGroups; i++) {
+            final Pair<? extends RealDistribution, Double> pair = probabilities.get(i);
+            sum += pair.getSecond();
+            this.subgroupDists[i] = pair.getFirst();
+            this.cumulativeProbabilities[i] = sum;
          }
-      };
+      }
+
+
+      @Override
+      public double sample()
+      {
+         final RealDistribution innerDist = enumDist.sample();
+         return innerDist.sample();
+      }
+
+
+      @Override
+      public double lookup(double groupProb, double distProb)
+      {
+         final RealDistribution realDist = this.selectGroup(groupProb);
+         return realDist.inverseCumulativeProbability(distProb);
+      }
+
+
+      private RealDistribution selectGroup(final double groupProb)
+      {
+         int index = Arrays.binarySearch(cumulativeProbabilities, groupProb);
+         if (index < 0) {
+            index = -index - 1;
+         }
+
+         if (index >= 0 &&
+            index < this.cumulativeProbabilities.length &&
+            groupProb < cumulativeProbabilities[index]) { return this.subgroupDists[index]; }
+
+         /*
+          * This should never happen, but it ensures we will return a correct object in case there is some floating
+          * point inequality problem wrt the cumulative probabilities.
+          */
+         return this.subgroupDists[this.subgroupDists.length - 1];
+      }
    }
 }

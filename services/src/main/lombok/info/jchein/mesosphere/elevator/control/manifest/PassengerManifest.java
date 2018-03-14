@@ -23,8 +23,6 @@ implements IPassengerManifest
    private double outgoingLoad;
    private double currentLoad;
    private ArrayList<ScheduledStop> scheduledStops;
-   private ITravelGraph currentTravelGraph;
-   private ITravelGraph nextTravelGraph;
    private DirectionOfTravel currentDirection;
    private int currentFloor;
    private ScheduledStop currentPickup;
@@ -39,7 +37,6 @@ implements IPassengerManifest
       this.currentLoad = 0;
       this.currentFloor = 0;
       this.scheduledStops = new ArrayList<ScheduledStop>(3 * numFloors);
-      this.currentTravelGraph = this.allocateTravelGraph(DirectionOfTravel.GOING_UP);
       this.currentDirection = DirectionOfTravel.GOING_UP;
       this.nextTravelGraph = null;
       this.currentPickup = null;

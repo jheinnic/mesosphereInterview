@@ -8,7 +8,9 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import info.jchein.mesosphere.elevator.common.PassengerIdJsonComponent.PassengerIdJsonDeserializer;
 import info.jchein.mesosphere.elevator.common.PassengerIdJsonComponent.PassengerIdJsonSerializer;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.experimental.FieldDefaults;
 
 
 /**
@@ -22,16 +24,15 @@ import lombok.AllArgsConstructor;
  * 
  * @author jheinnic
  */
-// @FieldDefaults(makeFinal=true, level=AccessLevel.PRIVATE)
 @AllArgsConstructor
-// @EqualsAndHashCode(doNotUseGetters = true)
+@FieldDefaults(makeFinal=true, level=AccessLevel.PRIVATE)
 @JsonSerialize(using = PassengerIdJsonSerializer.class)
 @JsonDeserialize(using = PassengerIdJsonDeserializer.class)
 public class PassengerId
 implements Comparable<PassengerId>
 {
-   final long idMost;
-   final long idLeast;
+   long idMost;
+   long idLeast;
 
 
    PassengerId( UUID uuid )
