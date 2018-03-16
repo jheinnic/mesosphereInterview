@@ -130,14 +130,14 @@ implements ApplicationRunner
       final WhoGoesWhere problem = this.problemFactory.allocateProblem("Testing", problemData);
       final WhoGoesWhereFitness fitness = problem.getDefaultFitness();
       final WhoGoesWhereRender render = new WhoGoesWhereRender(fitness);
-      final Solver solver = new SimpleSolver(new GeneticAlgorithm(20, 0.15), problem);
+      final Solver solver = new SimpleSolver(new GeneticAlgorithm(2048, 0.0175), problem);
 
-      solver.addStopCondition(
-         new TimeoutCondition(5000));
+//      solver.addStopCondition(
+//         new TimeoutCondition(5000));
 //      solver.addStopCondition(
 //         new IterationCondition(50));
       solver.addStopCondition(
-         new SufficientFitnessCondition(fitness, 0.9));
+         new SufficientFitnessCondition(fitness, 0.95));
       solver.addRender(render);
 
       solver.run();

@@ -74,7 +74,7 @@ implements RandomConfigurationProblem, IWhoGoesWhereProblem, GlobalSearchProblem
       this.travellerCount = travellerCount;
       this.tripsCompleted = travellerCount - passengersOnBoard;
       this.passengersOnBoard = passengersOnBoard;
-      this.firstLotteryIndex = travellerCount + travellerCount;
+      this.firstLotteryIndex = travellerCount + 1;
 
       passengersOnBoard = 0;
       travellerCount = 0;
@@ -86,17 +86,21 @@ implements RandomConfigurationProblem, IWhoGoesWhereProblem, GlobalSearchProblem
          passengersOnBoard += nextExchange.getPassengersIn();
       }
 
-      this.dimension = (2 * this.travellerCount) + this.tripsCompleted;
+      // Two attributes are used to seed the weight randomizer
+      // travellerCount - 1 attributes are used to shuffle assignment of weights to arrivals
+      // tripsCompleted attributes are used to shuffle assignment of arrivals to departures 
+      this.dimension = this.travellerCount + this.tripsCompleted + 1;
    }
 
 
    public boolean isSolution(Configuration configuration)
    {
-      for (int ii=0; ii<this.travellerCount; ii++) {
-         if (configuration.valueAt(ii) < 0) {
-            return false;
-         }
-         if (configuration.valueAt(ii + this.travellerCount) < 0) {
+      if ((configuration.valueAt(0) < 0) || (configuration.valueAt(1) < 0)) {
+         return false;
+      }
+
+      for (int ii=2; ii<this.firstLotteryIndex; ii++) {
+         if (configuration.valueAt(ii) > (this.firstLotteryIndex - ii)) {
             return false;
          }
       }
@@ -125,10 +129,17 @@ implements RandomConfigurationProblem, IWhoGoesWhereProblem, GlobalSearchProblem
    public Configuration getRandomConfiguration()
    {
       List<Integer> tmp = new ArrayList<Integer>(this.dimension);
-      for (int ii = 0; ii < this.firstLotteryIndex; ii++)
-         tmp.add(JcopRandom.nextInt(Integer.MAX_VALUE));
+      tmp.add(JcopRandom.nextInt(Integer.MAX_VALUE));
+      tmp.add(JcopRandom.nextInt(Integer.MAX_VALUE));
+
+      for (int ii = 2; ii < this.firstLotteryIndex; ii++)
+         tmp.add(JcopRandom.nextInt(this.firstLotteryIndex - ii));
+
       for (int ii = 0; ii < this.tripsCompleted; ii++)
          tmp.add(JcopRandom.nextInt(this.departureLottery[ii]));
+      
+      // JcopRandom.setSeed(System.currentTimeMillis());
+
       return new Configuration(tmp);
    }
 
@@ -136,6 +147,10 @@ implements RandomConfigurationProblem, IWhoGoesWhereProblem, GlobalSearchProblem
 
    public Integer getMaximum(int index)
    {
-      return (index < this.firstLotteryIndex) ? Integer.MAX_VALUE : this.departureLottery[index - this.firstLotteryIndex];
+      return (index >= this.firstLotteryIndex)
+         ? this.departureLottery[index - this.firstLotteryIndex]
+         : (index < 2)
+            ? Integer.MAX_VALUE
+            : this.firstLotteryIndex - index;
    }
 }

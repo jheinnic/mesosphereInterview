@@ -55,8 +55,13 @@ public class WhoGoesWhereConfiguration
                            }
                            weightSamples[jj] = nextSample;
                         }
+                        
+                        // A standard deviation of zero is exceedingly unlikely, but safeguard against it anyhow because the 
+                        // consequence is a function that returns NaN on a match to its target value.  If the standard deviation
+                        // as a double turns out to be less than the smallest normal float, just use that smallest normal float 
+                        // instead.
                         return new Gaussian(
-                           1.0, weightDelta, stdDev.evaluate(weightSamples, weightDelta));
+                           1.0, weightDelta, Math.max(stdDev.evaluate(weightSamples, weightDelta), Float.MIN_NORMAL));
                      }
                   };
 

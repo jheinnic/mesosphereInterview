@@ -2,6 +2,7 @@ package test.jcop2;
 
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.commons.math3.analysis.function.Gaussian;
@@ -11,6 +12,7 @@ import com.google.common.collect.ImmutableList;
 import cz.cvut.felk.cig.jcop.problem.BaseFitness;
 import cz.cvut.felk.cig.jcop.problem.Configuration;
 import cz.cvut.felk.cig.jcop.problem.Fitness;
+import cz.cvut.felk.cig.jcop.util.JcopRandom;
 import info.jchein.mesosphere.elevator.common.probability.IPopulationSampler;
 import lombok.extern.slf4j.Slf4j;
 import test.jcop2.CandidateSolution.CandidateSolutionBuilder;
@@ -35,7 +37,10 @@ implements Fitness
    protected final IPopulationSampler populationSampler;
    protected final ImmutableList<FitnessExchange> fitnessExchanges;
    protected final ArrayList<TravellingPassenger> onboardPassengers;
+   protected final List<TravellingPassenger> allArrivals;
    private final FitnessExchange ongoingExchange;
+   
+   private int testCounter = 0;
 
    /**
     * Fitness requires source problem instance to be able to calculate
@@ -65,11 +70,17 @@ implements Fitness
       this.onboardPassengers =
          new ArrayList<TravellingPassenger>(
             problem.getTravellerCount());
+      this.allArrivals =
+         this.fitnessExchanges.stream().flatMap((exchange) -> {
+            return exchange.getArrivals().stream();
+         }).collect(Collectors.toList());
+         new ArrayList<TravellingPassenger>(
+            problem.getTravellerCount());
       
       final int passengersOnBoard = problem.getPassengersOnBoard();
       if (passengersOnBoard > 0) {
 	      final double weightRemaining =
-	         this.fitnessExchanges.stream().collect(
+	         0 - this.fitnessExchanges.stream().collect(
 	            Collectors.summingDouble(FitnessExchange::getExpectedWeightChange));
 	      this.ongoingExchange =
 	         FitnessExchange.builder()
@@ -88,6 +99,7 @@ implements Fitness
       final FitnessExchange.FitnessExchangeBuilder builder = FitnessExchange.builder();
 
       final double expectedWeightChange = nextExchange.getExpectedWeightChange();
+      final int floorIndex = nextExchange.getFloorIndex();
       final int passengersIn = nextExchange.getPassengersIn();
       final int passengersOut = nextExchange.getPassengersOut();
 
@@ -106,6 +118,7 @@ implements Fitness
 
       return builder.passengersOut(passengersOut)
          .expectedWeightChange(expectedWeightChange)
+         .floorIndex(floorIndex)
          .scoreFunction(
             this.getScoreFunction(expectedWeightChange, passengersIn, passengersOut)
          ).build();
@@ -126,12 +139,12 @@ implements Fitness
     */
    public double getValue(Configuration configuration)
    {
-      return this.transformConfiguration(configuration).getFitness();
-//      CandidateSolution retval = this.transformConfiguration(configuration);
-//      if ((this.testCounter++ % 200) == 0) {
-//         log.info("Solution {} is {}", this.testCounter, retval.toString());
-//      }
-//      return retval.getFitness();
+//      return this.transformConfiguration(configuration).getFitness();
+      CandidateSolution retval = this.transformConfiguration(configuration);
+      if ((this.testCounter <= 210) && (this.testCounter++ > 200)) {
+         log.info("Solution {} is {}", this.testCounter, retval.toString());
+      }
+      return retval.getFitness();
    }
 
 
@@ -140,10 +153,43 @@ implements Fitness
       final CandidateSolutionBuilder solutionBuilder = CandidateSolution.builder();
       solutionBuilder.configuration(configuration);
 
-      this.onboardPassengers.clear();
-      int weightAttrIndex = 0;
-      int lotteryAttrIndex = this.problem.getFirstLotteryIndex();
+      // To avoid breaking JCOP's own randomization, take a value from the current sequence to use as seed after
+      // we've read some values using seed from our configuration.
+      final long cachedSeed = JcopRandom.nextLong();
 
+      // Use the first two attributes to seed random number generator for sampling weights.
+      final int lowSeed = configuration.valueAt(0);
+      final int highSeed = configuration.valueAt(1);
+      final long seedAttr = (((long) highSeed) << 32) | (lowSeed & 0xffffffffL);
+      JcopRandom.setSeed(seedAttr);
+
+      // Next, use the (numTravellers-1) to order the first N-1 passengers to receive weights
+      // from the population sampler using the seeded random number generator.
+      int lotteryAttrIndex = this.problem.getFirstLotteryIndex();
+      final ArrayList<TravellingPassenger> passengersWithoutWeight =
+         new ArrayList<TravellingPassenger>(this.allArrivals);
+      for (int weightAttrIndex = 2; weightAttrIndex < lotteryAttrIndex; weightAttrIndex++) {
+         final int nextIndex = configuration.valueAt(weightAttrIndex);
+         final TravellingPassenger nextPassenger = passengersWithoutWeight.get(nextIndex);
+         nextPassenger.setWeight(
+            this.populationSampler.lookup(
+               JcopRandom.nextDouble(),
+               JcopRandom.nextDouble()));
+         passengersWithoutWeight.remove(nextIndex);
+      }
+      
+      // One passenger remains to be assigned weight
+      passengersWithoutWeight.get(0)
+         .setWeight(
+            this.populationSampler.lookup(
+               JcopRandom.nextDouble(),
+               JcopRandom.nextDouble()));
+
+      // Finally, use the last (completedTrips) attributes to assign each arriving passenger to its destination
+      // The attributes maximums have been set such that every onboard passenger is a candidate provided that
+      // FitnessExchanges are processed in traversal order, with departures occuring before arrivals at each
+      // exchange.
+      this.onboardPassengers.clear();
       for (final FitnessExchange nextExchange : this.fitnessExchanges) {
          final int passengersOut = nextExchange.getPassengersOut();
          final ImmutableList<TravellingPassenger> arrivals = nextExchange.getArrivals();
@@ -163,26 +209,15 @@ implements Fitness
                .weight(nextDeparture.getWeight());
             });
          }
-
-         for (final TravellingPassenger nextPassenger : arrivals) {
-            /*final int lowSeed = configuration.valueAt(weightAttrIndex++);
-            final int highSeed = configuration.valueAt(weightAttrIndex++);
-            final long seedAttr = (((long) highSeed) << 32) | (lowSeed & 0xffffffffL);
-            JcopRandom.setSeed(seedAttr);
-
-            nextPassenger.setWeight(
-               this.populationSampler.lookup(
-                  JcopRandom.nextDouble(),
-                  JcopRandom.nextDouble()));*/
-            final double probGroup = configuration.valueAt(weightAttrIndex++) * ATTR_SCALE;
-            final double probDist = configuration.valueAt(weightAttrIndex++) * ATTR_SCALE;
-            nextPassenger.setWeight(
-               this.populationSampler.lookup(probGroup, probDist));
-         }
          
+         // Having just processed the departures, queue up the arrivals.  The next attribute will have been sampled
+         // from a variable that reflects this increase in candidate count.
          this.onboardPassengers.addAll(arrivals);
       }
       
+      // Anyone still onboard is should be accounted for by remaining weight in elevator car.  Account for it with a
+      // pretend exchange that imagines that many passengers of that much weight disembark at an imaginary next stop
+      // that has not actually happened yet.
       for (TravellingPassenger nextTraveller: this.onboardPassengers) {
          solutionBuilder.ongoingTraveller((builder) -> {
             builder.originFloor(nextTraveller.getOriginFloorIndex())
@@ -191,18 +226,23 @@ implements Fitness
          });
       }
 
+      // Calculate partial scores and clear the transient state so the score tracking structures may be reused.
       for (final FitnessExchange nextExchange : this.fitnessExchanges) {
          solutionBuilder.scoreComponent(
             nextExchange.computeResult()
          );
       }
       if (this.ongoingExchange != null) {
+         // Only tabulate the final imaginary exchange if there were any passengers left on board.  The error function
+         // does not work well when the expected value and standard deviation are zero.
          this.ongoingExchange.getDepartures()
             .addAll(this.onboardPassengers);
          solutionBuilder.scoreComponent(
             this.ongoingExchange.computeResult());
       }
 
+      // JcopRandom.setSeed(System.currentTimeMillis());
+      JcopRandom.setSeed(cachedSeed);
       return solutionBuilder.build();
    }
 }
