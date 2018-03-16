@@ -5,7 +5,7 @@ import java.util.BitSet;
 import lombok.experimental.Delegate;
 
 
-public class ProtectedBitSet {
+public class ProtectedBitSet implements ReadOnlyBitSet {
    @Delegate(types={ReadOnlyBitSet.class})
    private BitSet bitSet;
    

@@ -1,8 +1,12 @@
 package test.jcop;
 
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 
 @Value
+@Builder
+@EqualsAndHashCode(doNotUseGetters=true, of= {"index"})
 public class PassengerExit implements PassengerVertex
 {
    final int index;

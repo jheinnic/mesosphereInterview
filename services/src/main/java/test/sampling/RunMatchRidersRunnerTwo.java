@@ -15,14 +15,13 @@ import cz.cvut.felk.cig.jcop.result.ResultEntry;
 import cz.cvut.felk.cig.jcop.solver.SimpleSolver;
 import cz.cvut.felk.cig.jcop.solver.Solver;
 import cz.cvut.felk.cig.jcop.solver.condition.IterationCondition;
-import cz.cvut.felk.cig.jcop.solver.condition.StopCondition;
 import cz.cvut.felk.cig.jcop.solver.condition.TimeoutCondition;
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
-import test.jcop.Building;
-import test.jcop.CandidateSolution;
-import test.jcop.IWhoGoesWhereFactory;
-import test.jcop.WhoGoesWhere;
-import test.jcop.WhoGoesWhereFitness;
+import test.jcop2.Building;
+import test.jcop2.CandidateSolution;
+import test.jcop2.IWhoGoesWhereFactory;
+import test.jcop2.WhoGoesWhere;
+import test.jcop2.WhoGoesWhereFitness;
 
 
 //@Component
@@ -32,18 +31,16 @@ implements ApplicationRunner
 {
    private final IWhoGoesWhereFactory problemFactory;
 
-
    @Autowired
    RunMatchRidersRunnerTwo( IWhoGoesWhereFactory problemFactory )
    {
       this.problemFactory = problemFactory;
    }
 
-
    @Override
    public void run(ApplicationArguments args) throws Exception
    {
-      Building problemData = Building.build((builder) -> {
+      final Building problemData = Building.build((builder) -> {
          builder.currentDirection(DirectionOfTravel.GOING_UP)
          .floorLanding((floorBuilder) -> {
             floorBuilder.floorIndex(0)
@@ -66,23 +63,30 @@ implements ApplicationRunner
             });
          });
       });
-      WhoGoesWhere problem = this.problemFactory.allocateProblem("Testing", problemData);
-      Solver solver = new SimpleSolver(
+
+      final WhoGoesWhere problem = this.problemFactory.allocateProblem("Testing", problemData);
+      final WhoGoesWhereFitness fitness = problem.getDefaultFitness();
+
+      final Solver solver = new SimpleSolver(
          new GeneticAlgorithm(16, 0.025), problem);
-      StopCondition timeStopCondition = new TimeoutCondition(500);
-      StopCondition iterStopCondition = new IterationCondition(2000);
-      solver.addStopCondition(timeStopCondition);
-      solver.addStopCondition(iterStopCondition);
-      
+      solver.addStopCondition(
+         new TimeoutCondition(500));
+      solver.addStopCondition(
+         new IterationCondition(2000));
       solver.run();
       
-      Result result = solver.getResult();
-      WhoGoesWhereFitness fitness = problem.getDefaultFitness();
-      ResultEntry resultEntry = result.getResultEntries().get(0);
-      Configuration bestConfiguration = resultEntry.getBestConfiguration();
-      CandidateSolution solution = fitness.transformConfiguration(bestConfiguration);
+      final Result result = solver.getResult();
+      final ResultEntry resultEntry = result.getResultEntries().get(0);
+      final Configuration bestConfiguration = resultEntry.getBestConfiguration();
+      final CandidateSolution solution = fitness.transformConfiguration(bestConfiguration);
+
       System.out.println(solution.toString());
-      System.out.println(String.format("Solution in %d iterations over %d ms", resultEntry.getOptimizeCounter(), resultEntry.getStartTimestamp().getClockTimeSpent(resultEntry.getStopTimestamp())));
+      System.out.println(
+         String.format("Solution in %d iterations over %d ms",
+            resultEntry.getOptimizeCounter(),
+            resultEntry.getStartTimestamp()
+               .getClockTimeSpent(
+                  resultEntry.getStopTimestamp())));
    }
    // 63.2 + 64.3 + 72.1
    // -64.3 + 70.9 = 6.6 

@@ -1,6 +1,10 @@
 package test.jcop;
 
 
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.commons.math3.util.MathArrays;
 import org.jgrapht.alg.interfaces.MatchingAlgorithm.Matching;
 import org.jgrapht.graph.DefaultWeightedEdge;
@@ -10,6 +14,7 @@ import org.jgrapht.graph.builder.GraphBuilder;
 import cz.cvut.felk.cig.jcop.problem.BaseFitness;
 import cz.cvut.felk.cig.jcop.problem.Configuration;
 import cz.cvut.felk.cig.jcop.problem.Fitness;
+import cz.cvut.felk.cig.jcop.util.JcopRandom;
 import info.jchein.mesosphere.elevator.common.probability.IPopulationSampler;
 import lombok.extern.slf4j.Slf4j;
 import test.jcop.CandidateSolution.CandidateSolutionBuilder;
@@ -31,6 +36,11 @@ implements Fitness
     */
    protected final IWhoGoesWhereProblem problem;
    protected final IPopulationSampler populationSampler;
+   private SimpleWeightedGraph<PassengerVertex, DefaultWeightedEdge> matchingGraph;
+   private DefaultWeightedEdge[][] entryExitEdges;
+
+   private Set<PassengerVertex> arrivalSet;
+   private Set<PassengerVertex> departureSet;
 
 
    /**
@@ -46,19 +56,30 @@ implements Fitness
       this.populationSampler = populationSampler;
 
       /* BaseFitness */
-      this.maxFitness = problem.getExchanges().length;
-      this.minFitness = 0;
       this.asymmetricScale = false;
-   }
+      this.maxFitness = 1.0;
+      this.minFitness = 0.0;
 
+      // This populates matchingGraph and entryExitEdges
+      this.constructMatchingGraph(problem);
+
+      // Prepackage the arrivals and departure vertices in Sets, since thats how the matching algorithms expect to 
+      // be provided their values.
+      this.arrivalSet =
+         Arrays.<PassengerVertex> stream(problem.getArrivals())
+            .collect(Collectors.toSet());
+      this.departureSet =
+         Arrays.<PassengerVertex> stream(problem.getDepartures())
+            .collect(Collectors.toSet());
+   }
 
    protected abstract
    GraphBuilder<PassengerVertex, DefaultWeightedEdge, SimpleWeightedGraph<PassengerVertex, DefaultWeightedEdge>>
    getGraphBuilder();
 
-
    protected abstract Matching<PassengerVertex, DefaultWeightedEdge>
-   getOptimalMatching(SimpleWeightedGraph<PassengerVertex, DefaultWeightedEdge> graph);
+   getOptimalMatching(SimpleWeightedGraph<PassengerVertex, DefaultWeightedEdge> graph,
+      Set<PassengerVertex> incomingSet, Set<PassengerVertex> outgoingSet);
 
 
    /**
@@ -79,61 +100,116 @@ implements Fitness
    }
 
 
-   public CandidateSolution transformConfiguration(Configuration configuration)
+   private void constructMatchingGraph(IWhoGoesWhereProblem problem)
    {
-      final PassengerEntry[] arrivals = this.problem.getArrivals();
-      final PassengerExit[] departures = this.problem.getDepartures();
-      final PassengerExchange[] exchanges = this.problem.getExchanges();
-      final CandidateSolutionBuilder solutionBuilder = CandidateSolution.builder();
-      solutionBuilder.configuration(configuration);
-
-      final int passengerCount = arrivals.length;
-      final int exchangeCount = exchanges.length;
-
-      final double[] passengerWeights = new double[passengerCount];
-      final double[] weightChanges = new double[exchangeCount];
-
       final GraphBuilder<PassengerVertex, DefaultWeightedEdge, SimpleWeightedGraph<PassengerVertex, DefaultWeightedEdge>> graphBuilder =
          this.getGraphBuilder();
+
+      final PassengerEntry[] arrivals = problem.getArrivals();
+      final PassengerExit[] departures = problem.getDepartures();
       graphBuilder.addVertices(arrivals)
          .addVertices(departures);
 
+      final int passengerCount = arrivals.length;
+      this.entryExitEdges = new DefaultWeightedEdge[passengerCount][];
       for (int ii = 0; ii < passengerCount; ii++) {
+         // Read the static problem sizing indices stored with the next passenger pickup entry and allocate edges to
+         // hold implied by a given Configuration while testing its fitness.
          final PassengerEntry nextEntry = arrivals[ii];
+         final int firstOutboundIndex = nextEntry.getFirstOutboundIndex();
+         final int matchCandidateCount = nextEntry.getMatchCandidateCount();
+         this.entryExitEdges[ii] = new DefaultWeightedEdge[matchCandidateCount];
+
+         for (int jj = 0, kk = firstOutboundIndex; jj < matchCandidateCount; jj++, kk++) {
+            this.entryExitEdges[ii][jj] = new DefaultWeightedEdge();
+            graphBuilder.addEdge(nextEntry, departures[kk], this.entryExitEdges[ii][jj]);
+         }
+      }
+
+      this.matchingGraph = graphBuilder.build();
+   }
+
+
+   public CandidateSolution transformConfiguration(Configuration configuration)
+   {
+      final CandidateSolutionBuilder solutionBuilder = CandidateSolution.builder();
+      solutionBuilder.configuration(configuration);
+
+      final PassengerEntry[] arrivals = this.problem.getArrivals();
+      final PassengerExchange[] exchanges = this.problem.getExchanges();
+
+      // Store passenger weights orthogonally to the passenger vertices to facilitate concurrent reuse.
+      final int passengerCount = arrivals.length;
+      final double[] passengerWeights = new double[passengerCount];
+
+      // Store mass values from Configuration orthogonally to the passenger vertices to facilitate concurrent reuse.
+      final int exchangeCount = exchanges.length;
+      final double[] weightChanges = new double[exchangeCount];
+
+      // Store match bias edge weights from Configuration one source at a time--once they are assigned to graph,
+      // we can recycle.
+      int lastMatchCandidateCount = -1;
+      double[] matchWeights = null;
+
+      for (int ii = 0; ii < passengerCount; ii++) {
+         // Get the iith passenger entry vertex and its list of candidate edges for weighting.
+         final PassengerEntry nextEntry = arrivals[ii];
+         final DefaultWeightedEdge[] matchCandidates = this.entryExitEdges[ii];
+
+         // Read the static problem sizing indices stored with the next passenger pickup entry.
+         final int weightIndex = ii * 4; // nextEntry.getWeightIndex();
          final int exchangeIndex = nextEntry.getExchangeIndex();
-         final int weightIndex = nextEntry.getWeightIndex();
+         final int matchCandidateCount = nextEntry.getMatchCandidateCount();
+
+         // Try to recycle the array for normalizing match randomization weights.
+         if (matchCandidateCount != lastMatchCandidateCount) {
+            matchWeights = new double[matchCandidateCount];
+         }
+
+         // Read the sampling key used to embed the weight for current passenger in configuration's proposed solution.
          final double attrValueOne = configuration.valueAt(weightIndex) * ATTR_SCALE;
          final double attrValueTwo = configuration.valueAt(weightIndex + 1) * ATTR_SCALE;
          passengerWeights[ii] = this.populationSampler.lookup(attrValueOne, attrValueTwo);
          weightChanges[exchangeIndex] += passengerWeights[ii];
 
-         final int firstMatchIndex = nextEntry.getFirstMatchIndex();
-         final int firstOutboundIndex = nextEntry.getFirstOutboundIndex();
-         final int matchCandidateCount = nextEntry.getMatchCandidateCount();
-//         log.info("Loading match algorithm with edges origin {} to {} destinations from {}({}) to {}({})", nextEntry.getLabel(), matchCandidateCount, departures[firstOutboundIndex].getLabel(),
-//            firstOutboundIndex, departures[firstOutboundIndex + matchCandidateCount - 1].getLabel(), firstOutboundIndex + matchCandidateCount - 1);
-         double[] matchWeights = new double[matchCandidateCount];
-         for (int jj = 0, kk = firstMatchIndex; jj < matchCandidateCount; jj++, kk++) {
-            matchWeights[jj] = configuration.valueAt(kk) * ATTR_SCALE;
+         // Next two integer parameters provide a seed for generating vertex matching edge weights.
+         final int lowSeed = configuration.valueAt(weightIndex + 2);
+         final int highSeed = configuration.valueAt(weightIndex + 3);
+         final long seedAttr = (((long) highSeed) << 32) | (lowSeed & 0xffffffffL);
+         JcopRandom.setSeed(seedAttr);
+
+         // Convert the seed attribute to a run of unnormalized edge weights. This is deterministic.
+         for (int jj = 0; jj < matchCandidateCount; jj++) {
+            matchWeights[jj] = JcopRandom.nextDouble();
          }
+
+         // Normalize the edge weights to 1000.
          matchWeights = MathArrays.normalizeArray(matchWeights, 1000.00);
-         for (int jj = 0, kk = firstOutboundIndex; jj < matchCandidateCount; jj++, kk++) {
-            final PassengerExit nextExit = departures[kk];
-            graphBuilder.addEdge(nextEntry, nextExit, matchWeights[jj]);
-            // log.info(String.format("Adding edge from %s to %s of weight %f", nextEntry.getLabel(),
-            // nextExit.getLabel(), matchWeights[jj]));
+
+         // Assign edge weights to edges
+         for (int jj = 0; jj < matchCandidateCount; jj++) {
+            this.matchingGraph.setEdgeWeight(matchCandidates[jj], matchWeights[jj]);
          }
       }
-      final SimpleWeightedGraph<PassengerVertex, DefaultWeightedEdge> graph = graphBuilder.build();
-      final Matching<PassengerVertex, DefaultWeightedEdge> matching = this.getOptimalMatching(graph);
-      if (matching.isPerfect()) {
-         // log.info("Fitness check computed perfect matching for candidate graph");
-      } else {
+
+      // Run the matching
+      final Matching<PassengerVertex, DefaultWeightedEdge> matching =
+         this.getOptimalMatching(this.matchingGraph, this.arrivalSet, this.departureSet);
+      if (!matching.isPerfect()) {
          log.warn("Fitness check computed imperfect matching for candidate graph");
       }
+      
+      // Process each edge found in the matching
       for (final DefaultWeightedEdge matchEdge : matching) {
-         final PassengerExit matchedExit = (PassengerExit) graph.getEdgeTarget(matchEdge);
-         final PassengerEntry matchedEntry = (PassengerEntry) graph.getEdgeSource(matchEdge);
+         final PassengerExit matchedExit = (PassengerExit) this.matchingGraph.getEdgeTarget(matchEdge);
+         final PassengerEntry matchedEntry = (PassengerEntry) this.matchingGraph.getEdgeSource(matchEdge);
+         
+         // Tally effect of outbound departures on weight flow, pairing the location of each departure with
+         // the weight associated with its matched passenger arrival vertex, then normalize each exchange's
+         // contribution to the overall score by applying the Gaussian function to the difference between
+         // expected and actual weight change.  This function will equal 1 for a perfect match, and some
+         // value between 0 and 1 for anything else, with smaller values associated with larger differences
+         // between expected and actual.
          weightChanges[matchedExit.getExchangeIndex()] -= passengerWeights[matchedEntry.getIndex()];
          if (matchedExit.hasReachedDestination()) {
             solutionBuilder.completedTrip(
@@ -171,8 +247,9 @@ implements Fitness
                   .build());
          }
       }
+      fitness = fitness / exchangeCount;
       solutionBuilder.fitness(fitness);
-       log.info("Calculated fitness score of {}", fitness);
+//      log.info("Calculated fitness ranking of {}", fitness);
 
       return solutionBuilder.build();
    }

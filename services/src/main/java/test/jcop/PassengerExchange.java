@@ -3,10 +3,12 @@ package test.jcop;
 import org.apache.commons.math3.analysis.function.Gaussian;
 
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 
 @Value
 @AllArgsConstructor
+@EqualsAndHashCode(doNotUseGetters=true, of= {"index"})
 public class PassengerExchange
 {
    final int index;
@@ -30,7 +32,7 @@ public class PassengerExchange
       this.expectedIncomingWeight = expectedIncomingWeight;
       this.expectedOutgoingWeight = expectedIncomingWeight + event.getWeightChange();
       this.expectedWeightChange = event.getWeightChange();
-      this.actualChangeGauss = new Gaussian(1.0, this.expectedWeightChange, 40);
+      this.actualChangeGauss = new Gaussian(1.0, this.expectedWeightChange, 9.5);
    }
    
    /**

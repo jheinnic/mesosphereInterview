@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Import;
 import info.jchein.mesosphere.elevator.common.IdentityConfiguration;
 import info.jchein.mesosphere.elevator.common.bootstrap.BootstrapConfiguration;
 import info.jchein.mesosphere.elevator.common.probability.ProbabilityUtilsConfiguration;
-import test.jcop.WhoGoesWhereConfiguration;
+import test.jcop2.WhoGoesWhereConfiguration;
 
 @Configuration
 @Import({
