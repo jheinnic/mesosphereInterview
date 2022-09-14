@@ -2,15 +2,15 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>info.jchein.examples.citrine.units</groupId>
-        <artifactId>units-parent</artifactId>
-        <version>0.0.8</version>
-        <relativePath>../units-parent</relativePath>
+        <groupId>info.jchein.examples.mesosphere.interview</groupId>
+        <artifactId>parent</artifactId>
+        <version>0.0.1</version>
+        <relativePath>../parent</relativePath>
     </parent>
-    <artifactId>acceptance</artifactId>
+    <artifactId>at</artifactId>
     <packaging>jar</packaging>
-    <name>Units Project Acceptance Suite</name>
-    <description>Acceptance Test Suite for Citrine Interview Challenge</description>
+    <name>Elevator Project Acceptance Suite</name>
+    <description>Acceptance Test Suite for Mesosphre Interview Challenge</description>
 
     <build>
         <plugins>
@@ -18,12 +18,22 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
-            <!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-surefire-plugin</artifactId> 
-                </plugin> <plugin> <groupId>org.eclipse.xtend</groupId> <artifactId>xtend-maven-plugin</artifactId> 
-                </plugin> -->
             <plugin>
                 <groupId>com.thoughtworks.gauge.maven</groupId>
                 <artifactId>gauge-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>test</phase>
+                        <configuration>
+			    <dir>src/test/gauge</dir>
+			    <env>default</env>
+                            <specsDir>src/test/gauge/specs</specsDir>
+                        </configuration>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                    </execution>
+                </executions>
 <!--
                 <dependencies>
                     <dependency>
@@ -38,12 +48,19 @@
     </build>
 
     <dependencies>
-        <!-- <dependency> <groupId>info.jchein.examples.citrine</groupId> 
-            <artifactId>units-webapp</artifactId> <scope>test</scope> </dependency> -->
-
+        <dependency>
+            <groupId>com.thoughtworks.gauge</groupId>
+            <artifactId>gauge</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>com.thoughtworks.gauge</groupId>
             <artifactId>gauge-java</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
 
