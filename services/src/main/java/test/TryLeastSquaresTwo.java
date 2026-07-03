@@ -63,7 +63,7 @@ public class TryLeastSquaresTwo
       final ArrayRealVector targetOutputs =
          new ArrayRealVector(new double[] {v2, a2}, false);
       final ArrayRealVector initialInputs =
-         new ArrayRealVector(new double[] {20, 20}, false);
+         new ArrayRealVector(new double[] {996.104, 462.770}, false);
 
       double it0 = initialInputs.getEntry(IDX_T_0);
       double it1 = initialInputs.getEntry(IDX_T_1);
@@ -74,14 +74,20 @@ public class TryLeastSquaresTwo
          double t0 = input.getEntry(IDX_T_0);
          double t1 = input.getEntry(IDX_T_1);
          
-         if (t0 <= 0) { t0 = 1e-12; }
-         if (t1 <= 0) { t1 = 1e-12; }
+         if (t0 <= 0) {
+            t0 = 1e-12;
+            if (t1 <= 0) {
+               t1 = 1e-12;
+            }
+         }
+         else if (t1 <= 0) { t1 = 1e-12; }
+         else return input;
 
          return new ArrayRealVector(new double[] {t0, t1}, false);
       };
 
       LeastSquaresBuilder bldr = new LeastSquaresBuilder();
-      MultivariateJacobianFunction mjf = new BrakingFunction(v0, j0, j1);
+      MultivariateJacobianFunction mjf = new BrakingFunction(v0, a0, j0, j1);
       EvaluationRmsChecker convChecker = new EvaluationRmsChecker(1e-9);
       LeastSquaresProblem problem =
          bldr.model(mjf)
@@ -140,13 +146,15 @@ public class TryLeastSquaresTwo
    {
 
       private double v0;
+      private double a0;
       private double j0;
       private double j1;
 
 
-      public BrakingFunction( double v0, double j0, double j1 )
+      public BrakingFunction( double v0, double a0, double j0, double j1 )
       {
          this.v0 = v0;
+         this.v0 = a0;
          this.j0 = j0;
          this.j1 = j1;
       }
