@@ -6,8 +6,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
 
-import info.jchein.mesosphere.elevator.common.physics.PathMoment;
-
 
 public class JourneyArcMomentSeries
 implements Iterable<PathMoment>

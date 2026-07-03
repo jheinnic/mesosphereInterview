@@ -67,8 +67,6 @@ import info.jchein.mesosphere.elevator.common.physics.IElevatorPhysicsService;
 import info.jchein.mesosphere.elevator.common.physics.JourneyArc;
 import info.jchein.mesosphere.elevator.common.physics.JourneyArcMomentSeries;
 import info.jchein.mesosphere.elevator.common.physics.PathMoment;
-import info.jchein.mesosphere.elevator.common.physics.TravelPathDownComparator;
-import info.jchein.mesosphere.elevator.common.physics.TravelPathUpComparator;
 import info.jchein.mesosphere.elevator.control.event.AssignedPickupCall;
 import info.jchein.mesosphere.elevator.control.event.DepartedLanding;
 import info.jchein.mesosphere.elevator.control.event.DriverBootstrapped;
