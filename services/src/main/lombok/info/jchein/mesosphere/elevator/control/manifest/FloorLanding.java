@@ -97,7 +97,7 @@ class FloorLanding implements ITravelQueueNode
       if (this.direction.floorOrder(this.pickupFloor, floorIndex) < 0) {
          this.possibleDropFloors.set(floorIndex);
          if (this.activePickup) {
-            this.
+            // this.
          }
       }
    }
