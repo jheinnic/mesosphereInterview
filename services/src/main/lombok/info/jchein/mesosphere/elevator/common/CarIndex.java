@@ -4,7 +4,7 @@ import javax.validation.constraints.Min;
 
 import lombok.Value;
 
-@Value
+@Value(staticConstructor="of")
 public class CarIndex
 {
    @Min(0)
