@@ -1,6 +1,7 @@
 package test.jcop2;
 
 
+import java.util.BitSet;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -32,7 +33,7 @@ public class FloorLanding
    static FloorLanding makeFloorLanding(int floorIndex,
       @Singular("boardingEvent") @ObtainVia(method = "boardingEventsForBuilder")
       List<Consumer<BoardingEvent.BoardingEventBuilder>> boardingEvents,
-      IBitSet dropRequests)
+      BitSet dropRequests)
    {
       return new FloorLanding(
          floorIndex,
@@ -45,9 +46,7 @@ public class FloorLanding
                   builderOne.addAll(builderTwo.build());
                })
             .build(),
-         (dropRequests instanceof IReadOnlyBitSet)
-            ? (IReadOnlyBitSet) dropRequests 
-            : (dropRequests != null) ? dropRequests.readOnlyCopy() : new ReadOnlyBitSet());
+            (dropRequests != null) ? new ProtectedBitSet(dropRequests.clone(), true) : new ReadOnlyBitSet());
    }
 
 
