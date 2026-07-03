@@ -53,7 +53,7 @@ public class VertexFactory implements IVertexFactory
    private final BeforeTravelling travelPathOriginNode;
    private final AfterTravelling travelPathTerminalNode;
    
-   // The BitSets that partition the pickup and drop off floors creaete too many permutations to pre-allocate these that get used with bookkeeping for 
+   // The BitSets that partition the pickup and drop off floors create too many permutations to pre-allocate those that get used with bookkeeping for 
    // projected and potential travel time costs, and possibly for deducing origins from weight deltas.  Use a weak interner to track the in-use set dynamically
    // in order to reuse as much as we can, without also holding on to much we don't.
    private final Interner<InitialPickupStep> pickupStepInterner;
@@ -107,7 +107,9 @@ public class VertexFactory implements IVertexFactory
       for( int ii=0; ii<numFloors; ii++ ) {
          final BitSet bits = new BitSet(this.numFloors);
          bits.set(ii);
-         this.oneFloorBitSets[ii] = new ProtectedBitSet(bits);
+         this.oneFloorBitSets[ii] = this.bitSetInterner.intern(
+             new ProtectedBitSet(bits)
+         );
 
          this.buildingFloors[ii] = new BuildingFloor(ii);
          this.descendingAdjacencies[0] = null;

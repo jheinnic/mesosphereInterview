@@ -8,8 +8,8 @@ import com.google.common.collect.Interners;
 //@Scope(BeanDefinition.SCOPE_SINGLETON)
 public class CarIndexContext implements ICarContext
 {
+   private static Interner<CarIndex> internCache = Interners.newStrongInterner();
    private ThreadLocal<CarIndex> carContext = new ThreadLocal<CarIndex>();;
-   private Interner<CarIndex> internCache = Interners.newStrongInterner();
 
    @Override
    public CarIndex get()
@@ -25,13 +25,13 @@ public class CarIndexContext implements ICarContext
    public void accept(CarIndex t)
    {
       this.carContext.set(
-         (t != null) ? this.internCache.intern(t) : t);
+         (t != null) ? CarIndexContext.internCache.intern(t) : t);
    }
    
    public void setCarIndex(int carIndex) {
-      final CarIndex t = new CarIndex(carIndex);
+      final CarIndex t = CarIndex.of(carIndex);
       this.carContext.set(
-         this.internCache.intern(t));
+         CarIndexContext.internCache.intern(t));
    }
 
    @Override
@@ -39,17 +39,18 @@ public class CarIndexContext implements ICarContext
    {
       final CarIndex retVal = this.carContext.get();
       this.carContext.set(
-         (t != null) ? this.internCache.intern(t) : t);
+         (t != null) ? CarIndexContext.internCache.intern(t) : t);
       return retVal;
    }
 
    @Override
    public CarIndex swapCarIndex(int carIndex)
    {
-      final CarIndex retVal = this.carContext.get();
-      final CarIndex t = new CarIndex(carIndex);
-      this.carContext.set(
-         this.internCache.intern(t));
+      final CarIndex retVal = 
+         CarIndexContext.internCache.intern(
+             CarIndex.of(carIndex)
+         );
+      this.carContext.set(retVal);
 
       return retVal;
    }
