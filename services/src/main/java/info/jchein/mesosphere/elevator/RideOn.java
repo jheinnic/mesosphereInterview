@@ -40,6 +40,7 @@ public class RideOn
          public void initialize(ConfigurableApplicationContext applicationContext)
          {
             final CustomScopeConfigurer addElevatorCarScopePostProcessor = customScopeConfigurer();
+            addElevatorCarScopePostProcessor.addScope(IElevatorCarScope.SCOPE_NAME, elevatorCarScope());
             applicationContext.addBeanFactoryPostProcessor(addElevatorCarScopePostProcessor);
          }
         }));
