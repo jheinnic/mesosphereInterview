@@ -145,7 +145,6 @@
         <dependency>
             <groupId>io.jenetics</groupId>
             <artifactId>jenetics</artifactId>
-            <version>4.0.0</version>
         </dependency>
 
         <!-- Jackson -->

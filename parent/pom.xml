@@ -56,6 +56,7 @@
         <gauge-java.version>1.0.1</gauge-java.version>
         <javasim.version>2.0-hbraun</javasim.version>
         <jgrapht.version>1.1.0</jgrapht.version>
+        <jenetics.version>4.0.0</jenetics.version>
         <lombok.version>1.18.30</lombok.version>
         <rxjava.version>1.3.5</rxjava.version>
         <scala-lib.version>2.11.0</scala-lib.version>
@@ -243,6 +244,12 @@
                 <groupId>javasim</groupId>
                 <artifactId>javasim</artifactId>
                 <version>${javasim.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.jenetics</groupId>
+                <artifactId>jenetics</artifactId>
+                <version>${jenetics.version}</version>
             </dependency>
 
             <!-- Jackson -->
