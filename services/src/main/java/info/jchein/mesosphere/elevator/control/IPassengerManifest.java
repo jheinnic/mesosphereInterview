@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableList;
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 import info.jchein.mesosphere.elevator.control.event.DropOffRequested;
 import info.jchein.mesosphere.elevator.control.event.WeightLoadUpdated;
+import info.jchein.mesosphere.elevator.monitor.model.PendingDropOff;
 
 public interface IPassengerManifest
 {
@@ -29,6 +30,8 @@ public interface IPassengerManifest
    PerformanceEstimate estimatePerformance();
    
    PickupImpactEstimate estimatePickupImpact(int floorIndex, DirectionOfTravel direction, ImmutableList<Pair<Integer, Double>> passengers);
+
+   void bootstrapFromState(int initialFloor, ImmutableList<PendingDropOff> passengers);
 
    void trackDropRequest(int floorIndex);
 

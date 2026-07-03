@@ -152,7 +152,8 @@ implements IElevatorCar, IElevatorCarPort
       @NotNull IElevatorPhysicsService physicsService, @NotNull final IRuntimeClock clock,
       @NotNull final IRuntimeScheduler scheduler, @NotNull final IRuntimeEventBus eventBus,
       @NotNull final DeploymentConfiguration bootstrapData,
-      @NotNull final VirtualRuntimeConfiguration runtimeConfig )
+      @NotNull final VirtualRuntimeConfiguration runtimeConfig,
+      @NotNull final IPassengerManifest passengerManifest )
    {
       this.physicsService = physicsService;
       this.driverLocator = driverLocator;
@@ -164,6 +165,7 @@ implements IElevatorCar, IElevatorCarPort
       this.weightDesc = bootstrapData.getWeight();
       this.doorDesc = bootstrapData.getDoors();
       this.tickDurationMillis = runtimeConfig.getTickDurationMillis();
+      this.passengerManifest = passengerManifest;
    }
 
    @Override
@@ -286,74 +288,28 @@ implements IElevatorCar, IElevatorCarPort
 
 
    @Transition(from = WAITING_FOR_DRIVER, event = DRIVER_INITIALIZED, to = AVAILABLE)
-   public void onBootstrap(final String event, final IPassengerManifest data)
+   public void onBootstrap(final String event, final InitialCarState data)
    {
       log.info(
          "Driver for elevator car {} called onBootstrap() at {} with {}",
          this.carIndex,
          this.clock.now(),
          data);
-      this.passengerManifest = data;
-/*
-      final int initialFloor = data.getInitialFloor();
-      final double initialWeight =
-         data.passengers.stream()
-            .collect(Collectors.summingDouble((p) -> p.weight));
-      final List<ScheduledStop> initialDropRequests =
-         data.passengers.stream()
-            .<ScheduledStop> map(pendingDrop -> {
-               return ScheduledDrop.builder()
-                  .build();
-            })
-            .collect(Collectors.toList());
-      
-      this.currentWeightLoad = initialWeight;
-      this.currentFloorIndex = initialFloor;
-      this.scheduledStops = new ArrayList<ScheduledStop>(this.bldgDesc.getNumFloors());
-
-      if (initialDropRequests.size() == 0) {
-         this.currentDirection = DirectionOfTravel.STOPPED;
-         this.currentDestination = null;
-         this.currentComparator = null;
-      } else {
-         ScheduledStop aNewTarget = initialDropRequests.get(0);
-         // TODO: Consider relaxing the following assertion for cases where a pickup call is early on a post-rerversal return route.
-         if (initialFloor < aNewTarget.getFloorIndex()) {
-            Preconditions.checkArgument(
-               initialDropRequests.stream().allMatch(stop -> {
-                  return stop.getFloorIndex() > this.currentFloorIndex;
-               }), "Initial requests must either all initially ascend or all initially descend."
-            );
-            this.currentComparator = new TravelPathUpComparator(initialFloor);
-            this.currentDirection = DirectionOfTravel.GOING_UP;
-         } else if (initialFloor > aNewTarget.getFloorIndex()) {
-            Preconditions.checkArgument(
-               initialDropRequests.stream().allMatch(stop -> {
-                  return stop.getFloorIndex() < this.currentFloorIndex;
-               }), "Initial requests must either all initially ascend or all initially descend."
-            );
-            this.currentComparator = new TravelPathDownComparator(initialFloor);
-            this.currentDirection = DirectionOfTravel.GOING_DOWN;
-         }
-      this.scheduledStops = new ArrayList<ScheduledStop>(initialDropRequests);
-      Collections.sort(this.scheduledStops, this.currentComparator);
-   }
-      */
+      this.passengerManifest.bootstrapFromState(data.initialFloor, data.passengers);
 
       this.scheduler.scheduleInterrupt(
          this.tickDurationMillis,
          TimeUnit.MILLISECONDS,
          Priorities.STEP_DRIVERS.getValue(),
          this::onClockInterval);
-      
-      // At this point, scheduledStops only includes drop requests.
+
       this.eventBus.post(DriverBootstrapped.build(bldr -> {
          bldr.clockTime(this.clock.now())
             .carIndex(this.carIndex)
-            .floorIndex(data.getCurrentFloor())
-            .weightLoad(data.getCurrentWeightLoad())
-            .initialDirection(data.getCurrentDirection())
-            .dropRequests(data.getFloorStops());
+            .floorIndex(this.passengerManifest.getCurrentFloor())
+            .weightLoad(this.passengerManifest.getCurrentWeightLoad())
+            .initialDirection(this.passengerManifest.getCurrentDirection())
+            .dropRequests(this.passengerManifest.getFloorStops());
       }));
    }
 

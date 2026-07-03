@@ -46,20 +46,18 @@ public class ManifestConfiguration
          {
             return null;
          }
-         
-         
+
          @Override
          public PerformanceEstimate estimatePerformance()
          {
             return null;
          }
 
-
-//         @Override
-//         protected ITravelGraph allocateTravelGraph(DirectionOfTravel direction)
-//         {
-//            return ManifestConfiguration.this.graphFactory().apply(direction);
-//         }
+         @Override
+         protected ITravelGraph allocateTravelGraph(DirectionOfTravel direction)
+         {
+            return null;
+         }
       };
    }
 }
