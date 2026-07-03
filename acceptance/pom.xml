@@ -50,11 +50,6 @@
     <dependencies>
         <dependency>
             <groupId>com.thoughtworks.gauge</groupId>
-            <artifactId>gauge</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.thoughtworks.gauge</groupId>
             <artifactId>gauge-java</artifactId>
             <scope>test</scope>
         </dependency>
