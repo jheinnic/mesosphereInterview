@@ -14,8 +14,6 @@ import java.lang.annotation.Target;
 import javax.validation.Constraint;
 import javax.validation.Payload;
 
-import org.hibernate.validator.constraints.Length;
-
 import info.jchein.mesosphere.validator.constraint.PositiveDoubleValidator;
 
 /**
@@ -36,12 +34,12 @@ public @interface Positive {
 	Class<? extends Payload>[] payload() default { };
 
 	/**
-	 * Defines several {@code @Length} annotations on the same element.
+	 * Defines several {@code @Positive} annotations on the same element.
 	 */
 	@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 	@Retention(RUNTIME)
 	@Documented
 	public @interface List {
-		Length[] value();
+		Positive[] value();
 	}
 }

@@ -14,8 +14,6 @@ import java.lang.annotation.Target;
 import javax.validation.Constraint;
 import javax.validation.Payload;
 
-import org.hibernate.validator.constraints.Length;
-
 import info.jchein.mesosphere.validator.constraint.UUIDStringValidator;
 
 /**
@@ -29,19 +27,19 @@ import info.jchein.mesosphere.validator.constraint.UUIDStringValidator;
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface UUIDString {
-	String message() default "{info.jchein.mesosphere.validator.constraints.Positive.message}";
+	String message() default "{info.jchein.mesosphere.validator.constraints.UUIDString.message}";
 
 	Class<?>[] groups() default { };
 
 	Class<? extends Payload>[] payload() default { };
 
 	/**
-	 * Defines several {@code @Length} annotations on the same element.
+	 * Defines several {@code @UUIDString} annotations on the same element.
 	 */
 	@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 	@Retention(RUNTIME)
 	@Documented
 	public @interface List {
-		Length[] value();
+		UUIDString[] value();
 	}
 }
