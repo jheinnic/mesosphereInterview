@@ -7,10 +7,12 @@ import java.util.Collections;
 import java.util.List;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 import info.jchein.mesosphere.elevator.control.IPassengerManifest;
 import info.jchein.mesosphere.elevator.control.event.WeightLoadUpdated;
+import info.jchein.mesosphere.elevator.monitor.model.PendingDropOff;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -23,10 +25,18 @@ implements IPassengerManifest
    private double outgoingLoad;
    private double currentLoad;
    private ArrayList<ScheduledStop> scheduledStops;
-   private DirectionOfTravel currentDirection;
+
+   // Monotonic counter incremented at every direction reversal.
+   // Even values = travelling up, odd values = travelling down.
+   // This lets stops be queued for the next pass in either direction while the
+   // elevator is still completing the current pass.
+   private int currentTravelIndex;
+
    private int currentFloor;
-   private ScheduledStop currentPickup;
+   private ScheduledPickuUp currentPickup;
    private ScheduledDropOff currentDrop;
+   private ITravelGraph currentTravelGraph;
+   private ITravelGraph nextTravelGraph;
 
 
    public PassengerManifest(int numFloors)
@@ -36,21 +46,23 @@ implements IPassengerManifest
       this.outgoingLoad = 0;
       this.currentLoad = 0;
       this.currentFloor = 0;
+      this.currentTravelIndex = 0;
       this.scheduledStops = new ArrayList<ScheduledStop>(3 * numFloors);
-      this.currentDirection = DirectionOfTravel.GOING_UP;
+      this.currentTravelGraph = null;
       this.nextTravelGraph = null;
       this.currentPickup = null;
       this.currentDrop = null;
 
-      this.scheduledStops.add(new ScheduledReversal(this.numFloors - 1));
+      // Sentinel reversal at the top floor ends the first (upward) pass.
+      this.scheduledStops.add(new ScheduledReversal(this.numFloors - 1, 0));
    }
 
 
    abstract protected ITravelGraph allocateTravelGraph(DirectionOfTravel direction);
-   
+
    @Override
    public DirectionOfTravel getCurrentDirection() {
-      return this.currentDirection;
+      return (this.currentTravelIndex % 2 == 0) ? DirectionOfTravel.GOING_UP : DirectionOfTravel.GOING_DOWN;
    }
 
    @Override
@@ -65,10 +77,10 @@ implements IPassengerManifest
       } else {
          nextDirection = DirectionOfTravel.STOPPED;
       }
-   
+
       return nextDirection;
    }
-   
+
    @Override
    public int getCurrentDestination()
    {
@@ -82,11 +94,27 @@ implements IPassengerManifest
    }
 
    @Override
+   public int getCurrentFloor() {
+      return this.currentFloor;
+   }
+
+   @Override
+   public boolean hasCurrentFloorStopRequest() {
+      return this.scheduledStops.stream()
+         .anyMatch(stop -> stop.getFloorIndex() == this.currentFloor && !stop.isReversal());
+   }
+
+   @Override
+   public BitSet getFloorStops() {
+      return this.toBitSet(this.scheduledStops);
+   }
+
+   @Override
    public void trackDoorsOpening()
    {
       final DirectionOfTravel nextDirection = this.getNextDirection();
-   
-      if (nextDirection != this.currentDirection) {
+
+      if (nextDirection != this.getCurrentDirection()) {
          this.nextTravelGraph = this.allocateTravelGraph(nextDirection);
          this.nextTravelGraph.recordDoorsOpening(this.currentFloor);
       } else {
@@ -130,22 +158,25 @@ implements IPassengerManifest
    }
 
 
-   private void enqueueNewStop(final ScheduledStop newStop)
+   private void enqueueStop(final ScheduledStop newStop)
    {
-      final int insertionPoint = Collections.<ScheduledStop> binarySearch(this.scheduledStops, newStop);
+      int insertionPoint = Collections.<ScheduledStop> binarySearch(this.scheduledStops, newStop);
+      if (insertionPoint < 0) {
+         insertionPoint = -(insertionPoint) - 1;
+      }
       this.scheduledStops.add(insertionPoint, newStop);
 
       if ((this.currentDrop != null) && (newStop.compareTo(this.currentDrop) < 0)) {
          // TODO: Midflight destination change!!
-         if (newStop.getPurpose() == StopPurpose.DROP_OFF) {
-            this.currentDrop = newStop; 
+         if (newStop.isDropOff()) {
+            this.currentDrop = (ScheduledDropOff) newStop;
          } else {
             this.currentDrop = null;
          }
-      } else if ((this.currentPickup != null) && (newStop.compareTo(this.currentDrop) < 0)) {
-         if (newStop.getPurpose() == StopPurpose.DOWNWARD_CALL) || (newStop.getPurpose() == StopPurpose.UPWARD_CALL)) {
+      } else if ((this.currentPickup != null) && (newStop.compareTo(this.currentPickup) < 0)) {
+         if (newStop.isPickup()) {
             this.currentPickup = newStop;
-         } else {
+         }
       }
    }
 
@@ -153,51 +184,71 @@ implements IPassengerManifest
    @Override
    public void trackDropRequest(final int destinationFloor)
    {
-      final ScheduledDropOff newStop = new ScheduledDropOff(destinationFloor);
-      final int insertionPoint = Collections.<ScheduledStop> binarySearch(this.scheduledStops, newStop);
-      this.scheduledStops.add(insertionPoint, newStop);
-
+      final ScheduledDropOff newStop = new ScheduledDropOff(destinationFloor, this.currentTravelIndex);
+      this.enqueueStop(newStop);
       this.nextTravelGraph.recordDropRequest(destinationFloor);
+   }
+
+
+   /**
+    * Computes the travelIndex for a new pickup at {@code floorIndex} in {@code direction}.
+    *
+    * Rules:
+    *   - Same direction as the current pass AND floor is still ahead of us  → current travelIndex
+    *   - Same direction as the current pass BUT floor is already behind us  → travelIndex + 2  (skip a full round-trip)
+    *   - Opposite direction from the current pass                           → travelIndex + 1  (next pass, opposite parity)
+    *
+    * "Ahead" means:
+    *   - upward pass  (even travelIndex): floorIndex >= currentFloor
+    *   - downward pass (odd travelIndex): floorIndex <= currentFloor
+    */
+   private int travelIndexFor(int floorIndex, DirectionOfTravel direction) {
+      Preconditions.checkArgument(direction != DirectionOfTravel.STOPPED);
+      final boolean wantUp   = (direction == DirectionOfTravel.GOING_UP);
+      final boolean currentUp = (this.currentTravelIndex % 2 == 0);
+
+      if (wantUp == currentUp) {
+         // Same direction: determine whether the floor is still reachable this pass.
+         final boolean floorIsAhead = currentUp
+            ? (floorIndex >= this.currentFloor)   // going up:   ahead = at or above
+            : (floorIndex <= this.currentFloor);   // going down: ahead = at or below
+         return floorIsAhead ? this.currentTravelIndex : this.currentTravelIndex + 2;
+      } else {
+         // Opposite direction: earliest opportunity is the very next pass.
+         return this.currentTravelIndex + 1;
+      }
    }
 
 
    @Override
    /**
     * Account for an assigned pickup request.
-    * 
+    *
     * @returns true if accepting the assigned pickup has changed the current destination, requiring the caller to recompute
-    *          its braking trajectory.  If the new destination falls beyond the range of safe braking requirements, it is the 
-    *          caller's responsibility to then revert the change by calling trackDroppedPickup() to reverse the changes made 
+    *          its braking trajectory.  If the new destination falls beyond the range of safe braking requirements, it is the
+    *          caller's responsibility to then revert the change by calling trackDroppedPickup() to reverse the changes made
     *          here.
     */
    public boolean trackAssignedPickup(int floorIndex, DirectionOfTravel direction)
    {
-      final ScheduledStop newStop;
-      if (direction == DirectionOfTravel.GOING_UP) {
-         newStop = new ScheduledAscendingPickUp(floorIndex);
-      } else if (direction == DirectionOfTravel.GOING_DOWN) {
-         newStop = new ScheduledDescendingPickUp(floorIndex);
-      } else if (direction == DirectionOfTravel.STOPPED) {
-         throw new IllegalArgumentException();
-      } else {
-         throw new NullPointerException();
-      }
-      
+      final int travelIndex = this.travelIndexFor(floorIndex, direction);
+      final ScheduledPickUp newStop = new ScheduledPickUp(floorIndex, travelIndex);
+
       // Pickup assignments can preempt the current destination if they are "on the way" to it.
-      
+
       boolean changedDestination = true;
       if (this.currentDrop != null) {
          if (newStop.compareTo(this.currentDrop) < 0) {
             // The new pickup is in our direction of travel and we'll reach it before the current drop.  Re-queue the current drop and change destination.
-            final int insertionPoint = Collections.<ScheduledStop> binarySearch(this.scheduledStops, this.currentDrop);
-            log.info(String.format("Re-queuing previous stop at index %d should be 0.", insertionPoint));
-            this.scheduledStops.add(insertionPoint, this.currentDrop);
+            this.enqueueStop(this.currentDrop);
             if (this.currentPickup != null) {
-               this.scheduledStops.add(insertionPoint + 1, this.currentPickup);
+               this.enqueueStop(this.currentPickup);
             }
             this.currentDrop = null;
             this.currentPickup = newStop;
-         } else if((this.currentDrop.getFloorIndex() == floorIndex) && (this.currentDirection == direction)) {
+         } else if ((this.currentDrop.getFloorIndex() == floorIndex) &&
+                    (this.getCurrentDirection() == direction) &&
+                    (travelIndex == this.currentTravelIndex)) {
             // We just picked up a pickup request for the same floor as the current drop and in the same direction we're already travelling, so we
             // can just add it to the current destination as current pickup.
             Preconditions.checkState(this.currentPickup == null, "We should not be handling a pickup already assigned as next!");
@@ -205,21 +256,21 @@ implements IPassengerManifest
             changedDestination = false;
          } else {
             // We picked up a pickup request that is after our current destination.  Queue it.
-            final int insertionPoint = Collections.<ScheduledStop> binarySearch(this.scheduledStops, newStop);
+            int insertionPoint = Collections.<ScheduledStop> binarySearch(this.scheduledStops, newStop);
+            if (insertionPoint < 0) insertionPoint = -(insertionPoint) - 1;
             log.info(String.format("Queuing new pickup at index %d.", insertionPoint));
             this.scheduledStops.add(insertionPoint, newStop);
             changedDestination = false;
          }
       } else if (this.currentPickup != null) {
          if (newStop.compareTo(this.currentPickup) < 0) {
-            // The new pickup is in our direction of travel and we'll reach it before the current drop.  Re-queue the current drop and change destination.
-            final int insertionPoint = Collections.<ScheduledStop> binarySearch(this.scheduledStops, this.currentPickup);
-            log.info(String.format("Re-queuing previous stop at index %d should be 0.", insertionPoint));
-            this.scheduledStops.add(insertionPoint, this.currentPickup);
+            // The new pickup is in our direction of travel and we'll reach it before the current pickup.  Re-queue the old pickup and change destination.
+            this.enqueueStop(this.currentPickup);
             this.currentPickup = newStop;
          } else {
             // We picked up a pickup request that is after our current destination.  Queue it.
-            final int insertionPoint = Collections.<ScheduledStop> binarySearch(this.scheduledStops, newStop);
+            int insertionPoint = Collections.<ScheduledStop> binarySearch(this.scheduledStops, newStop);
+            if (insertionPoint < 0) insertionPoint = -(insertionPoint) - 1;
             log.info(String.format("Queuing new pickup at index %d.", insertionPoint));
             this.scheduledStops.add(insertionPoint, newStop);
             changedDestination = false;
@@ -237,83 +288,75 @@ implements IPassengerManifest
    @Override
    public boolean trackCanceledPickup(int floorIndex, DirectionOfTravel direction)
    {
-      final ScheduledStop oldStop;
-      if (direction == DirectionOfTravel.GOING_UP) {
-         oldStop = new ScheduledDescendingPickUp(floorIndex);
-      } else if (direction == DirectionOfTravel.GOING_DOWN) {
-         oldStop = new ScheduledDescendingPickUp(floorIndex);
-      } else if (direction == DirectionOfTravel.STOPPED) {
-         throw new IllegalArgumentException();
-      } else {
-         throw new NullPointerException();
-      }
+      final int travelIndex = this.travelIndexFor(floorIndex, direction);
+      final ScheduledPickUp searchKey = new ScheduledPickUp(floorIndex, travelIndex);
 
-      boolean changedDestination = true;
+      boolean changedDestination = false;
       if ((this.currentPickup != null) &&
          (this.currentPickup.getFloorIndex() == floorIndex) &&
-         (this.currentPickup.getOutbound() == direction)
-      ) {
-            this.currentPickup = null;
-            if (this.currentDrop != null) {
-               changedDestination = false;
-            } else {
-               this.popNextDestination();
-            }
+         (this.currentPickup.getOutbound() == direction) &&
+         (this.currentPickup.travelIndex == travelIndex))
+      {
+         this.currentPickup = null;
+         if (this.currentDrop == null) {
+            this.popNextDestination();
+            changedDestination = true;
+         }
       } else {
-         final int insertionPoint = Collections.<ScheduledStop> binarySearch(this.scheduledStops, oldStop);
-         final ScheduledStop match = this.scheduledStops.get(insertionPoint);
-         Preconditions.checkState(match.compareTo(oldStop) == 0);
+         int insertionPoint = Collections.<ScheduledStop> binarySearch(this.scheduledStops, searchKey);
+         Preconditions.checkState(insertionPoint >= 0, "Canceled pickup not found in schedule");
          this.scheduledStops.remove(insertionPoint);
-         changedDestination = false;
       }
 
       this.nextTravelGraph.recordCancelledPickup(floorIndex, direction);
       return changedDestination;
    }
-   
-   
+
+
    @Override
    public boolean trackSlowingThrough(int floorIndex, DirectionOfTravel direction) {
-      if ((this.currentDirection == direction) && (this.getCurrentDestination() == floorIndex)) {
+      if ((this.getCurrentDirection() == direction) && (this.getCurrentDestination() == floorIndex)) {
          this.currentFloor = floorIndex;
          return true;
       }
-      
+
       return false;
    }
 
-   
+
    @Override
    public boolean trackTravelThrough(int floorIndex, DirectionOfTravel direction) {
-      if ((this.currentDirection == direction) &&
-         (((this.getCurrentDestination()> floorIndex) && (direction == DirectionOfTravel.GOING_UP)) ||
+      if ((this.getCurrentDirection() == direction) &&
+         (((this.getCurrentDestination() > floorIndex) && (direction == DirectionOfTravel.GOING_UP)) ||
             ((this.getCurrentDestination() < floorIndex) && (direction == DirectionOfTravel.GOING_DOWN)))) {
          this.currentFloor = floorIndex;
          return true;
       }
-      
+
       return false;
    }
 
-   
+
    private void popNextDestination() {
-      if (this.scheduledStops.size() > 1) {
-         ScheduledStop nextStop = this.scheduledStops.remove(0);
-         if (nextStop.isDropOff()) {
+      if (this.scheduledStops.size() > 0) {
+         final ScheduledStop nextStop = this.scheduledStops.remove(0);
+         if (nextStop.isReversal()) {
+            // Consuming a reversal advances the traversal epoch; the next stop belongs to the new pass.
+            this.currentTravelIndex++;
+            this.popNextDestination();
+         } else if (nextStop.isDropOff()) {
             this.currentDrop = (ScheduledDropOff) nextStop;
-            nextStop = this.scheduledStops.get(0);
-            if (nextStop.isPickup()) {
-               ScheduledPickUp nextPickup = (ScheduledPickUp) nextStop;
-               if (nextPickup.getFloorIndex() == this.currentDrop.getFloorIndex()) {
-                  this.currentPickup = nextPickup;
+            if (!this.scheduledStops.isEmpty()) {
+               final ScheduledStop peek = this.scheduledStops.get(0);
+               if (peek.isPickup() &&
+                   peek.getFloorIndex() == this.currentDrop.getFloorIndex() &&
+                   peek.travelIndex == this.currentDrop.travelIndex) {
+                  this.currentPickup = this.scheduledStops.remove(0);
                }
             }
          } else if (nextStop.isPickup()) {
-            this.currentPickup = (ScheduledPickUp) nextStop;
-            
+            this.currentPickup = nextStop;
          }
-
-         ScheduledStop 
       }
    }
 
@@ -332,320 +375,269 @@ implements IPassengerManifest
    }
 
 
+   // -------------------------------------------------------------------------
+   // Stop purpose taxonomy
+   // -------------------------------------------------------------------------
+
    enum StopPurpose
    {
-      DROP_OFF,
+      UPWARD_DROP,
+      DOWNWARD_DROP,
       UPWARD_CALL,
       DOWNWARD_CALL,
       REVERSE;
    }
 
 
-   abstract class ScheduledStop
+   // -------------------------------------------------------------------------
+   // Scheduled stop hierarchy
+   // -------------------------------------------------------------------------
+
+   public abstract class ScheduledStop
    implements Comparable<ScheduledStop>
    {
       final int floorIndex;
       final StopPurpose purpose;
+      final int travelIndex;
+      final PassengerManifest manifest;
 
 
-      ScheduledStop( int floorIndex, StopPurpose purpose )
+      /**
+       * The interesting sequences are:
+       * -- DOWNWARD_DROP, DOWNWARD_CALL
+       * -- UPWARD_DROP, UPWARD_CALL
+       * -- UPWARD_DROP, REVERSE, DOWNWARD_CALL  (travelIndex+1 at REVERSE)
+       * -- DOWNWARD_DROP, REVERSE, UPWARD_CALL  (travelIndex+1 at REVERSE)
+       *
+       * @param floorIndex
+       * @param purpose
+       * @param travelIndex Monotonic counter that changes every time there is a reversal of direction.  All even values go
+       *                    up, and all odd values go down.  Stops on different travelIndex values sort by travelIndex alone;
+       *                    stops on the same travelIndex sort by floor (ascending for even, descending for odd).
+       *                    This allows future-direction stops to be queued while the current pass is still in progress.
+       */
+      ScheduledStop(int floorIndex, StopPurpose purpose, int travelIndex)
       {
          Preconditions.checkArgument(0 <= floorIndex && floorIndex < PassengerManifest.this.numFloors);
          Preconditions.checkNotNull(purpose);
+         Preconditions.checkArgument(travelIndex >= 0);
 
          this.floorIndex = floorIndex;
          this.purpose = purpose;
+         this.travelIndex = travelIndex;
       }
-
 
       public StopPurpose getPurpose() {
          return this.purpose;
       }
 
-      abstract boolean isReversal();
-      
-      abstract boolean isPickup();
-      
-      abstract boolean isDropOff();
+      public abstract boolean isReversal();
 
-      abstract int breakComparisonTie(ScheduledStop otherStop);
+      public abstract boolean isPickup();
 
+      public abstract boolean isDropOff();
 
-      PassengerManifest manifest()
+      PassengerManifest getManifest()
       {
-         return PassengerManifest.this;
+         return PassngerManifest.this;
       }
 
 
       int getFloorIndex() {
          return this.floorIndex;
       }
-      
-      
-      protected abstract DirectionOfTravel getOutbound();
+
+
+      protected DirectionOfTravel getOutbound() {
+         return (this.travelIndex % 2 == 0) ? DirectionOfTravel.GOING_UP : DirectionOfTravel.GOING_DOWN;
+      }
 
 
       @Override
       public int compareTo(ScheduledStop o2)
       {
          Preconditions.checkNotNull(o2);
-         Preconditions.checkArgument(PassengerManifest.this == o2.manifest());
+         Preconditions.checkArgument(this.getManifest() == o2.getManifest());
 
          if (this == o2) { return 0; }
 
-         // If the main direction is GOING_DOWN, use the negative for all floor indices. This inversion transforms all
-         // floor-to-floor
-         // comparison semantics s uch that they become identical to the GOING_UP semantics with positive floor values.
-         // This get rid of
-         // a whole lot of redundant branching!
-         final DirectionOfTravel o1Outbound = this.getOutbound();
-         final DirectionOfTravel o2Outbound = this.getOutbound();
-         final DirectionOfTravel originOutbound = PassengerManifest.this.currentDirection;
-         final int originFloor, o1Floor, o2Floor;
-         if (originOutbound == DirectionOfTravel.GOING_DOWN) {
-            originFloor = PassengerManifest.this.currentFloor * -1;
-            o1Floor = this.floorIndex * -1;
-            o2Floor = o2.floorIndex * -1;
-         } else {
-            originFloor = PassengerManifest.this.currentFloor;
-            o1Floor = this.floorIndex;
-            o2Floor = o2.floorIndex;
+         // Different passes: earlier travelIndex always comes first.
+         if (this.travelIndex != o2.travelIndex) {
+            return Integer.compare(this.travelIndex, o2.travelIndex);
          }
 
-         if (o1Outbound == o2Outbound) {
-            if (o1Floor == o2Floor) {
-               // Both depart the same floor in the same direction, therefore they are scheduled together.
-               return this.breakComparisonTie(o2);
-            } else if (o1Outbound == originOutbound) {
-               // Both are departing the same direction the car is currently travelling.  To compare the floor indices, it is necessary to
-               // know whether one, both, or neither is above the origin floor.
-               if (o1Floor > o2Floor) {
-                  if (o2Floor >= originFloor) {
-                     return 1;
-                  } else if (o1Floor >= originFloor) {
-                     return -1;
-                  } else {
-                     return 1;
+         // Same pass: even passes ascend by floor, odd passes descend by floor.
+         if (this.floorIndex != o2.floorIndex) {
+            return (this.travelIndex % 2 == 0)
+               ? Integer.compare(this.floorIndex, o2.floorIndex)
+               : Integer.compare(o2.floorIndex, this.floorIndex);
+         }
+
+         // Same pass, same floor: use stop-type ordering.
+         switch(this.getPurpose()) {
+            case UPWARD_DROP: {
+               switch(o2.getPurpose()) {
+                  case UPWARD_CALL: return -1;
+                  case UPWARD_DROP: return 0;
+                  default: {
+                     throw new IllegalStateException(
+                        String.format("this is %s, o2 is %s", this.getPurpose(), o2.getPurpose())
+                     );
                   }
-               } else if (o1Floor < o2Floor) {
-                  if (o1Floor >= originFloor) {
-                     return -1;
-                  } else if (o2Floor >= originFloor) {
-                     return 1;
-                  } else {
-                     return -1;
+               };
+            }
+            case DOWNWARD_DROP: {
+               switch(o2.getPurpose()) {
+                  case DOWNWARD_CALL: return -1;
+                  case DOWNWARD_DROP: return 0;
+                  default: {
+                     throw new IllegalStateException(
+                        String.format("this is %s, o2 is %s", this.getPurpose(), o2.getPurpose())
+                     );
+                  }
+               };
+            }
+            case UPWARD_CALL: {
+               switch(o2.getPurpose()) {
+                  case UPWARD_CALL: return 0;
+                  case UPWARD_DROP: return 1;
+                  case REVERSE: return -1;
+                  default: {
+                     throw new IllegalStateException(
+                        String.format("this is %s, o2 is %s", this.getPurpose(), o2.getPurpose())
+                     );
+                  }
+               };
+            }
+            case DOWNWARD_CALL: {
+               switch(o2.getPurpose()) {
+                  case DOWNWARD_CALL: return 0;
+                  case DOWNWARD_DROP: return 1;
+                  case REVERSE: return -1;
+                  default: {
+                     throw new IllegalStateException(
+                        String.format("this is %s, o2 is %s", this.getPurpose(), o2.getPurpose())
+                     );
+                  }
+               };
+            }
+            case REVERSE: {
+               switch(o2.getPurpose()) {
+                  case REVERSE: return 0;
+                  case DOWNWARD_CALL: return -1;
+                  case UPWARD_CALL: return -1;
+                  default: {
+                     throw new IllegalStateException(
+                        String.format("this is %s, o2 is %s", this.getPurpose(), o2.getPurpose())
+                     );
                   }
                }
-            } else if (o1Floor > o2Floor) {
-               return -1;
-            } else {
-               return 1;
             }
-         } else if (o1Outbound == originOutbound) {
-            if (o1Floor >= originFloor) {
-               return -1;
-            } else {
-               return 1;
-            }
-         } else if (o2Floor >= originFloor) {
-            return 1;
          }
 
-         return -1;
+         throw new IllegalStateException(
+             String.format("this is %s, o2 is %s", this, o2)
+         );
       }
    }
 
-  
-   abstract class ScheduledPickUp extends ScheduledStop {
-      ScheduledPickUp( int floorIndex, DirectionOfTravel direction )
-      {
-         super(floorIndex, direction == DirectionOfTravel.GOING_UP ? StopPurpose.UPWARD_CALL : StopPurpose.DOWNWARD_CALL);
-      }
 
-      boolean isReversal()
-      {
-         return false;
-      }
-
-      @Override
-      boolean isPickup()
-      {
-         return true;
-      }
-
-      @Override
-      boolean isDropOff()
-      {
-         return false;
-      }
-
-   }
-   
-
-   class ScheduledAscendingPickUp
-   extends ScheduledPickUp
+   // Unified pickup stop — direction encoded by travelIndex parity.
+   public class ScheduledPickUp extends ScheduledStop
    {
-      ScheduledAscendingPickUp( int floorIndex )
+      public ScheduledPickUp(int floorIndex, int travelIndex)
       {
-         super(floorIndex, DirectionOfTravel.GOING_UP);
-         Preconditions.checkArgument(floorIndex < (PassengerManifest.this.numFloors - 1));
-         Preconditions.checkArgument(floorIndex >= 0);
-      }
-
-      @Override
-      protected DirectionOfTravel getOutbound()
-      {
-         return DirectionOfTravel.GOING_UP;
-      }
-      
-      
-      @Override
-      protected int breakComparisonTie( ScheduledStop otherStop ) {
-         if (PassengerManifest.this.getCurrentDirection() == DirectionOfTravel.GOING_DOWN) {
-            return 1;
-         } else if (otherStop.isDropOff()) {
-            return 1;
-         } else if (otherStop.getPurpose() == StopPurpose.UPWARD_CALL) {
-            return 0;
+         super(floorIndex,
+               (travelIndex % 2 == 0) ? StopPurpose.UPWARD_CALL : StopPurpose.DOWNWARD_CALL,
+               travelIndex);
+         if (travelIndex % 2 == 0) {
+            Preconditions.checkArgument(floorIndex < PassengerManifest.this.numFloors - 1,
+               "Upward pickup floor must not be the top floor");
+         } else {
+            Preconditions.checkArgument(floorIndex > 0,
+               "Downward pickup floor must not be the bottom floor");
          }
+      }
 
-         return -1;
+      @Override
+      public boolean isReversal() { return false; }
+
+      @Override
+      public boolean isPickup() { return true; }
+
+      @Override
+      public boolean isDropOff() { return false; }
+
+      @Override
+      public String toString() {
+         return String.format("%s@floor=%d,pass=%d",
+            (this.travelIndex % 2 == 0) ? "UP_CALL" : "DOWN_CALL",
+            this.floorIndex, this.travelIndex);
       }
    }
 
 
-   class ScheduledDescendingPickUp
-   extends ScheduledPickUp
+   // Drop-off stop — direction encoded by travelIndex parity.
+   // Constructor does not validate against current floor position because drops may be
+   // pre-scheduled for a future pass before the elevator has reached that position.
+   public class ScheduledDropOff extends ScheduledStop
    {
-      ScheduledDescendingPickUp( int floorIndex )
+      public ScheduledDropOff(int floorIndex, int travelIndex)
       {
-         super(floorIndex, DirectionOfTravel.GOING_DOWN);
-         Preconditions.checkArgument(floorIndex < PassengerManifest.this.numFloors);
-         Preconditions.checkArgument(floorIndex > 0);
+         super(floorIndex,
+               (travelIndex % 2 == 0) ? StopPurpose.UPWARD_DROP : StopPurpose.DOWNWARD_DROP,
+               travelIndex);
       }
 
-      @Override
-      protected DirectionOfTravel getOutbound()
-      {
-         return DirectionOfTravel.GOING_DOWN;
-      }
-      
-      @Override
-      protected int breakComparisonTie( ScheduledStop otherStop ) {
-         if (PassengerManifest.this.getCurrentDirection() == DirectionOfTravel.GOING_UP) {
-            return 1;
-         } else if (otherStop.isDropOff()) {
-            return 1;
-         } else if (otherStop.getPurpose() == StopPurpose.DOWNWARD_CALL) {
-            return 0;
-         }
 
-         return -1;
+      @Override
+      public boolean isReversal() { return false; }
+
+      @Override
+      public boolean isPickup() { return false; }
+
+      @Override
+      public boolean isDropOff() { return true; }
+
+      @Override
+      public String toString() {
+         return String.format("%s@floor=%d,pass=%d",
+            (this.travelIndex % 2 == 0) ? "UP_DROP" : "DOWN_DROP",
+            this.floorIndex, this.travelIndex);
       }
    }
 
 
-   class ScheduledDropOff
-   extends ScheduledStop
+   // Reversal marker — travelIndex is the pass that ends here; consuming it increments currentTravelIndex.
+   public class ScheduledReversal extends ScheduledStop
    {
-      ScheduledDropOff( int floorIndex )
+      public ScheduledReversal(int floorIndex, int travelIndex)
       {
-         super(floorIndex, StopPurpose.DROP_OFF);
-         if (PassengerManifest.this.currentDirection == DirectionOfTravel.GOING_UP) {
-            Preconditions.checkArgument(floorIndex > PassengerManifest.this.currentFloor);
-         } else if (PassengerManifest.this.currentDirection == DirectionOfTravel.GOING_UP) {
-            Preconditions.checkArgument(floorIndex < PassengerManifest.this.currentFloor);
-         }
-      }
-
-
-      boolean isReversal()
-      {
-         return false;
+         super(floorIndex, StopPurpose.REVERSE, travelIndex);
+         Preconditions.checkArgument(
+            (floorIndex == 0) || (floorIndex == (PassengerManifest.this.numFloors - 1)) || (travelIndex > 0),
+            "Mid-path reversal must not be the initial sentinel");
       }
 
 
       @Override
-      boolean isPickup()
-      {
-         return false;
-      }
-
+      public boolean isReversal() { return true; }
 
       @Override
-      boolean isDropOff()
-      {
-         return true;
-      }
-
+      public boolean isPickup() { return false; }
 
       @Override
-      protected DirectionOfTravel getOutbound()
-      {
-         return PassengerManifest.this.currentDirection;
-      }
-      
-      
-      @Override
-      protected int breakComparisonTie( ScheduledStop otherStop ) {
-         if (otherStop.isDropOff()) {
-            return 0;
-         }
-
-         return -1;
-      }
-   }
-
-
-   class ScheduledReversal
-   extends ScheduledStop
-   {
-      ScheduledReversal( int floorIndex )
-      {
-         super(floorIndex, StopPurpose.REVERSE);
-         Preconditions
-            .checkArgument((floorIndex == 0) || (floorIndex == (PassengerManifest.this.numFloors - 1)));
-      }
-
-
-      boolean isReversal()
-      {
-         return true;
-      }
-
+      public boolean isDropOff() { return false; }
 
       @Override
-      boolean isPickup()
-      {
-         return false;
+      protected DirectionOfTravel getOutbound() {
+         // After this reversal the next pass has the opposite parity.
+         return ((this.travelIndex + 1) % 2 == 0) ? DirectionOfTravel.GOING_UP : DirectionOfTravel.GOING_DOWN;
       }
 
-
       @Override
-      boolean isDropOff()
-      {
-         return false;
-      }
-
-
-      @Override
-      protected DirectionOfTravel getOutbound()
-      {
-         if (this.floorIndex == 0) { return DirectionOfTravel.GOING_UP; }
-
-         return DirectionOfTravel.GOING_DOWN;
-      }
-      
-      
-      @Override
-      protected int breakComparisonTie( ScheduledStop otherStop ) {
-         if (otherStop.isReversal()) {
-            return 0;
-         } else if (otherStop.getOutbound() == this.getOutbound()) {
-            return 1;
-         }
-
-         return -1;
+      public String toString() {
+         return String.format("REVERSE@floor=%d,pass=%d", this.floorIndex, this.travelIndex);
       }
    }
 }
