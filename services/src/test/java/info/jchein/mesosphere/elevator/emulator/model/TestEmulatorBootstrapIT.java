@@ -16,8 +16,8 @@ import info.jchein.mesosphere.elevator.runtime.event.IRuntimeEventBus;
 import info.jchein.mesosphere.elevator.runtime.temporal.IRuntimeClock;
 import info.jchein.mesosphere.elevator.runtime.temporal.IRuntimeScheduler;
 import info.jchein.mesosphere.elevator.runtime.temporal.VirtualTimerConfiguration;
-import info.jchein.mesosphere.elevator.runtime.temporal.temporal.EnableVirtualRuntime;
-import info.jchein.mesosphere.elevator.runtime.temporal.temporal.IVirtualRuntimeService;
+import info.jchein.mesosphere.elevator.runtime.temporal.EnableVirtualRuntime;
+import info.jchein.mesosphere.elevator.runtime.temporal.IVirtualRuntimeService;
 
 @TestPropertySource
 @ContextConfiguration(classes= {VirtualRuntimeTestConfiguration.class}, loader=AnnotationConfigContextLoader.class)

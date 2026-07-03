@@ -14,8 +14,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import fixtures.elevator.runtime.temporal.EnableTestVirtualRuntime;
 import info.jchein.mesosphere.elevator.runtime.IRuntime;
-import info.jchein.mesosphere.elevator.runtime.temporal.temporal.IVirtualRuntimeService;
-import info.jchein.mesosphere.elevator.runtime.temporal.temporal.RuntimeClock;
+import info.jchein.mesosphere.elevator.runtime.temporal.IVirtualRuntimeService;
+import info.jchein.mesosphere.elevator.runtime.temporal.RuntimeClock;
 import rx.Scheduler;
 
 
