@@ -1,14 +1,12 @@
 package test.jcop2;
 
 
-import java.util.BitSet;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableList;
 
-import info.jchein.mesosphere.elevator.common.bitset.IBitSet;
 import info.jchein.mesosphere.elevator.common.bitset.IReadOnlyBitSet;
 import info.jchein.mesosphere.elevator.common.bitset.ReadOnlyBitSet;
 import lombok.AllArgsConstructor;
@@ -33,7 +31,7 @@ public class FloorLanding
    static FloorLanding makeFloorLanding(int floorIndex,
       @Singular("boardingEvent") @ObtainVia(method = "boardingEventsForBuilder")
       List<Consumer<BoardingEvent.BoardingEventBuilder>> boardingEvents,
-      BitSet dropRequests)
+      @ObtainVia(field = "dropRequests") IReadOnlyBitSet dropRequests)
    {
       return new FloorLanding(
          floorIndex,
@@ -46,7 +44,7 @@ public class FloorLanding
                   builderOne.addAll(builderTwo.build());
                })
             .build(),
-            (dropRequests != null) ? new ProtectedBitSet(dropRequests.clone(), true) : new ReadOnlyBitSet());
+            (dropRequests != null) ? dropRequests : new ReadOnlyBitSet());
    }
 
 

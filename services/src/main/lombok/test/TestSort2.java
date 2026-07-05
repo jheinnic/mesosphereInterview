@@ -13,6 +13,7 @@ import info.jchein.mesosphere.elevator.control.PerformanceEstimate;
 import info.jchein.mesosphere.elevator.control.PickupImpactEstimate;
 import info.jchein.mesosphere.elevator.control.manifest.ITravelGraph;
 import info.jchein.mesosphere.elevator.control.manifest.PassengerManifest;
+import info.jchein.mesosphere.elevator.monitor.model.PendingDropOff;
 
 
 /**
@@ -34,6 +35,7 @@ public class TestSort2
       @Override public PickupImpactEstimate estimatePickupImpact(
             int floorIndex, DirectionOfTravel direction,
             ImmutableList<Pair<Integer, Double>> passengers) { return null; }
+      @Override public void bootstrapFromState(int initialFloor, ImmutableList<PendingDropOff> passengers) { }
    }
 
    public static void main(String[] args)

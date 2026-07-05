@@ -49,6 +49,7 @@ implements ITravelGraph
       this.visitWeightBoarded = this.visitWeightDisembarked = 0;
       final long now = this.clock.now();
       for( final FloorOfOrigin nextFloor : this.floorOrigins ) {
+         nextFloor.notifyDoorsOpening(floorIndex);
          this.floorFsm.onEvent(nextFloor, FloorOfOriginEvents.Names.DOORS_OPENED, floorIndex, now);
       }
    }

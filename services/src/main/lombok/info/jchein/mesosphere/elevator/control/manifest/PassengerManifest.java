@@ -33,7 +33,7 @@ implements IPassengerManifest
    private int currentTravelIndex;
 
    private int currentFloor;
-   private ScheduledPickuUp currentPickup;
+   private ScheduledPickUp currentPickup;
    private ScheduledDropOff currentDrop;
    private ITravelGraph currentTravelGraph;
    private ITravelGraph nextTravelGraph;
@@ -175,7 +175,7 @@ implements IPassengerManifest
          }
       } else if ((this.currentPickup != null) && (newStop.compareTo(this.currentPickup) < 0)) {
          if (newStop.isPickup()) {
-            this.currentPickup = newStop;
+            this.currentPickup = (ScheduledPickUp) newStop;
          }
       }
    }
@@ -351,11 +351,11 @@ implements IPassengerManifest
                if (peek.isPickup() &&
                    peek.getFloorIndex() == this.currentDrop.getFloorIndex() &&
                    peek.travelIndex == this.currentDrop.travelIndex) {
-                  this.currentPickup = this.scheduledStops.remove(0);
+                  this.currentPickup = (ScheduledPickUp) this.scheduledStops.remove(0);
                }
             }
          } else if (nextStop.isPickup()) {
-            this.currentPickup = nextStop;
+            this.currentPickup = (ScheduledPickUp) nextStop;
          }
       }
    }
@@ -399,7 +399,6 @@ implements IPassengerManifest
       final int floorIndex;
       final StopPurpose purpose;
       final int travelIndex;
-      final PassengerManifest manifest;
 
 
       /**
@@ -439,7 +438,7 @@ implements IPassengerManifest
 
       PassengerManifest getManifest()
       {
-         return PassngerManifest.this;
+         return PassengerManifest.this;
       }
 
 
@@ -484,7 +483,7 @@ implements IPassengerManifest
                         String.format("this is %s, o2 is %s", this.getPurpose(), o2.getPurpose())
                      );
                   }
-               };
+               }
             }
             case DOWNWARD_DROP: {
                switch(o2.getPurpose()) {
@@ -495,7 +494,7 @@ implements IPassengerManifest
                         String.format("this is %s, o2 is %s", this.getPurpose(), o2.getPurpose())
                      );
                   }
-               };
+               }
             }
             case UPWARD_CALL: {
                switch(o2.getPurpose()) {
@@ -507,7 +506,7 @@ implements IPassengerManifest
                         String.format("this is %s, o2 is %s", this.getPurpose(), o2.getPurpose())
                      );
                   }
-               };
+               }
             }
             case DOWNWARD_CALL: {
                switch(o2.getPurpose()) {
@@ -519,7 +518,7 @@ implements IPassengerManifest
                         String.format("this is %s, o2 is %s", this.getPurpose(), o2.getPurpose())
                      );
                   }
-               };
+               }
             }
             case REVERSE: {
                switch(o2.getPurpose()) {

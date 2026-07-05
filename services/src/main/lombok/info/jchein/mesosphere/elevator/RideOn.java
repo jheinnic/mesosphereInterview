@@ -47,12 +47,12 @@ public class RideOn
       app.run(args);
     }
    
-   //  @Bean
-   //  @Scope(BeanDefinition.SCOPE_SINGLETON)
-   //  public static CustomScopeConfigurer customScopeConfigurer()
-   //  {
-   //     return new CustomScopeConfigurer();
-   //  }
+    @Bean
+    @Scope(BeanDefinition.SCOPE_SINGLETON)
+    public static CustomScopeConfigurer customScopeConfigurer()
+    {
+       return new CustomScopeConfigurer();
+    }
 
     @Bean
     @Scope(BeanDefinition.SCOPE_SINGLETON)

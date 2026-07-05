@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Scope;
 import com.google.common.collect.ImmutableList;
 
 import info.jchein.mesosphere.elevator.common.CarIndexContext;
+import info.jchein.mesosphere.elevator.monitor.model.PendingDropOff;
 import info.jchein.mesosphere.elevator.common.DirectionOfTravel;
 import info.jchein.mesosphere.elevator.common.bootstrap.DeploymentConfiguration;
 import info.jchein.mesosphere.elevator.control.IElevatorCarScope;
@@ -52,6 +53,9 @@ public class ManifestConfiguration
          {
             return null;
          }
+
+         @Override
+         public void bootstrapFromState(int initialFloor, ImmutableList<PendingDropOff> passengers) { }
 
          @Override
          protected ITravelGraph allocateTravelGraph(DirectionOfTravel direction)

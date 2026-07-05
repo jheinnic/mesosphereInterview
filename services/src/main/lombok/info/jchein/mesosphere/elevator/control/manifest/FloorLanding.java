@@ -2,7 +2,6 @@ package info.jchein.mesosphere.elevator.control.manifest;
 
 import java.util.BitSet;
 
-import org.jgrapht.graph.DefaultWeightedEdge;
 import org.statefulj.persistence.annotations.State;
 import org.statefulj.persistence.annotations.State.AccessorType;
 
@@ -28,6 +27,14 @@ class FloorLanding implements ITravelQueueNode
    private double peerWeightObserved;
    private double peerWeightDeparted;
 
+   // Fields added to complete extraction from TravelGraph inner class
+   private int currentFloorStop;
+   private boolean activePickup;
+   private double peerWeightOnboard;
+   private double peerWeightDisembarked;
+   private BitSet possibleDropFloors;
+   private BitSet unvisittedDropFloors;
+
 
    FloorLanding( int pickupFloor )
    {
@@ -43,6 +50,18 @@ class FloorLanding implements ITravelQueueNode
       this.ownWeightRemaining = -1;
       this.peerWeightObserved = 0;
       this.peerWeightDeparted = 0;
+      this.currentFloorStop = -1;
+      this.activePickup = false;
+      this.peerWeightOnboard = 0;
+      this.peerWeightDisembarked = 0;
+      this.possibleDropFloors = new BitSet();
+      this.unvisittedDropFloors = new BitSet();
+   }
+
+
+   void notifyDoorsOpening(int floorIndex)
+   {
+      this.currentFloorStop = floorIndex;
    }
 
 
@@ -81,14 +100,14 @@ class FloorLanding implements ITravelQueueNode
    
    void trackBeginVisit(long pickupTime)
    {
-      this.unvisittedDropFloors.clear(TravelGraph.this.currentFloorStop);
+      this.unvisittedDropFloors.clear(this.currentFloorStop);
       this.ownWeightOnVisit = this.ownWeightRemaining;
    }
    
    void trackCompleteVisit()
    {
       final int fromFloorIndex = this.pickupFloor;
-      final int toFloorIndex = TravelGraph.this.currentFloorStop;
+      final int toFloorIndex = this.currentFloorStop;
    }
 
 
@@ -105,7 +124,7 @@ class FloorLanding implements ITravelQueueNode
 
    boolean isPotentialStop()
    {
-      return this.possibleDropFloors.get(TravelGraph.this.currentFloorStop);
+      return this.possibleDropFloors.get(this.currentFloorStop);
    }
 
    boolean isLastStop()
